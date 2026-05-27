@@ -5,7 +5,7 @@
         "query_text": "I already know some of the basics of python and want to learn machine learning.", 
         "prior_knowledge": ["python"], 
         "learning_duration": "2 years", 
-        "relevant_resource_ids": [] 
+        "relevant_resource_ids": ["r001"] 
     },
     {
         "query_id": "q002",
