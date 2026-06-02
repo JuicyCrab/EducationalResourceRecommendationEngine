@@ -1,0 +1,114 @@
+Wandering around a random forest. I won't get lost because of stat quest
+Hello, I'm Josh Dharma and welcome to stat quest today
+We're gonna be starting part one of a series on random forests, and we're going to talk about building and evaluating random forests
+Note random forests are built from decision trees. So if you don't already know about those check out my stat quest and beef up
+Motivation for using Random Forests
+Decision trees are easy to build easy to use and easy to interpret
+But in practice they are not that awesome
+to quote from the elements of statistical learning
+Aka the Bible of machine learning
+Trees have one aspect that prevents them from being the ideal tool for predictive learning
+Namely in accuracy. In other words, they work great with the data used to create them
+But they are not flexible when it comes to classifying new samples
+The good news is that random forests combine the simplicity of decision trees with flexibility
+Resulting in a vast improvement in accuracy
+So let's make a random forest
+Step 1, create a bootstrapped dataset
+step 1 create a bootstrap data set
+imagine that these 4 samples are the entire data set that we are going to build a tree from I
+Know it's crazy small, but just pretend for now
+To create a bootstrap data set that is the same size as the original. We just randomly select samples from the original data set
+The important detail is that we're allowed to pick the same sample more than once
+This is the first sample that we randomly select
+So it's the first sample in our bootstrap data set
+This is the second randomly selected sample from the original data set
+So it's the second sample in our bootstrap data set
+Here's the third randomly selected sample
+So here it is in the bootstrap data set
+Lastly here's the fourth randomly selected sample note. It's the same as the third and
+Here it is
+BAM we've created a bootstrap data set
+Step 2, create a decision tree a random subset of variables at each step
+Step2 for creating a random forest is to create a decision tree using the bootstrap dataset
+But only use a random subset of variables or columns at each step in
+This example, we will only consider two variables or columns at each step
+Note, we'll talk more about how to determine the optimal number of variables to consider later
+Thus instead of considering all four variables to figure out how to split the root node
+We randomly select two in
+This case we randomly selected good blood circulation and blocked arteries as candidates for the root node
+Just for the sake of the example assume that good blood circulation. Did the best job separating the samples?
+Since we used a good blood circulation, I'm going to gray it out so that we focus on the remaining variables
+Now we need to figure out how to split samples at this node
+just like for the route we randomly select two variables as candidates instead of all three remaining columns and
+We just build the tree as usual, but only considering a random subset of variables at each step
+double bound
+we built a tree one using a bootstrap data set and
+Two only considering a random subset of variables at each step
+Here's the tree we just made
+Step 3, repeat steps 1 and 2 a bunch of times
+Now go back to step one and repeat
+Make a new bootstrap data set and build a tree considering a subset of variables at each step
+Ideally you do this hundreds of times, but we only have space to show six, but you get the idea
+Using a bootstrap sample and considering only a subset of variables at each step results in a wide variety of trees
+The variety is what makes random forests more effective than individual decision trees
+Sweet now that we've created a random forest. How do we use it?
+Classifying a new sample with a Random Forest
+Well first we get a new patient
+We've got all the measurements and now we want to know if they have heart disease or not
+So we take the data and run it down the first tree that we made
+Booboo, dooba, dooba, dooba dooba, dooba. Do the first tree says yes, the patient has heart disease and
+We keep track of that here
+now we run the data down the second tree that we made the second tree also says yes and
+We keep track of that here. And then we repeat for all the trees we made
+After running the data down all of the trees in the random forest. We see which option received more votes in
+This case yes received the most votes so we will conclude that this patient has heart disease
+BAM
+Oh
+Definition of Bagging
+No terminology alert
+Bootstrapping the data plus using the aggregate to make a decision is called bagging
+Okay, now we've seen how to create and use a random forest
+How do we know if it's any good
+Evaluating a Random Forest
+Remember when we created the bootstrapped data set
+We allow duplicates in trees in the bootstrapped data set as
+A result. This entry was not included in the bootstrap data set
+Typically about one third of the original data does not end up in the bootstrap data set
+Here's the entry that didn't end up in the bootstrapped dataset
+If the original dataset were larger, we'd have more than just one entry over here
+This is called the out-of-bag data set
+If it were up to me
+I would have named it thee out of boot data set since it's the entries that didn't make it into the bootstrap dataset
+Unfortunately, it's not up to me
+Since the out-of-bag data was not used to create this tree
+We can run it through and see if it correctly classifies the sample as no heart disease
+In this case the tree correctly labels the out of bag sample. No
+Then we run this out of bag sample through all of the other trees that were built without it
+This tree incorrectly labeled the out of bag sample. Yes
+These trees correctly labeled the out of bag sample know
+Since the label with the most votes wins is the label that we assign this out of bag sample in
+This case the out of bag sample is correctly labeled by the random forest
+We then do the same thing for all of the other out of bag samples for all of the trees
+This out of bag sample was also correctly labeled
+This out of bag sample was incorrectly labeled
+Etc etc, etc
+Ultimately we can measure how accurate our random forest is by the proportion of out-of-bag samples that were correctly
+classified by the random forest
+The proportion of out-of-bag samples that were incorrectly classified is the out of bag error
+Okay, we now know how to one build a random forest to use a random forest and
+three estimate the accuracy of a random forest
+Optimizing the Random Forest
+However now that we know how to do this we can talk a little more about how to do this
+Remember when we built our first tree and we only use two variables
+columns of data to make a decision at each step
+Now we can compare the out-of-bag error for a random forest built using only two variables per step
+to a random forest built using three variables per step and
+We test a bunch of different settings and choose the most accurate random forest
+In other words one we build a random forest and then two we estimate the accuracy of a random forest
+then we change the number of variables used per step and
+We do this a bunch of times and then choose the one that is the most accurate
+Typically we start by using the square of the number of variables and then try a few settings above and below that value
+Triple bail
+Hooray
+We've made it to the end of another exciting static quest tune in next week
+And we'll talk about how to deal with missing data and how to cluster the samples. All right, and tell them quest are armed

@@ -1,0 +1,536 @@
+hi there today we're looking at
+attention is all you need by Google just
+to declare I don't work for Google just
+because we've been looking at Google
+papers lately but it's just an
+interesting paper and we're gonna see
+what's the deal with it so basically
+what the authors are saying is we should
+kind of get away from basically onions
+so traditionally what you would do and
+these authors particular interested in
+NLP natural language processing so
+Traditional Language Processing
+traditionally when you had like a
+language task the cat eats the mouse and
+you would like to translate this to say
+any other language like let's say German
+or whatever what you would do is you
+would try to encode this sentence into a
+representation and then decode it again
+so somehow somehow this sentence needs
+to all go into say one vector and then
+this one vector needs to somehow be
+transformed into the target language so
+these are tradition called sack to sack
+tasks and they have been solved so far
+using recurrent neural networks you
+might know the Alice TN networks that
+are very popular for these tasks what
+basically happens in an RNN is that you
+go over the say source sentence here one
+by one here you take the word the you
+kind of encode it maybe with a word
+vector if you know that is so you turn
+it into like a vector a word vector and
+then you use a neural network to turn
+this vector into what we call a hidden
+state so this H 0 is a hidden state you
+then take the second token here cat you
+again take it
+world vector because need to represent
+it with numbers somehow so you use word
+vectors for that you turn this into you
+put it through the same function so here
+is what it's like a little easy for
+encoder turn into the same function but
+this time this hidden state also gets
+plugged in here so the word vector did
+instead you can actually think of having
+like a started state here a start
+usually people either learn this or just
+initialize with zeros that kind of goes
+in to the encoder function so it's
+always really the same function and from
+the previous hidden state and the
+current word vector the encoder again
+predicts another hidden state h1 and so
+on so you take the next token you turn
+it into a word vector you put it through
+this thing the encoder function and of
+course this is a lot more complicated in
+actual like say an LST M that's the
+basic principle behind it so you you end
+up with H 2 and here you'd have H 3 H 4
+and the last hidden state H 4 here you
+would use this in kind of exactly the
+same fashion you plug it into like a
+decoder let the decoder which would
+output you a word D and it would also
+output you a next hidden state so H 5
+let's say let's just go on with the with
+the listing of the states and this H 5
+would again go into the decoder which
+would output concert like so that's how
+you would decode you basically these are
+n ends what they do is they kind of take
+if you look on top here they take an
+input a current input and they take the
+last hidden state and they compute a new
+hidden state in the case of the decoder
+they take the hidden state and they take
+kind of
+the previous usually the previous word
+that you output you also feed this back
+into the decoder and they will output
+the next word kind of make sense so you
+would guess that the hidden state kind
+of encode what the sentence means and
+the last word that you output you need
+this because maybe for grammar right you
+know what you've just output so kind of
+the next word should be based on that
+of course you don't have to have to do
+it exactly this way but that's kind of
+Attention
+what what is orleans did so attention is
+a mechanism here to basically increase
+the performance of the orleans so the
+tension would do is in in this
+particular case if we look at the
+decoder here if it's trying to predict
+this word for cat then or the next word
+here say here it wants the next word and
+[Music]
+in essence the only the only h6 the only
+information it really has is what the
+last word was german word for cat and
+what the hidden state is so if we look
+at what word it actually should output
+in the input sentence it's this here
+eats right and if we look at kind of the
+the information flow that this word has
+to travel so first it needs to encode
+into a word vector it needs to go
+through this encoder that's the same
+function for all the words so nothing
+specific and we learned to the word eats
+here all right let's go through this
+hidden state traverse again into another
+step this hidden state because we have
+two more tokens and then the next state
+state then it goes all the way to the
+decoder where the first two words are
+decoded and still so this H six this
+hidden state somehow still needs to
+retain the information that now the
+it's somehow is kind of their world to
+be translated and that they that the
+decoder should find the German word for
+that so that's that's of course very a
+very long path or there's a lot of
+transformations involved over these all
+Longrange dependencies
+of these hidden states and the hidden
+states not only do they need to remember
+this particular word but all of the
+words and the order and so on and the
+grammar Norquay the grammar you can
+actually learn with the decoders
+themselves but kind of the meaning and
+the structure of the sentence so it's
+very hard for an RNN to learn all of
+this what they what we call long-range
+dependencies and so naturally you
+actually think well why can't we just
+you know decode the first word to the
+first word the second word to the second
+world it actually works pretty well in
+this example right like the the cat cuts
+it eats the week just decoded it one by
+one about of course that's not how
+translation works in translations the
+sentences can become rearranged in the
+target language like one word can become
+many words or you could even be an
+entirely different expression so
+attention is a mechanism by which this
+decoder here in this step that we're
+Attention mechanism
+looking at can actually decide to go
+back and look at particular parts of the
+input especially what it would do
+anything like popular attention
+mechanisms is that the dis decoder here
+would can decide to attend to the hidden
+states of the input sentence what that
+means is in in this particular case we
+would like to teach the decoder somehow
+that AHA look here I need to pay close
+attention to this step here because that
+was the step when the word eats was just
+encoded so it probably has a lot of
+information about what I would like to
+do right now namely translate this word
+eats so this mechanism
+if you look at the information flow it
+simply it goes through this word vector
+goes through one encoding step and then
+is that hidden state and then the
+decoder can look directly at that so the
+the path length of information is much
+shorter than going through all the
+hidden states in a traditional way so
+that's where tension helps and the way
+that the decoder decides what to look at
+is like a kind of an addressing scheme
+you may know it from neural turing
+machines or or kind of other other kind
+of neural algorithms things so what the
+decoder will do is in each step it would
+output a bunch of keys oops sorry about
+that that's my hand being trippy so what
+I would output is a bunch of keys so K 1
+through K and what would these keys
+would do is they would index these
+hidden kind of hidden states via a kind
+of softmax architecture and we're gonna
+look at this I think in the actual paper
+we're discussing because it's gonna
+become more clear which is kind of
+notice that the decoder here can decide
+to attend it to the input sentence and
+kind of draw information directly from
+there instead of having to go just to
+the hidden state it's provided with so
+if we go to the paper here what do these
+authors propose and the thing is they
+teach the origins they basically say
+attention is all you need you don't need
+the entire recurrent things basically in
+every step of this decode of this and
+basically of the decoding so you want to
+produce the target sentence so in this
+step in this step in this step you can
+basically you don't need the recurrence
+even just kind of do attention over
+everything and you
+be fine namely what they do is they
+propose this transformer architecture so
+what does it do it has two parts what's
+what's called an encoder and a decoder
+but don't kind of be confused um because
+this all happens at once so this is not
+an art and it all happens at once every
+all the source sentence so if we again
+have the cat oops that doesn't work as
+easy let's just do this this is a source
+sentence and then we also have a target
+sentence that maybe we've produced two
+words and we want to produce this third
+word here what a produces so we would
+feed the entire source sentence and also
+the targets and as we produced so far to
+this network namely the source sentence
+would go into this part and the target
+that we've produced so far would go into
+this part and this is the all combined
+and at the end we get an output here at
+the output probabilities that kind of
+tells us the probabilities for the next
+word so we can choose the top
+probability and then repeat the entire
+process so basically every step in
+production is one training sample every
+step in producing a sentence here before
+with the Orang ends the entire sentence
+to sentence translation is one sample
+because we need to back propagate
+through all of these RNA in steps
+because they all happen kind of in
+sequence here basically output of one
+single token is one sample and then the
+computation is finished the back drop
+happens through everything only for this
+one step there is no multi-step kind of
+back propagation as in Orland and this
+is kind of a paradigm shift in sequence
+processing because people were always
+convinced that you kind of need these
+recurrent things in order to
+to make good to learn these dependencies
+but here they basically say Nenana
+we can just do attention over everything
+and little bit will actually be fine if
+we just do one step projections so let's
+go one by one so here with an input
+embedding and say an output embedding
+these these are symmetrical so basically
+the tokens just get embedded with say
+word vectors again then there's a
+positional encoding this is kind of a
+special thing where because you know
+lose this kind of sequence nature of
+your algorithm you kind of need to
+encode where the words are that you push
+Encoding
+through the network so the network kind
+of goes AHA this is a word at the
+beginning of the sentence or is the word
+towards the end of the sentence so or
+that it can compare to words like which
+one comes first
+which one comes second and you do this
+it's pretty easy for the networks if you
+do it with kind of these trigonometric
+functioning embeddings so if I draw your
+sine wave and I don't need a sine wave
+of that a stop was fast and I draw you a
+sine wave that is even faster maybe this
+one actually sync one two three four
+five doesn't matter you know what I mean
+so I can encode the first world you can
+encode the first position with all down
+and then the second position is kind of
+down down up and the third position is
+kind of up down up and so on so this is
+kind of a continuous way of binary
+Positional Encoding
+encoding of position so if I want to
+compare two words I can just look at all
+the scales of these things and I know
+how this word one word has high here and
+the other word is low here so they must
+be pretty far away like one must be at
+the beginning and one must be at the end
+if they happen to match in this long
+rate long wave and they also are both
+kind of low in this wave and then I can
+look in this way for like oh maybe
+they're close together but here
+I really got the information which ones
+first which was second so these are kind
+of positional encodings they they're not
+critical to this algorithm but they just
+encode where the words are which of
+course that is important and it gives
+the networking a significant boost in
+performance but it's not like it's not
+that the meat of the thing the meat of
+the thing is that now that these
+Tension
+encoding is go into the network's they
+simply do what they call tension here
+attention here and attention here so
+there's kind of three kinds of attention
+so basically the first attention on the
+bottom left is simply attention as you
+can see over the input sentence so if I
+told you before you need to take this
+input sentence if you look over here and
+you somehow need to encode it into a
+hidden representation and this now looks
+much more like the picture I drew here
+in the picture I drew right at the
+beginning is that all at once I kind of
+put together this head representation
+and all you do is he used attention over
+the input sequence which basically means
+you kind of pick and choose which word
+you look at more or less so with the
+bottom right so in the the output
+sentence that you've produced so for
+Top Right
+example a encoded into kind of a hidden
+state and then the third on the top
+right that's the I think that sorry I
+got interrupted so as are saying the top
+right is the most interesting part of
+the attention mechanism here where
+basically it unites the kind of encoder
+part with the kind of beak let's not it
+combines the source sentence with the
+target sentence that you've produced so
+far so as you can see maybe here I can
+just slightly annoying but I'm just
+gonna remove these kind of circles here
+so
+if you can see here there is an output
+going from the part that encodes the
+source sentence and it goes into this
+multi-head attention there's two
+connections and there's also one
+connection coming from the encoded
+output so far here and so there's three
+connections going in going into this and
+we're gonna take a look at what these
+three connections are so the the three
+connections here basically are the keys
+values and queries if you see here the
+values and the keys are what is output
+by the encoding part of the source
+sentence and the query is output by the
+encoding part of the target sentence and
+these are not only one value key in
+query so there are many and this kind of
+multi-head attention fashion so there
+are just many of them instead of one but
+you can think of and as there's just
+kind of sets so the attention computed
+Attention Computed
+here is what does it do so first of all
+it calculates a adult product of the
+keys and the queries and then it is a
+soft max over this and then it
+multiplies it by the value so what does
+this do if you thought product the keys
+and the queries what you would get is so
+as you know if you have two vectors and
+the dot there dot product basically
+gives you the angle between the vectors
+with especially in high dimensions most
+vectors going to be of kind of a 90
+degree kind of I know the Americans
+doodle the little square
+so most vectors are going to be not
+aligned very well so their dot product
+will kind of be zero ish but if a key in
+the query actually aligned with each
+other like
+if they point into the same directions
+the dot product will actually be large
+so what you can think of this as the the
+keys are kind of here the keys are just
+a bunch of vectors in space and each key
+has an Associated value so each key
+there is a kind of a table value one
+value to value three this is really
+annoying if I do this over text right so
+again here so we have a bunch of keys
+right in space and with a table with
+values and each key here corresponds to
+a value value one value to value three
+value 4 and so each key is associated
+with one of these values and then when
+we introduce a query what can it do so
+query will be a vector like this and we
+simply compute D so this is Q this is
+the query we compute the dot product
+with each of the keys and and then we
+compute a softmax over this which means
+that one key will basically be selected
+so in this case it would be probably
+this blue key here that has the biggest
+dot product with the query so this is
+key to in this in this case and the
+softmax so if you if you don't know what
+a softmax is you have you have like X 1
+2 X and B like some numbers then you
+simply do you map them to the
+exponential function each one of them
+and but also each one of them you divide
+by the sum of over over I of e to the X
+I so basically and this is a
+renormalization basically you you do the
+exponential function of the numbers
+which of course this makes the kind of
+big numbers even bigger so basically
+what you end up with is one of these
+numbers x1 through xn will become very
+big compared to the others
+and then you renormalize so basically
+one of them will be almost one and the
+other ones will be almost zero simply
+the the maximum function you can think
+of in a differentiable way I mean it
+should just want to select the biggest
+entry in this case here we kind of
+select the key that aligns most with the
+query which in this case would be key
+too and then we when we multiply this
+softmax thing with the with the values
+so this query this this inner product if
+we multiply Q with K to as an inner
+product and we take the softmax over it
+softmax what we'll do is i'm going to
+draw it upwards here we're going to
+induce a distribution like this and if
+we multiply this by the value it will
+basically select value two so this is
+this is kind of an indexing scheme into
+this memory of values and this is what
+then the network uses to compute further
+things using so you see the output here
+goes into kind of more layers of the
+neural network upwards so basically what
+what you can think what does this mean
+you can think of here's the whoops deep
+I want to delete this you can think of
+this as basically the encoder of the
+source sentence right here discovers
+interesting things that looks ugly it
+discovers interesting things about the
+about the source sentence and it builds
+key value pairs and then the encoder of
+the target sentence builds the queries
+and together they give you kind of the
+next the next signal so it means that
+the network basically says here's a
+bunch of things here is a here's a bunch
+of things about the source sentence
+that you might find interesting that's
+the values and the keys are ways to
+index the values so it says here's a
+bunch of things that are interesting
+which are the values and here is how you
+would address these things which is the
+keys and then the other part of the
+network builds the queries it says I
+would like to know certain things so
+think of the value is like attributes
+like here is the name and the the kind
+of tallness and the weight of a person
+right and the keys are like that the
+actual index is like name height weight
+and then the other part of the network
+can decide what I want I actually want
+the name so my query is the name it will
+be aligned with the key name and the
+corresponding value would be the name of
+the person you would like to describe so
+that's how kind of these networks work
+together and I think it's a it's a
+pretty ingenious it's not entirely new
+because it has been done of course
+before with all the differentiable
+Turing machines and whatnot but it's
+pretty cool that this actually works and
+actually works kind of better than our
+it ends if you simply do this so they
+describe a bunch of other things here I
+I don't think they're too important
+basically that the point they make about
+this attention is that it reduces path
+Conclusion
+lengths and kind of that's the the main
+reason why it should work better with
+this entire attention mechanism you
+reduce the amount of computation steps
+that information has to flow from one
+point in the network to another and that
+what brings the major improvement
+because all the computation steps can
+make you lose information and you don't
+want that you want short path lengths
+and so that's that's what this method
+achieves and they claim that's why it's
+better and it works so well so they have
+experiments you can look at them they're
+really good at everything of course of
+course you're always have state of the
+art and I think I will conclude here if
+you want to check it out yourself
+they have extensive code on github where
+you can build your own transformer
+networks and with that have a nice day
+and see ya

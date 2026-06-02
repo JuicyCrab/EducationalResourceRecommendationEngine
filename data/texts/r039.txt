@@ -1,0 +1,318 @@
+ML practitioners spend far more time evaluating, cleaning, and transforming data than building models. Data is so important that this course devotes three entire units to the topic:
+
+Working with numerical data (this unit)
+Working with categorical data
+Datasets, generalization, and overfitting
+This unit focuses on numerical data, meaning integers or floating-point values that behave like numbers. That is, they are additive, countable, ordered, and so on. The next unit focuses on categorical data, which can include numbers that behave like categories. The third unit focuses on how to prepare your data to ensure high-quality results when training and evaluating your model.
+
+Examples of numerical data include:
+
+Temperature
+Weight
+The number of deer wintering in a nature preserve
+In contrast, US postal codes, despite being five-digit or nine-digit numbers, don't behave like numbers or represent mathematical relationships. Postal code 40004 (in Nelson County, Kentucky) is not twice the quantity of postal code 20002 (in Washington, D.C.). These numbers represent categories, specifically geographic areas, and are considered categorical data.
+
+Until now, we've given you the impression that a model acts directly on the rows of a dataset; however, models actually ingest data somewhat differently.
+
+For example, suppose a dataset provides five columns, but only two of those columns (b and d) are features in the model. When processing the example in row 3, does the model simply grab the contents of the highlighted two cells (3b and 3d) as follows?
+
+Figure 1. A model ingesting an example directly from a dataset.
+            Columns b and d of Row 3 are highlighted.
+Figure 1. Not exactly how a model gets its examples.
+In fact, the model actually ingests an array of floating-point values called a feature vector. You can think of a feature vector as the floating-point values comprising one example.
+
+Figure 2. The feature vector is an intermediary between the dataset
+            and the model.
+Figure 2. Closer to the truth, but not realistic.
+However, feature vectors seldom use the dataset's raw values. Instead, you must typically process the dataset's values into representations that your model can better learn from. So, a more realistic feature vector might look something like this:
+
+Figure 3. The feature vector contains two floating-point values:
+            0.13 and 0.47. A more realistic feature vector.
+Figure 3. A more realistic feature vector.
+Wouldn't a model produce better predictions by training from the actual values in the dataset than from altered values? Surprisingly, the answer is no.
+
+You must determine the best way to represent raw dataset values as trainable values in the feature vector. This process is called feature engineering, and it is a vital part of machine learning. The most common feature engineering techniques are:
+
+Normalization: Converting numerical values into a standard range.
+Binning (also referred to as bucketing): Converting numerical values into buckets of ranges.
+This unit covers normalizing and binning. The next unit, Working with categorical data, covers other forms of preprocessing, such as converting non-numerical data, like strings, to floating point values.
+
+Every value in a feature vector must be a floating-point value. However, many features are naturally strings or other non-numerical values. Consequently, a large part of feature engineering is representing non-numerical values as numerical values. You'll see a lot of this in later modules.
+
+Before creating feature vectors, we recommend studying numerical data in two ways:
+
+Visualize your data in plots or graphs.
+Get statistics about your data.
+Visualize your data
+Graphs can help you find anomalies or patterns hiding in the data. Therefore, before getting too far into analysis, look at your data graphically, either as scatter plots or histograms. View graphs not only at the beginning of the data pipeline, but also throughout data transformations. Visualizations help you continually check your assumptions.
+
+We recommend working with pandas for visualization:
+
+Working with Missing Data (pandas Documentation)
+Visualizations (pandas Documentation)
+Note that certain visualization tools are optimized for certain data formats. A visualization tool that helps you evaluate protocol buffers may or may not be able to help you evaluate CSV data.
+
+Statistically evaluate your data
+Beyond visual analysis, we also recommend evaluating potential features and labels mathematically, gathering basic statistics such as:
+
+mean and median
+standard deviation
+the values at the quartile divisions: the 0th, 25th, 50th, 75th, and 100th percentiles. The 0th percentile is the minimum value of this column; the 100th percentile is the maximum value of this column. (The 50th percentile is the median.)
+Find outliers
+An outlier is a value distant from most other values in a feature or label. Outliers often cause problems in model training, so finding outliers is important.
+
+When the delta between the 0th and 25th percentiles differs significantly from the delta between the 75th and 100th percentiles, the dataset probably contains outliers.
+
+Note: Don't over-rely on basic statistics. Anomalies can also hide in seemingly well-balanced data.
+Outliers can fall into any of the following categories:
+
+The outlier is due to a mistake. For example, perhaps an experimenter mistakenly entered an extra zero, or perhaps an instrument that gathered data malfunctioned. You'll generally delete examples containing mistake outliers.
+The outlier is a legitimate data point, not a mistake. In this case, will your trained model ultimately need to infer good predictions on these outliers?
+If yes, keep these outliers in your training set. After all, outliers in certain features sometimes mirror outliers in the label, so the outliers could actually help your model make better predictions. Be careful, extreme outliers can still hurt your model.
+If no, delete the outliers or apply more invasive feature engineering techniques, such as clipping.
+Binning (also called bucketing) is a feature engineering technique that groups different numerical subranges into bins or buckets. In many cases, binning turns numerical data into categorical data. For example, consider a feature named X whose lowest value is 15 and highest value is 425. Using binning, you could represent X with the following five bins:
+
+Bin 1: 15 to 34
+Bin 2: 35 to 117
+Bin 3: 118 to 279
+Bin 4: 280 to 392
+Bin 5: 393 to 425
+Bin 1 spans the range 15 to 34, so every value of X between 15 and 34 ends up in Bin 1. A model trained on these bins will react no differently to X values of 17 and 29 since both values are in Bin 1.
+
+The feature vector represents the five bins as follows:
+
+Bin number	Range	Feature vector
+1	15-34	[1.0, 0.0, 0.0, 0.0, 0.0]
+2	35-117	[0.0, 1.0, 0.0, 0.0, 0.0]
+3	118-279	[0.0, 0.0, 1.0, 0.0, 0.0]
+4	280-392	[0.0, 0.0, 0.0, 1.0, 0.0]
+5	393-425	[0.0, 0.0, 0.0, 0.0, 1.0]
+Even though X is a single column in the dataset, binning causes a model to treat X as five separate features. Therefore, the model learns separate weights for each bin.
+
+Binning is a good alternative to scaling or clipping when either of the following conditions is met:
+
+The overall linear relationship between the feature and the label is weak or nonexistent.
+When the feature values are clustered.
+Binning can feel counterintuitive, given that the model in the previous example treats the values 37 and 115 identically. But when a feature appears more clumpy than linear, binning is a much better way to represent the data.
+
+Binning example: number of shoppers versus temperature
+Suppose you are creating a model that predicts the number of shoppers by the outside temperature for that day. Here's a plot of the temperature versus the number of shoppers:
+
+Figure 9. A scatter plot of 45 points. The 45 points naturally
+            cluster into three groups. 
+Figure 9. A scatter plot of 45 points.
+The plot shows, not surprisingly, that the number of shoppers was highest when the temperature was most comfortable.
+
+You could represent the feature as raw values: a temperature of 35.0 in the dataset would be 35.0 in the feature vector. Is that the best idea?
+
+During training, a linear regression model learns a single weight for each feature. Therefore, if temperature is represented as a single feature, then a temperature of 35.0 would have five times the influence (or one-fifth the influence) in a prediction as a temperature of 7.0. However, the plot doesn't really show any sort of linear relationship between the label and the feature value.
+
+The graph suggests three clusters in the following subranges:
+
+Bin 1 is the temperature range 4-11.
+Bin 2 is the temperature range 12-26.
+Bin 3 is the temperature range 27-36.
+Figure 10. The same scatter plot of 45 points as in the previous
+            figure, but with vertical lines to make the bins more obvious.
+Figure 10. The scatter plot divided into three bins.
+The model learns separate weights for each bin.
+
+While it's possible to create more than three bins, even a separate bin for each temperature reading, this is often a bad idea for the following reasons:
+
+A model can only learn the association between a bin and a label if there are enough examples in that bin. In the given example, each of the 3 bins contains at least 10 examples, which might be sufficient for training. With 33 separate bins, none of the bins would contain enough examples for the model to train on.
+A separate bin for each temperature results in 33 separate temperature features. However, you typically should minimize the number of features in a model.
+Exercise: Check your understanding
+The following plot shows the median home price for each 0.2 degrees of latitude for the mythical country of Freedonia:
+
+Figure 11. A plot of home values per latitude. The lowest house
+            value is about 327 and the highest is 712. The latitudes span 41.0
+            to 44.8, with a dot representing the median house value for every
+            0.2 degrees of latitude. The pattern is highly irregular, but with
+            two distinct clusters (one cluster between latitude 41.0 and 41.8,
+            and another cluster between latitude 42.6 and 43.4).
+Figure 11. Median home value per 0.2 degrees latitude.
+The graphic shows a nonlinear pattern between home value and latitude, so representing latitude as its floating-point value is unlikely to help a model make good predictions. Perhaps bucketing latitudes would be a better idea?
+
+What would be the best bucketing strategy?
+Make each data point its own bucket.
+Don't bucket.
+Create four buckets:
+41.0 to 41.8
+42.0 to 42.6
+42.8 to 43.4
+43.6 to 44.8
+Quantile Bucketing
+Quantile bucketing creates bucketing boundaries such that the number of examples in each bucket is exactly or nearly equal. Quantile bucketing mostly hides the outliers.
+
+To illustrate the problem that quantile bucketing solves, consider the equally spaced buckets shown in the following figure, where each of the ten buckets represents a span of exactly 10,000 dollars. Notice that the bucket from 0 to 10,000 contains dozens of examples but the bucket from 50,000 to 60,000 contains only 5 examples. Consequently, the model has enough examples to train on the 0 to 10,000 bucket but not enough examples to train on for the 50,000 to 60,000 bucket.
+
+Figure 13. A plot of car price versus the number of cars sold at
+            that price. The number of cars sold peaks at a price of 6,000.
+            Above a price of 6,000, the number of cars sold generally
+            decreases, with very few cars sold between a price of 40,000 to
+            60,000. The plot is divided into 6 equally-sized buckets, each with
+            a range of 10,000. So, the first bucket contains all the cars sold
+            between a price of 0 and a price of 10,000, the second
+            bucket contains all the cars sold between a price of 10,001 and
+            20,000, and so on. The first bucket contain many examples; each
+            subsequent bucket contains fewer examples.
+Figure 13. Some buckets contain a lot of cars; other buckets contain very few cars.
+In contrast, the following figure uses quantile bucketing to divide car prices into bins with approximately the same number of examples in each bucket. Notice that some of the bins encompass a narrow price span while others encompass a very wide price span.
+
+Figure 14. Same as previous figure, except with quantile buckets.
+            That is, the buckets now have different sizes. The first bucket
+            contains the cars sold from 0 to 4,000, the second bucket contains
+            the cars sold from 4,001 to 6,000. The sixth bucket contains the
+            cars sold from 25,001 to 60,000. The number of cars in each bucket
+            is now about the same.
+Figure 14. Quantile bucketing gives each bucket about the same number of cars.
+Bucketing with equal intervals works for many data distributions. For skewed data, however, try quantile bucketing. Equal intervals give extra information space to the long tail while compacting the large torso into a single bucket. Quantile buckets give extra information space to the large torso while compacting the long tail into a single bucket.
+
+Apple trees produce a mixture of great fruit and wormy messes. Yet the apples in high-end grocery stores display 100% perfect fruit. Between orchard and grocery, someone spends significant time removing the bad apples or spraying a little wax on the salvageable ones. As an ML engineer, you'll spend enormous amounts of your time tossing out bad examples and cleaning up the salvageable ones. Even a few bad apples can spoil a large dataset.
+
+Many examples in datasets are unreliable due to one or more of the following problems:
+
+Problem category	Example
+Omitted values	A census taker fails to record a resident's age.
+Duplicate examples	A server uploads the same logs twice.
+Out-of-range feature values.	A human accidentally types an extra digit.
+Bad labels	A human evaluator mislabels a picture of an oak tree as a maple.
+You can write a program or script to detect any of the following problems:
+
+Omitted values
+Duplicate examples
+Out-of-range feature values
+For example, the following dataset contains six repeated values:
+
+Figure 15. The first six values are repeated. The final eight
+            values are not.
+Figure 15. The first six values are repeated.
+As another example, suppose the temperature range for a certain feature must be between 10 and 30 degrees, inclusive. But accidents happen—perhaps a thermometer is temporarily exposed to the sun which causes a bad outlier. Your program or script must identify temperature values less than 10 or greater than 30:
+
+Figure 16. Nineteen in-range values and one out-of-range value.
+Figure 16. An out-of-range value.
+When labels are generated by multiple people, we recommend statistically determining whether each rater generated equivalent sets of labels. Perhaps one rater was a harsher grader than the other raters or used a different set of grading criteria?
+
+Once detected, you typically "fix" examples that contain bad features or bad labels by removing them from the dataset or imputing their values. For details, see the Data characteristics section of the Datasets, generalization, and overfitting module.
+
+Help Center
+Previous
+arrow_backBinning (15 min)
+Next
+Qualities of good numerical features (5 min)arrow_forward
+This unit has explored ways to map raw data into suitable feature vectors. Good numerical features share the qualities described in this section.
+
+Clearly named
+Each feature should have a clear, sensible, and obvious meaning to any human on the project. For example, the meaning of the following feature value is confusing:
+
+Not recommended
+
+house_age: 851472000
+
+In contrast, the following feature name and value are far clearer:
+
+Recommended
+
+house_age_years: 27
+
+Note: Although your co-workers will rebel against confusing feature and label names, the model won't care (assuming you normalize values properly).
+Checked or tested before training
+Although this module has devoted a lot of time to outliers, the topic is important enough to warrant one final mention. In some cases, bad data (rather than bad engineering choices) causes unclear values. For example, the following user_age_in_years came from a source that didn't check for appropriate values:
+
+Not recommended
+
+user_age_in_years: 224
+
+But people can be 24 years old:
+
+Recommended
+
+user_age_in_years: 24
+
+Check your data!
+
+Sensible
+A "magic value" is a purposeful discontinuity in an otherwise continuous feature. For example, suppose a continuous feature named watch_time_in_seconds can hold any floating-point value between 0 and 30 but represents the absence of a measurement with the magic value -1:
+
+Not recommended
+
+watch_time_in_seconds: -1
+
+A watch_time_in_seconds of -1 would force the model to try to figure out what it means to watch a movie backwards in time. The resulting model would probably not make good predictions.
+
+A better technique is to create a separate Boolean feature that indicates whether or not a watch_time_in_seconds value is supplied. For example:
+
+Recommended
+
+watch_time_in_seconds: 4.82
+is_watch_time_in_seconds_defined=True
+
+watch_time_in_seconds: 0
+is_watch_time_in_seconds_defined=False
+
+This is a way to handle a continuous dataset with missing values. Now consider a discrete numerical feature, like product_category, whose values must belong to a finite set of values. In this case, when a value is missing, signify that missing value using a new value in the finite set. With a discrete feature, the model will learn different weights for each value, including original weights for missing features.
+
+For example, we can imagine possible values fitting in the set:
+
+{0: 'electronics', 1: 'books', 2: 'clothing', 3: 'missing_category'}.
+
+Sometimes, when the ML practitioner has domain knowledge suggesting that one variable is related to the square, cube, or other power of another variable, it's useful to create a synthetic feature from one of the existing numerical features.
+
+Consider the following spread of data points, where pink circles represent one class or category (for example, a species of tree) and green triangles another class (or species of tree):
+
+Figure 17. y=x^2 spread of data points, with triangles below the
+            curve and circles above the curve.
+Figure 17. Two classes that can't be separated by a line.
+It's not possible to draw a straight line that cleanly separates the two classes, but it is possible to draw a curve that does so:
+
+Figure 18. Same image as Figure 17, only this time with y=x^2
+            overlaid to create a clear boundary between the triangles and
+            circles.
+Figure 18. Separating the classes with y = x2.
+As discussed in the Linear regression module, a linear model with one feature, 
+, is described by the linear equation:
+
+Additional features are handled by the addition of terms 
+, 
+, etc.
+
+Gradient descent finds the weight 
+ (or weights 
+, 
+, 
+, in the case of additional features) that minimizes the loss of the model. But the data points shown cannot be separated by a line. What can be done?
+
+It's possible to keep both the linear equation and allow nonlinearity by defining a new term, 
+, that is simply 
+ squared:
+
+This synthetic feature, called a polynomial transform, is treated like any other feature. The previous linear formula becomes:
+
+This can still be treated like a linear regression problem, and the weights determined through gradient descent, as usual, despite containing a hidden squared term, the polynomial transform. Without changing how the linear model trains, the addition of a polynomial transform allows the model to separate the data points using a curve of the form 
+.
+
+Usually the numerical feature of interest is multiplied by itself, that is, raised to some power. Sometimes an ML practitioner can make an informed guess about the appropriate exponent. For example, many relationships in the physical world are related to squared terms, including acceleration due to gravity, the attenuation of light or sound over distance, and elastic potential energy.
+
+If you transform a feature in a way that changes its scale, you should consider experimenting with normalizing it as well. Normalizing after transforming might make the model perform better. For more information, see Numerical Data: Normalization.
+
+A related concept in categorical data is the feature cross, which more frequently synthesizes two different features.\
+
+
+A machine learning (ML) model's health is determined by its data. Feed your model healthy data and it will thrive; feed your model junk and its predictions will be worthless.
+
+Best practices for working with numerical data:
+
+Remember that your ML model interacts with the data in the feature vector, not the data in the dataset.
+Normalize most numerical features.
+If your first normalization strategy doesn't succeed, consider a different way to normalize your data.
+Binning, also referred to as bucketing, is sometimes better than normalizing.
+Considering what your data should look like, write verification tests to validate those expectations. For example:
+The absolute value of latitude should never exceed 90. You can write a test to check if a latitude value greater than 90 appears in your data.
+If your data is restricted to the state of Florida, you can write tests to check that the latitudes fall between 24 through 31, inclusive.
+Visualize your data with scatter plots and histograms. Look for anomalies.
+Gather statistics not only on the entire dataset but also on smaller subsets of the dataset. That's because aggregate statistics sometimes obscure problems in smaller sections of a dataset.
+Document all your data transformations.
+Data is your most valuable resource, so treat it with care.
+
+Additional Information
+The Rules of Machine Learning guide contains a valuable Feature Engineering section.

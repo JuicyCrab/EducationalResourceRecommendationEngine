@@ -1,0 +1,56 @@
+Physics Informed Deep Learning (Part I): Data-driven
+Solutions of Nonlinear Partial Differential EquationsMaziar Raissi1, Paris Perdikaris2, and George Em Karniadakis11Division of Applied Mathematics, Brown University,
+Providence, RI, 02912, USA2Department of Mechanical Engineering and Applied Mechanics,
+University of Pennsylvania,
+Philadelphia, PA, 19104, USAAbstractWe introduce physics informed neural networks – neural networks that
+are trained to solve supervised learning tasks while respecting any given law
+of physics described by general nonlinear partial differential equations. In
+this two part treatise, we present our developments in the context of solving
+two main classes of problems: data-driven solution and data-driven discovery
+of partial differential equations. Depending on the nature and arrangement
+of the available data, we devise two distinct classes of algorithms, namely
+continuous time and discrete time models. The resulting neural networks
+form a new class of data-efficient universal function approximators that naturally encode any underlying physical laws as prior information. In this first
+part, we demonstrate how these networks can be used to infer solutions to
+partial differential equations, and obtain physics-informed surrogate models
+that are fully differentiable with respect to all input coordinates and free
+parameters.Keywords: Data-driven scientific computing, Machine learning, Predictive
+modeling, Runge-Kutta methods, Nonlinear dynamics1. IntroductionWith the explosive growth of available data and computing resources, recent advances in machine learning and data analytics have yielded transformative results across diverse scientific disciplines, including image recognition
+[1], natural language processing [2], cognitive science [3], and genomics [4].Preprint submitted to Journal Name November 30, 2017arXiv:1711.10561v1 [cs.AI] 28 Nov 20170.0 0.2 0.4 0.6 0.8 1.0t−1.0−0.5
+0.0
+0.5
+1.0xu(t, x)−1.00−0.75−0.50−0.25
+0.00
+0.25
+0.50
+0.75−1 0 1x−1.00−0.75−0.50−0.25
+0.00u(t, x)t = 0.10Data−1 0 1x−1.0−0.5
+0.0
+0.5
+1.0u(t, x)t = 0.90Exact PredictionFigure 4: Allen-Cahn equation: Top: Solution u(t, x) along with the location of the initial
+training snapshot at t = 0.1 and the final prediction snapshot at t = 0.9. Bottom: Initial
+training data and final prediction at the snapshots depicted by the white vertical lines in
+the top panel. The relative L2 error for this case is 6.99 · 10−3.physical laws that govern a given data-set, and can be described by partial differential equations. In this work, we design data-driven algorithms for
+inferring solutions to general nonlinear partial differential equations, and constructing computationally efficient physics-informed surrogate models. The
+resulting methods showcase a series of promising results for a diverse collection of problems in computational science, and open the path for endowing
+deep learning with the powerful capacity of mathematical physics to model
+the world around us. As deep learning technology is continuing to grow
+rapidly both in terms of methodological and algorithmic developments, we
+believe that this is a timely contribution that can benefit practitioners across
+19a wide range of scientific domains. Specific applications that can readily enjoy these benefits include, but are not limited to, data-driven forecasting of
+physical processes, model predictive control, multi-physics/multi-scale modeling and simulation.
+We must note however that the proposed methods should not be viewed
+as replacements of classical numerical methods for solving partial differential equations (e.g., finite elements, spectral methods, etc.). Such methods
+have matured over the last 50 years and, in many cases, meet the robustness
+and computational efficiency standards required in practice. Our message
+here, as advocated in Section 3, is that classical methods such as the RungeKutta time-stepping schemes can coexist in harmony with deep neural networks, and offer invaluable intuition in constructing structured predictive
+algorithms. Moreover, the implementation simplicity of the latter greatly
+favors rapid development and testing of new ideas, potentially opening the
+path for a new era in data-driven scientific computing. This will be further
+highlighted in the second part of this paper in which physics informed neural
+networks are put to the test of data-driven discovery of partial differential
+equations.
+Finally, in terms of future work, one pressing question involves addressing
+the problem of quantifying the uncertainty associated with the neural network predictions. Although this important element was naturally addressed
+in previous work employing Gaussian processes [9], it not captured by the
+proposed methodology in its present form and requires further investigation

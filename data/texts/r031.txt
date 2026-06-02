@@ -1,0 +1,1003 @@
+@jit
+def f(x):
+  return x.reshape((np.prod(x.shape),))
+
+f(x)
+
+
+
+
+Array([1., 1., 1., 1., 1., 1.], dtype=float32)
+
+
+
+
+For this reason, a standard convention in JAX programs is to
+import numpy as np and import jax.numpy as jnp so that both interfaces are
+available for finer control over whether operations are performed in a static
+manner (with numpy, once at compile-time) or a traced manner (with
+jax.numpy, optimized at run-time).
+Understanding which values and operations will be static and which will be
+traced is a key part of using jax.jit effectively.
+
+
+Different kinds of JAX values#
+A tracer value carries an abstract value, e.g., ShapedArray with
+information about the shape and dtype of an array. We will refer here to such
+tracers as abstract tracers. Some tracers, e.g., those that are introduced
+for arguments of autodiff transformations, carry ConcreteArray abstract values
+that actually include the regular array data, and are used, e.g., for resolving
+conditionals. We will refer here to such tracers as concrete tracers. Tracer
+values computed from these concrete tracers, perhaps in combination with regular
+values, result in concrete tracers. A concrete value is either a regular
+value or a concrete tracer.
+Typically, computations that involve at least a tracer value will produce a
+tracer value. There are very few exceptions, when a computation can be
+entirely done using the abstract value carried by a tracer, in which case the
+result can be a regular Python value. For example, getting the shape of a
+tracer with ShapedArray abstract value. Another example is when explicitly
+casting a concrete tracer value to a regular type, e.g., int(x) or
+x.astype(float). Another such situation is for bool(x), which produces a
+Python bool when concreteness makes it possible. That case is especially salient
+because of how often it arises in control flow.
+Here is how the transformations introduce abstract or concrete tracers:
+
+jax.jit(): introduces abstract tracers for all positional arguments
+except those denoted by static_argnums, which remain regular
+values.
+jax.pmap(): introduces abstract tracers for all positional arguments
+except those denoted by static_broadcasted_argnums.
+jax.vmap(), jax.make_jaxpr(), xla_computation():
+introduce abstract tracers for all positional arguments.
+jax.jvp() and jax.grad() introduce concrete tracers
+for all positional arguments. An exception is when these transformations
+are within an outer transformation and the actual arguments are
+themselves abstract tracers; in that case, the tracers introduced
+by the autodiff transformations are also abstract tracers.
+All higher-order control-flow primitives (lax.cond(),
+lax.while_loop(), lax.fori_loop(), lax.scan()) when they
+process the functionals introduce abstract tracers, whether or not there
+is a JAX transformation in progress.
+
+All of this is relevant when you have code that can operate
+only on regular Python values, such as code that has conditional
+control-flow based on data:
+
+
+def divide(x, y):
+  return x / y if y >= 1. else 0.
+
+
+
+
+If we want to apply jax.jit(), we must ensure to specify static_argnums=1
+to ensure y stays a regular value. This is due to the boolean expression
+y >= 1., which requires concrete values (regular or tracers). The
+same would happen if we write explicitly bool(y >= 1.), or int(y),
+or float(y).
+Interestingly, jax.grad(divide)(3., 2.), works because jax.grad()
+uses concrete tracers, and resolves the conditional using the concrete
+value of y.
+
+
+
+
+
+
+
+
+previous
+Control flow and logical operators with JIT
+
+
+
+
+next
+Stateful computations
+
+
+
+
+
+
+
+
+
+
+ Contents
+  
+
+
+Static vs traced operations
+Different kinds of JAX values
+
+
+
+
+
+
+
+
+By The JAX authors
+
+
+
+
+    
+      © Copyright 2024, The JAX Authors.
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Stateful computations — JAX  documentation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Skip to main content
+
+
+Back to top
+
+
+
+
+Ctrl+K
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Search
+Ctrl+K
+
+
+
+Getting started
+
+Installation
+Quickstart: How to think in JAX
+
+
+🔪 JAX - The Sharp Bits 🔪
+JAX 101
+Just-in-time compilation
+Automatic vectorization
+Automatic differentiation
+Pytrees
+Pseudorandom numbers
+Distributed arrays and automatic parallelization
+Control flow and logical operators with JIT
+Tracing
+Stateful computations
+
+
+
+Resources, guides, and references
+
+Key concepts
+Resources and Advanced Guides
+Manual parallelism with shard_map
+Device-local array layout control
+JAX Memories and Host Offloading
+Introduction to multi-controller JAX (aka multi-process/multi-host JAX)
+Fault Tolerant Distributed JAX
+Distributed data loading
+Colocated Python
+The Training Cookbook
+The Autodiff Cookbook
+Control autodiff’s saved values with jax.checkpoint (aka jax.remat)
+Advanced Automatic Differentiation
+Higher-order derivatives
+Forward- and reverse-mode autodiff in JAX
+Complex numbers and differentiation
+Custom derivative rules for JAX-transformable Python functions
+
+
+Errors
+Introduction to debugging
+Debugging runtime values
+JAX debugging flags
+Compiled prints and breakpoints
+The checkify transformation
+Attaching XLA Metadata with set_xla_metadata
+
+
+Transfer guard
+Custom pytree nodes
+Persistent compilation cache
+Buffer donation
+GPU performance tips
+Benchmarking JAX code
+Profiling computation
+Profiling device memory
+Ref: mutable arrays for data plumbing and memory control
+External callbacks
+Foreign function interface (FFI)
+Writing High-Performance GPU Kernels with CuTe DSL and JAX
+Gradient checkpointing with jax.checkpoint (jax.remat)
+Ahead-of-time lowering and compilation
+Exporting and serialization
+Exporting and serializing staged-out computations
+Shape polymorphism
+Interoperation with TensorFlow
+
+
+Training a simple neural network, with tensorflow/datasets data loading
+Training a simple neural network, with PyTorch data loading
+Autobatching for Bayesian inference
+Generalized convolutions in JAX
+XLA compiler flags
+JAX Internals: primitives
+JAX internals: The jaxpr language
+
+
+API Reference
+jax.numpy module
+jax.numpy.fft.fft
+jax.numpy.fft.fft2
+jax.numpy.fft.fftfreq
+jax.numpy.fft.fftn
+jax.numpy.fft.fftshift
+jax.numpy.fft.hfft
+jax.numpy.fft.ifft
+jax.numpy.fft.ifft2
+jax.numpy.fft.ifftn
+jax.numpy.fft.ifftshift
+jax.numpy.fft.ihfft
+jax.numpy.fft.irfft
+jax.numpy.fft.irfft2
+jax.numpy.fft.irfftn
+jax.numpy.fft.rfft
+jax.numpy.fft.rfft2
+jax.numpy.fft.rfftfreq
+jax.numpy.fft.rfftn
+
+
+jax.scipy module
+jax.scipy.stats.bernoulli.logpmf
+jax.scipy.stats.bernoulli.pmf
+jax.scipy.stats.bernoulli.cdf
+jax.scipy.stats.bernoulli.ppf
+
+
+jax.lax module
+jax.random module
+jax.sharding module
+jax.ad_checkpoint module
+jax.debug module
+jax.dlpack module
+jax.distributed module
+jax.dtypes module
+jax.ffi module
+jax.flatten_util module
+jax.image module
+jax.nn module
+jax.nn.initializers module
+
+
+jax.ops module
+jax.profiler module
+jax.ref module
+jax.stages module
+jax.test_util module
+jax.tree module
+jax.tree_util module
+jax.typing module
+jax.export module
+jax.extend module
+jax.extend.backend module
+jax.extend.core module
+jax.extend.linear_util module
+jax.extend.lowering module
+jax.extend.mlir module
+jax.extend.pallas module
+jax.extend.random module
+jax.extend.xla module
+
+
+jax.example_libraries module
+jax.example_libraries.optimizers module
+jax.example_libraries.stax module
+
+
+jax.experimental module
+jax.experimental.checkify module
+jax.experimental.compilation_cache module
+jax.experimental.custom_partitioning module
+jax.experimental.jet module
+jax.experimental.key_reuse module
+jax.experimental.mesh_utils module
+jax.experimental.multihost_utils module
+jax.experimental.pallas module
+Pallas TPU (TensorCore)
+Pallas MGPU
+Triton
+
+
+jax.experimental.random module
+jax.experimental.serialize_executable module
+jax.experimental.sparse module
+jax.experimental.sparse.BCOO
+jax.experimental.sparse.bcoo_broadcast_in_dim
+jax.experimental.sparse.bcoo_concatenate
+jax.experimental.sparse.bcoo_dot_general
+jax.experimental.sparse.bcoo_dot_general_sampled
+jax.experimental.sparse.bcoo_dynamic_slice
+jax.experimental.sparse.bcoo_extract
+jax.experimental.sparse.bcoo_fromdense
+jax.experimental.sparse.bcoo_gather
+jax.experimental.sparse.bcoo_multiply_dense
+jax.experimental.sparse.bcoo_multiply_sparse
+jax.experimental.sparse.bcoo_update_layout
+jax.experimental.sparse.bcoo_reduce_sum
+jax.experimental.sparse.bcoo_reshape
+jax.experimental.sparse.bcoo_slice
+jax.experimental.sparse.bcoo_sort_indices
+jax.experimental.sparse.bcoo_squeeze
+jax.experimental.sparse.bcoo_sum_duplicates
+jax.experimental.sparse.bcoo_todense
+jax.experimental.sparse.bcoo_transpose
+
+
+
+
+jax.Array.addressable_shards
+jax.Array.all
+jax.Array.any
+jax.Array.argmax
+jax.Array.argmin
+jax.Array.argpartition
+jax.Array.argsort
+jax.Array.astype
+jax.Array.at
+jax.Array.byteswap
+jax.Array.choose
+jax.Array.clip
+jax.Array.compress
+jax.Array.committed
+jax.Array.conj
+jax.Array.conjugate
+jax.Array.copy
+jax.Array.copy_to_host_async
+jax.Array.cumprod
+jax.Array.cumsum
+jax.Array.device
+jax.Array.diagonal
+jax.Array.dot
+jax.Array.dtype
+jax.Array.flat
+jax.Array.flatten
+jax.Array.global_shards
+jax.Array.imag
+jax.Array.is_fully_addressable
+jax.Array.is_fully_replicated
+jax.Array.item
+jax.Array.itemsize
+jax.Array.max
+jax.Array.mean
+jax.Array.min
+jax.Array.nbytes
+jax.Array.ndim
+jax.Array.nonzero
+jax.Array.prod
+jax.Array.ptp
+jax.Array.ravel
+jax.Array.real
+jax.Array.repeat
+jax.Array.reshape
+jax.Array.round
+jax.Array.searchsorted
+jax.Array.shape
+jax.Array.sharding
+jax.Array.size
+jax.Array.sort
+jax.Array.squeeze
+jax.Array.std
+jax.Array.sum
+jax.Array.swapaxes
+jax.Array.take
+jax.Array.to_device
+jax.Array.trace
+jax.Array.transpose
+jax.Array.var
+jax.Array.view
+jax.Array.T
+jax.Array.mT
+
+
+Developer notes
+Contributing to JAX
+Building from source
+Investigating a regression
+Autodidax: JAX core from scratch
+Autodidax2, part 1: JAX from scratch, again
+JAX Enhancement Proposals (JEPs)
+263: JAX PRNG Design
+2026: Custom JVP/VJP rules for JAX-transformable functions
+4008: Custom VJP and `nondiff_argnums` update
+4410: Omnistaging
+9263: Typed keys & pluggable RNGs
+9407: Design of Type Promotion Semantics for JAX
+9419: Jax and Jaxlib versioning
+10657: Sequencing side-effects in JAX
+11830: `jax.remat` / `jax.checkpoint` new implementation
+12049: Type Annotation Roadmap for JAX
+14273: `shard_map` (`shmap`) for simple per-device code
+15856: `jax.extend`, an extensions module
+17111: Efficient transposition of `shard_map` (and other maps)
+18137: Scope of JAX NumPy & SciPy Wrappers
+25516: Effort-based versioning
+28661: Supporting the `__jax_array__` protocol
+28845: Stateful Randomness in JAX
+
+
+JAX Internal Implementation Notes
+Handling of closed-over constants
+
+
+
+
+Extension guides
+Writing custom Jaxpr interpreters in JAX
+jax.extend module
+jax.extend.backend module
+jax.extend.core module
+jax.extend.linear_util module
+jax.extend.lowering module
+jax.extend.mlir module
+jax.extend.pallas module
+jax.extend.random module
+jax.extend.xla module
+
+
+Building on JAX
+
+
+Notes
+API compatibility
+Python and NumPy version support policy
+Asynchronous dispatch
+Concurrency
+GPU memory allocation
+Rank promotion warning
+Type promotion semantics
+Default dtypes and the X64 flag
+
+
+Pallas: a JAX kernel language
+Pallas Quickstart
+Software Pipelining
+Grids and BlockSpecs
+Pallas TPU
+Writing TPU kernels with Pallas
+TPU Pipelining
+Matrix Multiplication
+Scalar Prefetch and Block-Sparse Computation
+Distributed Computing in Pallas for TPUs
+Pallas Core-specific Programming
+SparseCore Kernel Writing
+Pseudo-Random Number Generation
+TPU Hardware Reference
+
+
+Pallas:Mosaic GPU
+Writing Mosaic GPU kernels with Pallas
+Mosaic GPU Pipelining
+Writing high-performance matrix multiplication kernels for Blackwell
+Collective matrix multiplication
+
+
+Instruction Reference
+Pallas TPU (TensorCore)
+Pallas MGPU
+Triton
+
+
+Pallas Design Notes
+Pallas Design
+Pallas Async Operations
+
+
+Pallas Changelog
+
+
+About the project
+
+
+Frequently asked questions (FAQ)
+Change log
+Glossary of terms
+
+
+Configuration Options
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JAX 101
+Stateful computations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.md
+
+
+
+
+
+
+
+.pdf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Stateful computations
+
+
+
+
+ Contents 
+
+
+
+A simple example: Counter
+The solution: explicit state
+A general strategy
+Simple worked example: Linear Regression
+Taking it further
+
+
+
+
+
+
+
+
+Stateful computations#
+
+JAX transformations like jit(), vmap(), grad(), require the functions
+they wrap to be pure: that is, functions whose outputs depend solely on the inputs, and which have
+no side effects such as updating of global state.
+You can find a discussion of this in JAX sharp bits: Pure functions.
+This constraint can pose some challenges in the context of machine learning, where state may exist in
+many forms. For example:
+
+model parameters,
+optimizer state, and
+stateful layers, such as BatchNorm.
+
+This section offers some advice of how to properly handle state in a JAX program.
+
+A simple example: Counter#
+Let’s start by looking at a simple stateful program: a counter.
+
+
+import jax
+import jax.numpy as jnp
+
+class Counter:
+  """A simple counter."""
+
+  def __init__(self):
+    self.n = 0
+
+  def count(self) -> int:
+    """Increments the counter and returns the new value."""
+    self.n += 1
+    return self.n
+
+  def reset(self):
+    """Resets the counter to zero."""
+    self.n = 0
+
+
+counter = Counter()
+
+for _ in range(3):
+  print(counter.count())
+
+
+
+
+1
+2
+3
+
+
+
+
+The counter’s n attribute maintains the counter’s state between successive calls of count. It is modified as a side effect of calling count.
+Let’s say we want to count fast, so we JIT-compile the count method.
+(In this example, this wouldn’t actually help speed anyway, for many reasons, but treat this as a toy model of JIT-compiling the update of model parameters, where jit() makes an enormous difference).
+
+
+counter.reset()
+fast_count = jax.jit(counter.count)
+
+for _ in range(3):
+  print(fast_count())
+
+
+
+
+1
+1
+1
+
+
+
+
+Oh no! Our counter isn’t working. This is because the line
+self.n += 1
+
+
+in count involves a side effect: it modifies the input counter in-place, and so this function is not supported by jit.
+Such side effects are executed only once when the function is first traced, and subsequent calls will not repeat the side effect.
+So, how do we fix it?
+
+
+The solution: explicit state#
+Part of the problem with our counter was that the returned value didn’t depend on the arguments, meaning a constant was “baked into” the compiled output. But it shouldn’t be a constant – it should depend on the state. Well, then why don’t we make the state into an argument?
+
+
+CounterState = int
+
+class CounterV2:
+
+  def count(self, n: CounterState) -> tuple[int, CounterState]:
+    # You could just return n+1, but here we separate its role as 
+    # the output and as the counter state for didactic purposes.
+    return n+1, n+1
+
+  def reset(self) -> CounterState:
+    return 0
+
+counter = CounterV2()
+state = counter.reset()
+
+for _ in range(3):
+  value, state = counter.count(state)
+  print(value)
+
+
+
+
+1
+2
+3
+
+
+
+
+In this new version of Counter, we moved n to be an argument of count, and added another return value that represents the new, updated, state. To use this counter, we now need to keep track of the state explicitly. But in return, we can now safely jax.jit this counter:
+
+
+state = counter.reset()
+fast_count = jax.jit(counter.count)
+
+for _ in range(3):
+  value, state = fast_count(state)
+  print(value)
+
+
+
+
+1
+2
+3
+
+
+
+
+
+
+A general strategy#
+We can apply the same process to any stateful method to convert it into a stateless one. We took a class of the form
+class StatefulClass
+
+  state: State
+
+  def stateful_method(*args, **kwargs) -> Output:
+
+
+and turned it into a class of the form
+class StatelessClass
+
+  def stateless_method(state: State, *args, **kwargs) -> (Output, State):
+
+
+This is a common functional programming pattern, and, essentially, is the way that state is handled in all JAX programs.
+Notice that the need for a class becomes less clear once we have rewritten it this way. We could just keep stateless_method, since the class is no longer doing any work.
+This is because, like the strategy we just applied, object-oriented programming (OOP) is a way to help programmers understand program state.
+In our case, the CounterV2 class is nothing more than a namespace bringing all the functions that use CounterState into one location. Exercise for the reader: do you think it makes sense to keep it as a class?
+Incidentally, you’ve already seen an example of this strategy in the JAX pseudo-randomness API, jax.random, shown in the Pseudorandom numbers section.
+Unlike Numpy, which manages random state using implicitly updated stateful classes, JAX requires the programmer to work directly with the random generator state – the PRNG key.
+
+
+Simple worked example: Linear Regression#
+Let’s apply this strategy to a simple machine learning model: linear regression via gradient descent.
+Here, we only deal with one kind of state: the model parameters.
+But generally, you’ll see many kinds of state being threaded in and out of JAX functions, like optimizer state, layer statistics for batchnorm, and others.
+The function to look at carefully is update.
+
+
+from typing import NamedTuple
+
+class Params(NamedTuple):
+  weight: jnp.ndarray
+  bias: jnp.ndarray
+
+
+def init(rng) -> Params:
+  """Returns the initial model params."""
+  weights_key, bias_key = jax.random.split(rng)
+  weight = jax.random.normal(weights_key, ())
+  bias = jax.random.normal(bias_key, ())
+  return Params(weight, bias)
+
+
+def loss(params: Params, x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+  """Computes the least squares error of the model's predictions on x against y."""
+  pred = params.weight * x + params.bias
+  return jnp.mean((pred - y) ** 2)
+
+
+LEARNING_RATE = 0.005
+
+@jax.jit
+def update(params: Params, x: jnp.ndarray, y: jnp.ndarray) -> Params:
+  """Performs one SGD update step on params using the given data."""
+  grad = jax.grad(loss)(params, x, y)
+
+  # If we were using Adam or another stateful optimizer,
+  # we would also do something like
+  #
+  #   updates, new_optimizer_state = optimizer(grad, optimizer_state)
+  # 
+  # and then use `updates` instead of `grad` to actually update the params.
+  # (And we'd include `new_optimizer_state` in the output, naturally.)
+
+  new_params = jax.tree.map(
+      lambda param, g: param - g * LEARNING_RATE, params, grad)
+
+  return new_params
+
+
+
+
+Notice that we manually pipe the params in and out of the update function.
+
+
+import matplotlib.pyplot as plt
+
+rng = jax.random.key(42)
+
+# Generate true data from y = w*x + b + noise
+true_w, true_b = 2, -1
+x_rng, noise_rng = jax.random.split(rng)
+xs = jax.random.normal(x_rng, (128, 1))
+noise = jax.random.normal(noise_rng, (128, 1)) * 0.5
+ys = xs * true_w + true_b + noise
+
+# Fit regression
+params = init(rng)
+for _ in range(1000):
+  params = update(params, xs, ys)
+
+plt.scatter(xs, ys)
+plt.plot(xs, params.weight * xs + params.bias, c='red', label='Model Prediction')
+plt.legend();
+
+
+
+
+
+
+
+
+
+Taking it further#
+The strategy described above is how any JAX program must handle state when using transformations like jit, vmap, grad, etc.
+Handling parameters manually seems fine if you’re dealing with two parameters, but what if it’s a neural net with dozens of layers? You might already be getting worried about two things:
+
+Are we supposed to initialize them all manually, essentially repeating what we already write in the forward pass definition?
+Are we supposed to pipe all these things around manually?
+
+The details can be tricky to handle, but there are examples of libraries that take care of this for you. See JAX Ecosystem Libraries for some examples.
+
+
+
+
+
+
+
+
+previous
+Tracing
+
+
+
+
+next
+Key concepts
+
+
+
+
+
+
+
+
+
+
+ Contents
+  
+
+
+A simple example: Counter
+The solution: explicit state
+A general strategy
+Simple worked example: Linear Regression
+Taking it further
+
+
+
+
+
+
+
+
+By The JAX authors
+
+
+
+
+    
+      © Copyright 2024, The JAX Authors.
+      
+
+
+
+
+
+
+
