@@ -1,383 +1,7751 @@
-
-2.7. Novelty and Outlier Detection#
-Many applications require being able to decide whether a new observation
-belongs to the same distribution as existing observations (it is an
-inlier), or should be considered as different (it is an outlier).
-Often, this ability is used to clean real data sets. Two important
-distinctions must be made:
-
-outlier detection:
-The training data contains outliers which are defined as observations that
-are far from the others. Outlier detection estimators thus try to fit the
-regions where the training data is the most concentrated, ignoring the
-deviant observations.
-
-novelty detection:
-The training data is not polluted by outliers and we are interested in
-detecting whether a new observation is an outlier. In this context an
-outlier is also called a novelty.
+                   A         B
+2013-01-04  0.721555 -0.706771
+2013-01-05 -0.424972  0.567020
 
 
-Outlier detection and novelty detection are both used for anomaly
-detection, where one is interested in detecting abnormal or unusual
-observations. Outlier detection is then also known as unsupervised anomaly
-detection and novelty detection as semi-supervised anomaly detection. In the
-context of outlier detection, the outliers/anomalies cannot form a
-dense cluster as available estimators assume that the outliers/anomalies are
-located in low density regions. On the contrary, in the context of novelty
-detection, novelties/anomalies can form a dense cluster as long as they are in
-a low density region of the training data, considered as normal in this
-context.
-The scikit-learn project provides a set of machine learning tools that
-can be used both for novelty or outlier detection. This strategy is
-implemented with objects learning in an unsupervised way from the data:
-estimator.fit(X_train)
+Lists of integer position locations:
+In [36]: df.iloc[[1, 2, 4], [0, 2]]
+Out[36]: 
+                   A         C
+2013-01-02  1.212112  0.119209
+2013-01-03 -0.861849 -0.494929
+2013-01-05 -0.424972  0.276232
 
 
-new observations can then be sorted as inliers or outliers with a
-predict method:
-estimator.predict(X_test)
+For slicing rows explicitly:
+In [37]: df.iloc[1:3, :]
+Out[37]: 
+                   A         B         C         D
+2013-01-02  1.212112 -0.173215  0.119209 -1.044236
+2013-01-03 -0.861849 -2.104569 -0.494929  1.071804
 
 
-Inliers are labeled 1, while outliers are labeled -1. The predict method
-makes use of a threshold on the raw scoring function computed by the
-estimator. This scoring function is accessible through the score_samples
-method, while the threshold can be controlled by the contamination
-parameter.
-The decision_function method is also defined from the scoring function,
-in such a way that negative values are outliers and non-negative ones are
-inliers:
-estimator.decision_function(X_test)
+For slicing columns explicitly:
+In [38]: df.iloc[:, 1:3]
+Out[38]: 
+                   B         C
+2013-01-01 -0.282863 -1.509059
+2013-01-02 -0.173215  0.119209
+2013-01-03 -2.104569 -0.494929
+2013-01-04 -0.706771 -1.039575
+2013-01-05  0.567020  0.276232
+2013-01-06  0.113648 -1.478427
 
 
-Note that neighbors.LocalOutlierFactor does not support
-predict, decision_function and score_samples methods by default
-but only a fit_predict method, as this estimator was originally meant to
-be applied for outlier detection. The scores of abnormality of the training
-samples are accessible through the negative_outlier_factor_ attribute.
-If you really want to use neighbors.LocalOutlierFactor for novelty
-detection, i.e. predict labels or compute the score of abnormality of new
-unseen data, you can instantiate the estimator with the novelty parameter
-set to True before fitting the estimator. In this case, fit_predict is
-not available.
+For getting a value explicitly:
+In [39]: df.iloc[1, 1]
+Out[39]: np.float64(-0.17321464905330858)
 
-Warning
-Novelty detection with Local Outlier Factor
-When novelty is set to True be aware that you must only use
-predict, decision_function and score_samples on new unseen data
-and not on the training samples as this would lead to wrong results.
-I.e., the result of predict will not be the same as fit_predict.
-The scores of abnormality of the training samples are always accessible
-through the negative_outlier_factor_ attribute.
 
-The behavior of neighbors.LocalOutlierFactor is summarized in the
-following table.
+For getting fast access to a scalar (equivalent to the prior method):
+In [40]: df.iat[1, 1]
+Out[40]: np.float64(-0.17321464905330858)
+
+
+
+
+Boolean indexing#
+Select rows where df.A is greater than 0.
+In [41]: df[df["A"] > 0]
+Out[41]: 
+                   A         B         C         D
+2013-01-01  0.469112 -0.282863 -1.509059 -1.135632
+2013-01-02  1.212112 -0.173215  0.119209 -1.044236
+2013-01-04  0.721555 -0.706771 -1.039575  0.271860
+
+
+Selecting values from a DataFrame where a boolean condition is met:
+In [42]: df[df > 0]
+Out[42]: 
+                   A         B         C         D
+2013-01-01  0.469112       NaN       NaN       NaN
+2013-01-02  1.212112       NaN  0.119209       NaN
+2013-01-03       NaN       NaN       NaN  1.071804
+2013-01-04  0.721555       NaN       NaN  0.271860
+2013-01-05       NaN  0.567020  0.276232       NaN
+2013-01-06       NaN  0.113648       NaN  0.524988
+
+
+Using isin() method for filtering:
+In [43]: df2 = df.copy()
+
+In [44]: df2["E"] = ["one", "one", "two", "three", "four", "three"]
+
+In [45]: df2
+Out[45]: 
+                   A         B         C         D      E
+2013-01-01  0.469112 -0.282863 -1.509059 -1.135632    one
+2013-01-02  1.212112 -0.173215  0.119209 -1.044236    one
+2013-01-03 -0.861849 -2.104569 -0.494929  1.071804    two
+2013-01-04  0.721555 -0.706771 -1.039575  0.271860  three
+2013-01-05 -0.424972  0.567020  0.276232 -1.087401   four
+2013-01-06 -0.673690  0.113648 -1.478427  0.524988  three
+
+In [46]: df2[df2["E"].isin(["two", "four"])]
+Out[46]: 
+                   A         B         C         D     E
+2013-01-03 -0.861849 -2.104569 -0.494929  1.071804   two
+2013-01-05 -0.424972  0.567020  0.276232 -1.087401  four
+
+
+
+
+Setting#
+Setting a new column automatically aligns the data by the indexes:
+In [47]: s1 = pd.Series(
+   ....:    [1, 2, 3, 4, 5, 6],
+   ....:    index=pd.date_range("20130102", periods=6))
+   ....: 
+
+In [48]: s1
+Out[48]: 
+2013-01-02    1
+2013-01-03    2
+2013-01-04    3
+2013-01-05    4
+2013-01-06    5
+2013-01-07    6
+Freq: D, dtype: int64
+
+In [49]: df["F"] = s1
+
+
+Setting values by label:
+In [50]: df.at[dates[0], "A"] = 0
+
+
+Setting values by position:
+In [51]: df.iat[0, 1] = 0
+
+
+Setting by assigning with a NumPy array:
+In [52]: df.loc[:, "D"] = np.array([5] * len(df))
+
+
+The result of the prior setting operations:
+In [53]: df
+Out[53]: 
+                   A         B         C    D    F
+2013-01-01  0.000000  0.000000 -1.509059  5.0  NaN
+2013-01-02  1.212112 -0.173215  0.119209  5.0  1.0
+2013-01-03 -0.861849 -2.104569 -0.494929  5.0  2.0
+2013-01-04  0.721555 -0.706771 -1.039575  5.0  3.0
+2013-01-05 -0.424972  0.567020  0.276232  5.0  4.0
+2013-01-06 -0.673690  0.113648 -1.478427  5.0  5.0
+
+
+A where operation with setting:
+In [54]: df2 = df.copy()
+
+In [55]: df2[df2 > 0] = -df2
+
+In [56]: df2
+Out[56]: 
+                   A         B         C    D    F
+2013-01-01  0.000000  0.000000 -1.509059 -5.0  NaN
+2013-01-02 -1.212112 -0.173215 -0.119209 -5.0 -1.0
+2013-01-03 -0.861849 -2.104569 -0.494929 -5.0 -2.0
+2013-01-04 -0.721555 -0.706771 -1.039575 -5.0 -3.0
+2013-01-05 -0.424972 -0.567020 -0.276232 -5.0 -4.0
+2013-01-06 -0.673690 -0.113648 -1.478427 -5.0 -5.0
+
+
+
+
+
+Missing data#
+For NumPy data types, np.nan represents missing data. It is by
+default not included in computations. See the Missing Data section.
+Reindexing allows you to change/add/delete the index on a specified axis. This
+returns a copy of the data:
+In [57]: df1 = df.reindex(index=dates[0:4], columns=list(df.columns) + ["E"])
+
+In [58]: df1.loc[dates[0] : dates[1], "E"] = 1
+
+In [59]: df1
+Out[59]: 
+                   A         B         C    D    F    E
+2013-01-01  0.000000  0.000000 -1.509059  5.0  NaN  1.0
+2013-01-02  1.212112 -0.173215  0.119209  5.0  1.0  1.0
+2013-01-03 -0.861849 -2.104569 -0.494929  5.0  2.0  NaN
+2013-01-04  0.721555 -0.706771 -1.039575  5.0  3.0  NaN
+
+
+DataFrame.dropna() drops any rows that have missing data:
+In [60]: df1.dropna(how="any")
+Out[60]: 
+                   A         B         C    D    F    E
+2013-01-02  1.212112 -0.173215  0.119209  5.0  1.0  1.0
+
+
+DataFrame.fillna() fills missing data:
+In [61]: df1.fillna(value=5)
+Out[61]: 
+                   A         B         C    D    F    E
+2013-01-01  0.000000  0.000000 -1.509059  5.0  5.0  1.0
+2013-01-02  1.212112 -0.173215  0.119209  5.0  1.0  1.0
+2013-01-03 -0.861849 -2.104569 -0.494929  5.0  2.0  5.0
+2013-01-04  0.721555 -0.706771 -1.039575  5.0  3.0  5.0
+
+
+isna() gets the boolean mask where values are nan:
+In [62]: pd.isna(df1)
+Out[62]: 
+                A      B      C      D      F      E
+2013-01-01  False  False  False  False   True  False
+2013-01-02  False  False  False  False  False  False
+2013-01-03  False  False  False  False  False   True
+2013-01-04  False  False  False  False  False   True
+
+
+
+
+Operations#
+See the Basic section on Binary Ops.
+
+Stats#
+Operations in general exclude missing data.
+Calculate the mean value for each column:
+In [63]: df.mean()
+Out[63]: 
+A   -0.004474
+B   -0.383981
+C   -0.687758
+D    5.000000
+F    3.000000
+dtype: float64
+
+
+Calculate the mean value for each row:
+In [64]: df.mean(axis=1)
+Out[64]: 
+2013-01-01    0.872735
+2013-01-02    1.431621
+2013-01-03    0.707731
+2013-01-04    1.395042
+2013-01-05    1.883656
+2013-01-06    1.592306
+Freq: D, dtype: float64
+
+
+Operating with another Series or DataFrame with a different index or column
+will align the result with the union of the index or column labels. In addition, pandas
+automatically broadcasts along the specified dimension and will fill unaligned labels with np.nan.
+In [65]: s = pd.Series([1, 3, 5, np.nan, 6, 8], index=dates).shift(2)
+
+In [66]: s
+Out[66]: 
+2013-01-01    NaN
+2013-01-02    NaN
+2013-01-03    1.0
+2013-01-04    3.0
+2013-01-05    5.0
+2013-01-06    NaN
+Freq: D, dtype: float64
+
+In [67]: df.sub(s, axis="index")
+Out[67]: 
+                   A         B         C    D    F
+2013-01-01       NaN       NaN       NaN  NaN  NaN
+2013-01-02       NaN       NaN       NaN  NaN  NaN
+2013-01-03 -1.861849 -3.104569 -1.494929  4.0  1.0
+2013-01-04 -2.278445 -3.706771 -4.039575  2.0  0.0
+2013-01-05 -5.424972 -4.432980 -4.723768  0.0 -1.0
+2013-01-06       NaN       NaN       NaN  NaN  NaN
+
+
+
+
+User defined functions#
+DataFrame.agg() and DataFrame.transform() applies a user defined function
+that reduces or broadcasts its result respectively.
+In [68]: df.agg(lambda x: np.mean(x) * 5.6)
+Out[68]: 
+A    -0.025054
+B    -2.150294
+C    -3.851445
+D    28.000000
+F    16.800000
+dtype: float64
+
+In [69]: df.transform(lambda x: x * 101.2)
+Out[69]: 
+                     A           B           C      D      F
+2013-01-01    0.000000    0.000000 -152.716721  506.0    NaN
+2013-01-02  122.665737  -17.529322   12.063922  506.0  101.2
+2013-01-03  -87.219115 -212.982405  -50.086843  506.0  202.4
+2013-01-04   73.021382  -71.525239 -105.204988  506.0  303.6
+2013-01-05  -43.007200   57.382459   27.954680  506.0  404.8
+2013-01-06  -68.177398   11.501219 -149.616767  506.0  506.0
+
+
+
+
+Value Counts#
+See more at Histogramming and Discretization.
+In [70]: s = pd.Series(np.random.randint(0, 7, size=10))
+
+In [71]: s
+Out[71]: 
+0    4
+1    2
+2    1
+3    2
+4    6
+5    4
+6    4
+7    6
+8    4
+9    4
+dtype: int64
+
+In [72]: s.value_counts()
+Out[72]: 
+4    5
+2    2
+6    2
+1    1
+Name: count, dtype: int64
+
+
+
+
+String Methods#
+Series is equipped with a set of string processing methods in the str
+attribute that make it easy to operate on each element of the array, as in the
+code snippet below. See more at Vectorized String Methods.
+In [73]: s = pd.Series(["A", "B", "C", "Aaba", "Baca", np.nan, "CABA", "dog", "cat"])
+
+In [74]: s.str.lower()
+Out[74]: 
+0       a
+1       b
+2       c
+3    aaba
+4    baca
+5     NaN
+6    caba
+7     dog
+8     cat
+dtype: str
+
+
+
+
+
+Merge#
+
+Concat#
+pandas provides various facilities for easily combining together Series and
+DataFrame objects with various kinds of set logic for the indexes
+and relational algebra functionality in the case of join / merge-type
+operations.
+See the Merging section.
+Concatenating pandas objects together row-wise with concat():
+In [75]: df = pd.DataFrame(np.random.randn(10, 4))
+
+In [76]: df
+Out[76]: 
+          0         1         2         3
+0 -0.548702  1.467327 -1.015962 -0.483075
+1  1.637550 -1.217659 -0.291519 -1.745505
+2 -0.263952  0.991460 -0.919069  0.266046
+3 -0.709661  1.669052  1.037882 -1.705775
+4 -0.919854 -0.042379  1.247642 -0.009920
+5  0.290213  0.495767  0.362949  1.548106
+6 -1.131345 -0.089329  0.337863 -0.945867
+7 -0.932132  1.956030  0.017587 -0.016692
+8 -0.575247  0.254161 -1.143704  0.215897
+9  1.193555 -0.077118 -0.408530 -0.862495
+
+# break it into pieces
+In [77]: pieces = [df[:3], df[3:7], df[7:]]
+
+In [78]: pd.concat(pieces)
+Out[78]: 
+          0         1         2         3
+0 -0.548702  1.467327 -1.015962 -0.483075
+1  1.637550 -1.217659 -0.291519 -1.745505
+2 -0.263952  0.991460 -0.919069  0.266046
+3 -0.709661  1.669052  1.037882 -1.705775
+4 -0.919854 -0.042379  1.247642 -0.009920
+5  0.290213  0.495767  0.362949  1.548106
+6 -1.131345 -0.089329  0.337863 -0.945867
+7 -0.932132  1.956030  0.017587 -0.016692
+8 -0.575247  0.254161 -1.143704  0.215897
+9  1.193555 -0.077118 -0.408530 -0.862495
+
+
+
+Note
+Adding a column to a DataFrame is relatively fast. However, adding
+a row requires a copy, and may be expensive. We recommend passing a
+pre-built list of records to the DataFrame constructor instead
+of building a DataFrame by iteratively appending records to it.
+
+
+
+Join#
+merge() enables SQL style join types along specific columns. See the Database style joining section.
+In [79]: left = pd.DataFrame({"key": ["foo", "foo"], "lval": [1, 2]})
+
+In [80]: right = pd.DataFrame({"key": ["foo", "foo"], "rval": [4, 5]})
+
+In [81]: left
+Out[81]: 
+   key  lval
+0  foo     1
+1  foo     2
+
+In [82]: right
+Out[82]: 
+   key  rval
+0  foo     4
+1  foo     5
+
+In [83]: pd.merge(left, right, on="key")
+Out[83]: 
+   key  lval  rval
+0  foo     1     4
+1  foo     1     5
+2  foo     2     4
+3  foo     2     5
+
+
+merge() on unique keys:
+In [84]: left = pd.DataFrame({"key": ["foo", "bar"], "lval": [1, 2]})
+
+In [85]: right = pd.DataFrame({"key": ["foo", "bar"], "rval": [4, 5]})
+
+In [86]: left
+Out[86]: 
+   key  lval
+0  foo     1
+1  bar     2
+
+In [87]: right
+Out[87]: 
+   key  rval
+0  foo     4
+1  bar     5
+
+In [88]: pd.merge(left, right, on="key")
+Out[88]: 
+   key  lval  rval
+0  foo     1     4
+1  bar     2     5
+
+
+
+
+
+Grouping#
+By “group by” we are referring to a process involving one or more of the
+following steps:
+
+Splitting the data into groups based on some criteria
+Applying a function to each group independently
+Combining the results into a data structure
+
+See the Grouping section.
+In [89]: df = pd.DataFrame(
+   ....:     {
+   ....:         "A": ["foo", "bar", "foo", "bar", "foo", "bar", "foo", "foo"],
+   ....:         "B": ["one", "one", "two", "three", "two", "two", "one", "three"],
+   ....:         "C": np.random.randn(8),
+   ....:         "D": np.random.randn(8),
+   ....:     }
+   ....: )
+   ....: 
+
+In [90]: df
+Out[90]: 
+     A      B         C         D
+0  foo    one  1.346061 -1.577585
+1  bar    one  1.511763  0.396823
+2  foo    two  1.627081 -0.105381
+3  bar  three -0.990582 -0.532532
+4  foo    two -0.441652  1.453749
+5  bar    two  1.211526  1.208843
+6  foo    one  0.268520 -0.080952
+7  foo  three  0.024580 -0.264610
+
+
+Grouping by a column label, selecting column labels, and then applying the
+DataFrameGroupBy.sum() function to the resulting
+groups:
+In [91]: df.groupby("A")[["C", "D"]].sum()
+Out[91]: 
+            C         D
+A                      
+bar  1.732707  1.073134
+foo  2.824590 -0.574779
+
+
+Grouping by multiple columns label forms MultiIndex.
+In [92]: df.groupby(["A", "B"]).sum()
+Out[92]: 
+                  C         D
+A   B                        
+bar one    1.511763  0.396823
+    three -0.990582 -0.532532
+    two    1.211526  1.208843
+foo one    1.614581 -1.658537
+    three  0.024580 -0.264610
+    two    1.185429  1.348368
+
+
+
+
+Reshaping#
+See the sections on Hierarchical Indexing and
+Reshaping.
+
+Stack#
+In [93]: arrays = [
+   ....:    ["bar", "bar", "baz", "baz", "foo", "foo", "qux", "qux"],
+   ....:    ["one", "two", "one", "two", "one", "two", "one", "two"],
+   ....: ]
+   ....: 
+
+In [94]: index = pd.MultiIndex.from_arrays(arrays, names=["first", "second"])
+
+In [95]: df = pd.DataFrame(np.random.randn(8, 2), index=index, columns=["A", "B"])
+
+In [96]: df2 = df[:4]
+
+In [97]: df2
+Out[97]: 
+                     A         B
+first second                    
+bar   one    -0.727965 -0.589346
+      two     0.339969 -0.693205
+baz   one    -0.339355  0.593616
+      two     0.884345  1.591431
+
+
+The stack() method “compresses” a level in the DataFrame’s
+columns:
+In [98]: stacked = df2.stack()
+
+In [99]: stacked
+Out[99]: 
+first  second   
+bar    one     A   -0.727965
+               B   -0.589346
+       two     A    0.339969
+               B   -0.693205
+baz    one     A   -0.339355
+               B    0.593616
+       two     A    0.884345
+               B    1.591431
+dtype: float64
+
+
+With a “stacked” DataFrame or Series (having a MultiIndex as the
+index), the inverse operation of stack() is
+unstack(), which by default unstacks the last level:
+In [100]: stacked.unstack()
+Out[100]: 
+                     A         B
+first second                    
+bar   one    -0.727965 -0.589346
+      two     0.339969 -0.693205
+baz   one    -0.339355  0.593616
+      two     0.884345  1.591431
+
+In [101]: stacked.unstack(1)
+Out[101]: 
+second        one       two
+first                      
+bar   A -0.727965  0.339969
+      B -0.589346 -0.693205
+baz   A -0.339355  0.884345
+      B  0.593616  1.591431
+
+In [102]: stacked.unstack(0)
+Out[102]: 
+first          bar       baz
+second                      
+one    A -0.727965 -0.339355
+       B -0.589346  0.593616
+two    A  0.339969  0.884345
+       B -0.693205  1.591431
+
+
+
+
+Pivot tables#
+See the section on Pivot Tables.
+In [103]: df = pd.DataFrame(
+   .....:     {
+   .....:         "A": ["one", "one", "two", "three"] * 3,
+   .....:         "B": ["A", "B", "C"] * 4,
+   .....:         "C": ["foo", "foo", "foo", "bar", "bar", "bar"] * 2,
+   .....:         "D": np.random.randn(12),
+   .....:         "E": np.random.randn(12),
+   .....:     }
+   .....: )
+   .....: 
+
+In [104]: df
+Out[104]: 
+        A  B    C         D         E
+0     one  A  foo -1.202872  0.047609
+1     one  B  foo -1.814470 -0.136473
+2     two  C  foo  1.018601 -0.561757
+3   three  A  bar -0.595447 -1.623033
+4     one  B  bar  1.395433  0.029399
+5     one  C  bar -0.392670 -0.542108
+6     two  A  foo  0.007207  0.282696
+7   three  B  foo  1.928123 -0.087302
+8     one  C  foo -0.055224 -1.575170
+9     one  A  bar  2.395985  1.771208
+10    two  B  bar  1.552825  0.816482
+11  three  C  bar  0.166599  1.100230
+
+
+pivot_table() pivots a DataFrame specifying the values, index and columns
+In [105]: pd.pivot_table(df, values="D", index=["A", "B"], columns=["C"])
+Out[105]: 
+C             bar       foo
+A     B                    
+one   A  2.395985 -1.202872
+      B  1.395433 -1.814470
+      C -0.392670 -0.055224
+three A -0.595447       NaN
+      B       NaN  1.928123
+      C  0.166599       NaN
+two   A       NaN  0.007207
+      B  1.552825       NaN
+      C       NaN  1.018601
+
+
+
+
+
+Time series#
+pandas has simple, powerful, and efficient functionality for performing
+resampling operations during frequency conversion (e.g., converting secondly
+data into 5-minutely data). This is extremely common in, but not limited to,
+financial applications. See the Time Series section.
+In [106]: rng = pd.date_range("1/1/2012", periods=100, freq="s")
+
+In [107]: ts = pd.Series(np.random.randint(0, 500, len(rng)), index=rng)
+
+In [108]: ts.resample("5Min").sum()
+Out[108]: 
+2012-01-01    24182
+Freq: 5min, dtype: int64
+
+
+Series.tz_localize() localizes a time series to a time zone:
+In [109]: rng = pd.date_range("3/6/2012 00:00", periods=5, freq="D")
+
+In [110]: ts = pd.Series(np.random.randn(len(rng)), rng)
+
+In [111]: ts
+Out[111]: 
+2012-03-06    1.857704
+2012-03-07   -1.193545
+2012-03-08    0.677510
+2012-03-09   -0.153931
+2012-03-10    0.520091
+Freq: D, dtype: float64
+
+In [112]: ts_utc = ts.tz_localize("UTC")
+
+In [113]: ts_utc
+Out[113]: 
+2012-03-06 00:00:00+00:00    1.857704
+2012-03-07 00:00:00+00:00   -1.193545
+2012-03-08 00:00:00+00:00    0.677510
+2012-03-09 00:00:00+00:00   -0.153931
+2012-03-10 00:00:00+00:00    0.520091
+Freq: D, dtype: float64
+
+
+Series.tz_convert() converts a timezones aware time series to another time zone:
+In [114]: ts_utc.tz_convert("US/Eastern")
+Out[114]: 
+2012-03-05 19:00:00-05:00    1.857704
+2012-03-06 19:00:00-05:00   -1.193545
+2012-03-07 19:00:00-05:00    0.677510
+2012-03-08 19:00:00-05:00   -0.153931
+2012-03-09 19:00:00-05:00    0.520091
+dtype: float64
+
+
+Adding a non-fixed duration (BusinessDay) to a time series:
+In [115]: rng
+Out[115]: 
+DatetimeIndex(['2012-03-06', '2012-03-07', '2012-03-08', '2012-03-09',
+               '2012-03-10'],
+              dtype='datetime64[us]', freq='D')
+
+In [116]: rng + pd.offsets.BusinessDay(5)
+Out[116]: 
+DatetimeIndex(['2012-03-13', '2012-03-14', '2012-03-15', '2012-03-16',
+               '2012-03-16'],
+              dtype='datetime64[us]', freq=None)
+
+
+
+
+Categoricals#
+pandas can include categorical data in a DataFrame. For full docs, see the
+categorical introduction and the API documentation.
+In [117]: df = pd.DataFrame(
+   .....:     {"id": [1, 2, 3, 4, 5, 6], "raw_grade": ["a", "b", "b", "a", "a", "e"]}
+   .....: )
+   .....: 
+
+
+Converting the raw grades to a categorical data type:
+In [118]: df["grade"] = df["raw_grade"].astype("category")
+
+In [119]: df["grade"]
+Out[119]: 
+0    a
+1    b
+2    b
+3    a
+4    a
+5    e
+Name: grade, dtype: category
+Categories (3, str): ['a', 'b', 'e']
+
+
+Rename the categories to more meaningful names:
+In [120]: new_categories = ["very good", "good", "very bad"]
+
+In [121]: df["grade"] = df["grade"].cat.rename_categories(new_categories)
+
+
+Reorder the categories and simultaneously add the missing categories (methods under Series.cat() return a new Series by default):
+In [122]: df["grade"] = df["grade"].cat.set_categories(
+   .....:     ["very bad", "bad", "medium", "good", "very good"]
+   .....: )
+   .....: 
+
+In [123]: df["grade"]
+Out[123]: 
+0    very good
+1         good
+2         good
+3    very good
+4    very good
+5     very bad
+Name: grade, dtype: category
+Categories (5, str): ['very bad', 'bad', 'medium', 'good', 'very good']
+
+
+Sorting is per order in the categories, not lexical order:
+In [124]: df.sort_values(by="grade")
+Out[124]: 
+   id raw_grade      grade
+5   6         e   very bad
+1   2         b       good
+2   3         b       good
+0   1         a  very good
+3   4         a  very good
+4   5         a  very good
+
+
+Grouping by a categorical column with observed=False also shows empty categories:
+In [125]: df.groupby("grade", observed=False).size()
+Out[125]: 
+grade
+very bad     1
+bad          0
+medium       0
+good         2
+very good    3
+dtype: int64
+
+
+
+
+Plotting#
+See the Plotting docs.
+We use the standard convention for referencing the matplotlib API:
+In [126]: import matplotlib.pyplot as plt
+
+In [127]: plt.close("all")
+
+
+The plt.close method is used to close a figure window:
+In [128]: ts = pd.Series(np.random.randn(1000), index=pd.date_range("1/1/2000", periods=1000))
+
+In [129]: ts = ts.cumsum()
+
+In [130]: ts.plot();
+
+
+
+
+Note
+When using Jupyter, the plot will appear using plot().  Otherwise use
+matplotlib.pyplot.show to show it or
+matplotlib.pyplot.savefig to write it to a file.
+
+plot() plots all columns:
+In [131]: df = pd.DataFrame(
+   .....:     np.random.randn(1000, 4), index=ts.index, columns=["A", "B", "C", "D"]
+   .....: )
+   .....: 
+
+In [132]: df = df.cumsum()
+
+In [133]: plt.figure();
+
+In [134]: df.plot();
+
+In [135]: plt.legend(loc='best');
+
+
+
+
+
+Importing and exporting data#
+See the IO Tools section.
+
+CSV#
+Writing to a csv file: using DataFrame.to_csv()
+In [136]: df = pd.DataFrame(np.random.randint(0, 5, (10, 5)))
+
+In [137]: df.to_csv("foo.csv")
+
+
+Reading from a csv file: using read_csv()
+In [138]: pd.read_csv("foo.csv")
+Out[138]: 
+   Unnamed: 0  0  1  2  3  4
+0           0  4  3  1  1  2
+1           1  1  0  2  3  2
+2           2  1  4  2  1  2
+3           3  0  4  0  2  2
+4           4  4  2  2  3  4
+5           5  4  0  4  3  1
+6           6  2  1  2  0  3
+7           7  4  0  4  4  4
+8           8  4  4  1  0  1
+9           9  0  4  3  0  3
+
+
+
+
+Parquet#
+Writing to a Parquet file:
+In [139]: df.to_parquet("foo.parquet")
+
+
+Reading from a Parquet file Store using read_parquet():
+In [140]: pd.read_parquet("foo.parquet")
+Out[140]: 
+   0  1  2  3  4
+0  4  3  1  1  2
+1  1  0  2  3  2
+2  1  4  2  1  2
+3  0  4  0  2  2
+4  4  2  2  3  4
+5  4  0  4  3  1
+6  2  1  2  0  3
+7  4  0  4  4  4
+8  4  4  1  0  1
+9  0  4  3  0  3
+
+
+
+
+Excel#
+Reading and writing to Excel.
+Writing to an excel file using DataFrame.to_excel():
+In [141]: df.to_excel("foo.xlsx", sheet_name="Sheet1")
+
+
+Reading from an excel file using read_excel():
+In [142]: pd.read_excel("foo.xlsx", "Sheet1", index_col=None, na_values=["NA"])
+Out[142]: 
+   Unnamed: 0  0  1  2  3  4
+0           0  4  3  1  1  2
+1           1  1  0  2  3  2
+2           2  1  4  2  1  2
+3           3  0  4  0  2  2
+4           4  4  2  2  3  4
+5           5  4  0  4  3  1
+6           6  2  1  2  0  3
+7           7  4  0  4  4  4
+8           8  4  4  1  0  1
+9           9  0  4  3  0  3
+
+
+
+
+
+Gotchas#
+If you are attempting to perform a boolean operation on a Series or DataFrame
+you might see an exception like:
+In [143]: if pd.Series([False, True, False]):
+   .....:      print("I was true")
+   .....: 
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+Cell In[143], line 1
+----> 1 if pd.Series([False, True, False]):
+      2      print("I was true")
+
+File ~/work/pandas/pandas/pandas/core/generic.py:1513, in NDFrame.__bool__(self)
+   1511     @final
+   1512     def __bool__(self) -> NoReturn:
+-> 1513         raise ValueError(
+   1514             f"The truth value of a {type(self).__name__} is ambiguous. "
+   1515             "Use a.empty, a.bool(), a.item(), a.any() or a.all()."
+   1516         )
+
+ValueError: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+
+
+See Comparisons and Gotchas for an explanation and what to do.
+
+
+Out[40]: 
+   one  two
+a  1.0  1.0
+b  2.0  2.0
+c  3.0  3.0
+d  NaN  4.0
+
+In [41]: pd.DataFrame(d, index=["d", "b", "a"])
+Out[41]: 
+   one  two
+d  NaN  4.0
+b  2.0  2.0
+a  1.0  1.0
+
+In [42]: pd.DataFrame(d, index=["d", "b", "a"], columns=["two", "three"])
+Out[42]: 
+   two three
+d  4.0   NaN
+b  2.0   NaN
+a  1.0   NaN
+
+
+The row and column labels can be accessed respectively by accessing the
+index and columns attributes:
+
+Note
+When a particular set of columns is passed along with a dict of data, the
+passed columns override the keys in the dict.
+
+In [43]: df.index
+Out[43]: Index(['a', 'b', 'c', 'd'], dtype='str')
+
+In [44]: df.columns
+Out[44]: Index(['one', 'two'], dtype='str')
+
+
+
+
+From dict of ndarrays / lists#
+All ndarrays must share the same length. If an index is passed, it must
+also be the same length as the arrays. If no index is passed, the
+result will be range(n), where n is the array length.
+In [45]: d = {"one": [1.0, 2.0, 3.0, 4.0], "two": [4.0, 3.0, 2.0, 1.0]}
+
+In [46]: pd.DataFrame(d)
+Out[46]: 
+   one  two
+0  1.0  4.0
+1  2.0  3.0
+2  3.0  2.0
+3  4.0  1.0
+
+In [47]: pd.DataFrame(d, index=["a", "b", "c", "d"])
+Out[47]: 
+   one  two
+a  1.0  4.0
+b  2.0  3.0
+c  3.0  2.0
+d  4.0  1.0
+
+
+
+
+From structured or record array#
+This case is handled identically to a dict of arrays.
+In [48]: data = np.zeros((2,), dtype=[("A", "i4"), ("B", "f4"), ("C", "S10")])
+
+In [49]: data[:] = [(1, 2.0, "Hello"), (2, 3.0, "World")]
+
+In [50]: pd.DataFrame(data)
+Out[50]: 
+   A    B         C
+0  1  2.0  b'Hello'
+1  2  3.0  b'World'
+
+In [51]: pd.DataFrame(data, index=["first", "second"])
+Out[51]: 
+        A    B         C
+first   1  2.0  b'Hello'
+second  2  3.0  b'World'
+
+In [52]: pd.DataFrame(data, columns=["C", "A", "B"])
+Out[52]: 
+          C  A    B
+0  b'Hello'  1  2.0
+1  b'World'  2  3.0
+
+
+
+Note
+DataFrame is not intended to work exactly like a 2-dimensional NumPy
+ndarray.
+
+
+
+From a list of dicts#
+In [53]: data2 = [{"a": 1, "b": 2}, {"a": 5, "b": 10, "c": 20}]
+
+In [54]: pd.DataFrame(data2)
+Out[54]: 
+   a   b     c
+0  1   2   NaN
+1  5  10  20.0
+
+In [55]: pd.DataFrame(data2, index=["first", "second"])
+Out[55]: 
+        a   b     c
+first   1   2   NaN
+second  5  10  20.0
+
+In [56]: pd.DataFrame(data2, columns=["a", "b"])
+Out[56]: 
+   a   b
+0  1   2
+1  5  10
+
+
+
+
+From a dict of tuples#
+You can automatically create a MultiIndexed frame by passing a tuples
+dictionary.
+In [57]: pd.DataFrame(
+   ....:     {
+   ....:         ("a", "b"): {("A", "B"): 1, ("A", "C"): 2},
+   ....:         ("a", "a"): {("A", "C"): 3, ("A", "B"): 4},
+   ....:         ("a", "c"): {("A", "B"): 5, ("A", "C"): 6},
+   ....:         ("b", "a"): {("A", "C"): 7, ("A", "B"): 8},
+   ....:         ("b", "b"): {("A", "D"): 9, ("A", "B"): 10},
+   ....:     }
+   ....: )
+   ....: 
+Out[57]: 
+       a              b      
+       b    a    c    a     b
+A B  1.0  4.0  5.0  8.0  10.0
+  C  2.0  3.0  6.0  7.0   NaN
+  D  NaN  NaN  NaN  NaN   9.0
+
+
+
+
+From a Series#
+The result will be a DataFrame with the same index as the input Series, and
+with one column whose name is the original name of the Series (only if no other
+column name provided).
+In [58]: ser = pd.Series(range(3), index=list("abc"), name="ser")
+
+In [59]: pd.DataFrame(ser)
+Out[59]: 
+   ser
+a    0
+b    1
+c    2
+
+
+
+
+From a list of namedtuples#
+The field names of the first namedtuple in the list determine the columns
+of the DataFrame. The remaining namedtuples (or tuples) are simply unpacked
+and their values are fed into the rows of the DataFrame. If any of those
+tuples is shorter than the first namedtuple then the later columns in the
+corresponding row are marked as missing values. If any are longer than the
+first namedtuple, a ValueError is raised.
+In [60]: from collections import namedtuple
+
+In [61]: Point = namedtuple("Point", "x y")
+
+In [62]: pd.DataFrame([Point(0, 0), Point(0, 3), (2, 3)])
+Out[62]: 
+   x  y
+0  0  0
+1  0  3
+2  2  3
+
+In [63]: Point3D = namedtuple("Point3D", "x y z")
+
+In [64]: pd.DataFrame([Point3D(0, 0, 0), Point3D(0, 3, 5), Point(2, 3)])
+Out[64]: 
+   x  y    z
+0  0  0  0.0
+1  0  3  5.0
+2  2  3  NaN
+
+
+
+
+From a list of dataclasses#
+Data Classes as introduced in PEP557,
+can be passed into the DataFrame constructor.
+Passing a list of dataclasses is equivalent to passing a list of dictionaries.
+Please be aware, that all values in the list should be dataclasses, mixing
+types in the list would result in a TypeError.
+In [65]: from dataclasses import make_dataclass
+
+In [66]: Point = make_dataclass("Point", [("x", int), ("y", int)])
+
+In [67]: pd.DataFrame([Point(0, 0), Point(0, 3), Point(2, 3)])
+Out[67]: 
+   x  y
+0  0  0
+1  0  3
+2  2  3
+
+
+Missing data
+To construct a DataFrame with missing data, we use np.nan to
+represent missing values. Alternatively, you may pass a numpy.MaskedArray
+as the data argument to the DataFrame constructor, and its masked entries will
+be considered missing. See Missing data for more.
+
+
+Alternate constructors#
+DataFrame.from_dict
+DataFrame.from_dict() takes a dict of dicts or a dict of array-like sequences
+and returns a DataFrame. It operates like the DataFrame constructor except
+for the orient parameter which is 'columns' by default, but which can be
+set to 'index' in order to use the dict keys as row labels.
+In [68]: pd.DataFrame.from_dict(dict([("A", [1, 2, 3]), ("B", [4, 5, 6])]))
+Out[68]: 
+   A  B
+0  1  4
+1  2  5
+2  3  6
+
+
+If you pass orient='index', the keys will be the row labels. In this
+case, you can also pass the desired column names:
+In [69]: pd.DataFrame.from_dict(
+   ....:     dict([("A", [1, 2, 3]), ("B", [4, 5, 6])]),
+   ....:     orient="index",
+   ....:     columns=["one", "two", "three"],
+   ....: )
+   ....: 
+Out[69]: 
+   one  two  three
+A    1    2      3
+B    4    5      6
+
+
+DataFrame.from_records
+DataFrame.from_records() takes a list of tuples or an ndarray with structured
+dtype. It works analogously to the normal DataFrame constructor, except that
+the resulting DataFrame index may be a specific field of the structured
+dtype.
+In [70]: data
+Out[70]: 
+array([(1, 2., b'Hello'), (2, 3., b'World')],
+      dtype=[('A', '<i4'), ('B', '<f4'), ('C', 'S10')])
+
+In [71]: pd.DataFrame.from_records(data, index="C")
+Out[71]: 
+          A    B
+C               
+b'Hello'  1  2.0
+b'World'  2  3.0
+
+
+
+
+Column selection, addition, deletion#
+You can treat a DataFrame semantically like a dict of like-indexed Series
+objects. Getting, setting, and deleting columns works with the same syntax as
+the analogous dict operations:
+In [72]: df["one"]
+Out[72]: 
+a    1.0
+b    2.0
+c    3.0
+d    NaN
+Name: one, dtype: float64
+
+In [73]: df["three"] = df["one"] * df["two"]
+
+In [74]: df["flag"] = df["one"] > 2
+
+In [75]: df
+Out[75]: 
+   one  two  three   flag
+a  1.0  1.0    1.0  False
+b  2.0  2.0    4.0  False
+c  3.0  3.0    9.0   True
+d  NaN  4.0    NaN  False
+
+
+Columns can be deleted or popped like with a dict:
+In [76]: del df["two"]
+
+In [77]: three = df.pop("three")
+
+In [78]: df
+Out[78]: 
+   one   flag
+a  1.0  False
+b  2.0  False
+c  3.0   True
+d  NaN  False
+
+
+When inserting a scalar value, it will naturally be propagated to fill the
+column:
+In [79]: df["foo"] = "bar"
+
+In [80]: df
+Out[80]: 
+   one   flag  foo
+a  1.0  False  bar
+b  2.0  False  bar
+c  3.0   True  bar
+d  NaN  False  bar
+
+
+When inserting a Series that does not have the same index as the DataFrame, it
+will be conformed to the DataFrame’s index:
+In [81]: df["one_trunc"] = df["one"][:2]
+
+In [82]: df
+Out[82]: 
+   one   flag  foo  one_trunc
+a  1.0  False  bar        1.0
+b  2.0  False  bar        2.0
+c  3.0   True  bar        NaN
+d  NaN  False  bar        NaN
+
+
+You can insert raw ndarrays but their length must match the length of the
+DataFrame’s index.
+By default, columns get inserted at the end. DataFrame.insert()
+inserts at a particular location in the columns:
+In [83]: df.insert(1, "bar", df["one"])
+
+In [84]: df
+Out[84]: 
+   one  bar   flag  foo  one_trunc
+a  1.0  1.0  False  bar        1.0
+b  2.0  2.0  False  bar        2.0
+c  3.0  3.0   True  bar        NaN
+d  NaN  NaN  False  bar        NaN
+
+
+
+
+Assigning new columns in method chains#
+Inspired by dplyr’s
+mutate verb, DataFrame has an assign()
+method that allows you to easily create new columns that are potentially
+derived from existing columns.
+In [85]: iris = pd.read_csv("data/iris.data")
+
+In [86]: iris.head()
+Out[86]: 
+   SepalLength  SepalWidth  PetalLength  PetalWidth         Name
+0          5.1         3.5          1.4         0.2  Iris-setosa
+1          4.9         3.0          1.4         0.2  Iris-setosa
+2          4.7         3.2          1.3         0.2  Iris-setosa
+3          4.6         3.1          1.5         0.2  Iris-setosa
+4          5.0         3.6          1.4         0.2  Iris-setosa
+
+In [87]: iris.assign(sepal_ratio=iris["SepalWidth"] / iris["SepalLength"]).head()
+Out[87]: 
+   SepalLength  SepalWidth  PetalLength  PetalWidth         Name  sepal_ratio
+0          5.1         3.5          1.4         0.2  Iris-setosa     0.686275
+1          4.9         3.0          1.4         0.2  Iris-setosa     0.612245
+2          4.7         3.2          1.3         0.2  Iris-setosa     0.680851
+3          4.6         3.1          1.5         0.2  Iris-setosa     0.673913
+4          5.0         3.6          1.4         0.2  Iris-setosa     0.720000
+
+
+In the example above, we inserted a precomputed value. We can also pass in
+a function of one argument to be evaluated on the DataFrame being assigned to.
+In [88]: iris.assign(sepal_ratio=lambda x: (x["SepalWidth"] / x["SepalLength"])).head()
+Out[88]: 
+   SepalLength  SepalWidth  PetalLength  PetalWidth         Name  sepal_ratio
+0          5.1         3.5          1.4         0.2  Iris-setosa     0.686275
+1          4.9         3.0          1.4         0.2  Iris-setosa     0.612245
+2          4.7         3.2          1.3         0.2  Iris-setosa     0.680851
+3          4.6         3.1          1.5         0.2  Iris-setosa     0.673913
+4          5.0         3.6          1.4         0.2  Iris-setosa     0.720000
+
+
+or, using pandas.col():
+In [89]: iris.assign(sepal_ratio=pd.col("SepalWidth") / pd.col("SepalLength")).head()
+Out[89]: 
+   SepalLength  SepalWidth  PetalLength  PetalWidth         Name  sepal_ratio
+0          5.1         3.5          1.4         0.2  Iris-setosa     0.686275
+1          4.9         3.0          1.4         0.2  Iris-setosa     0.612245
+2          4.7         3.2          1.3         0.2  Iris-setosa     0.680851
+3          4.6         3.1          1.5         0.2  Iris-setosa     0.673913
+4          5.0         3.6          1.4         0.2  Iris-setosa     0.720000
+
+
+assign() always returns a copy of the data, leaving the original
+DataFrame untouched.
+Passing a callable, as opposed to an actual value to be inserted, is
+useful when you don’t have a reference to the DataFrame at hand. This is
+common when using assign() in a chain of operations. For example,
+we can limit the DataFrame to just those observations with a Sepal Length
+greater than 5, calculate the ratio, and plot:
+In [90]: (
+   ....:     iris.query("SepalLength > 5")
+   ....:     .assign(
+   ....:         SepalRatio=lambda x: x.SepalWidth / x.SepalLength,
+   ....:         PetalRatio=lambda x: x.PetalWidth / x.PetalLength,
+   ....:     )
+   ....:     .plot(kind="scatter", x="SepalRatio", y="PetalRatio")
+   ....: )
+   ....: 
+Out[90]: <Axes: xlabel='SepalRatio', ylabel='PetalRatio'>
+
+
+
+Since a function is passed in, the function is computed on the DataFrame
+being assigned to. Importantly, this is the DataFrame that’s been filtered
+to those rows with sepal length greater than 5. The filtering happens first,
+and then the ratio calculations. This is an example where we didn’t
+have a reference to the filtered DataFrame available.
+The function signature for assign() is simply **kwargs. The keys
+are the column names for the new fields, and the values are either a value
+to be inserted (for example, a Series or NumPy array), or a function
+of one argument to be called on the DataFrame. A copy of the original
+DataFrame is returned, with the new values inserted.
+The order of **kwargs is preserved. This allows
+for dependent assignment, where an expression later in **kwargs can refer
+to a column created earlier in the same assign().
+In [91]: dfa = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+
+In [92]: dfa.assign(C=lambda x: x["A"] + x["B"], D=lambda x: x["A"] + x["C"])
+Out[92]: 
+   A  B  C   D
+0  1  4  5   6
+1  2  5  7   9
+2  3  6  9  12
+
+
+In the second expression, x['C'] will refer to the newly created column,
+that’s equal to dfa['A'] + dfa['B'].
+
+
+Indexing / selection#
+The basics of indexing are as follows:
+
+
+
+
+
+
+
+Operation
+Syntax
+Result
+
+
+
+Select column
+df[col]
+Series
+
+Select row by label
+df.loc[label]
+Series
+
+Select row by integer location
+df.iloc[loc]
+Series
+
+Slice rows
+df[5:10]
+DataFrame
+
+Select rows by boolean vector
+df[bool_vec]
+DataFrame
+
+
+
+
+Row selection, for example, returns a Series whose index is the columns of the
+DataFrame:
+In [93]: df.loc["b"]
+Out[93]: 
+one            2.0
+bar            2.0
+flag         False
+foo            bar
+one_trunc      2.0
+Name: b, dtype: object
+
+In [94]: df.iloc[2]
+Out[94]: 
+one           3.0
+bar           3.0
+flag         True
+foo           bar
+one_trunc     NaN
+Name: c, dtype: object
+
+
+For a more exhaustive treatment of sophisticated label-based indexing and
+slicing, see the section on indexing. We will address the
+fundamentals of reindexing / conforming to new sets of labels in the
+section on reindexing.
+
+
+Data alignment and arithmetic#
+Data alignment between DataFrame objects automatically align on both the
+columns and the index (row labels). Again, the resulting object will have the
+union of the column and row labels.
+In [95]: df = pd.DataFrame(np.random.randn(10, 4), columns=["A", "B", "C", "D"])
+
+In [96]: df2 = pd.DataFrame(np.random.randn(7, 3), columns=["A", "B", "C"])
+
+In [97]: df + df2
+Out[97]: 
+          A         B         C   D
+0  0.045691 -0.014138  1.380871 NaN
+1 -0.955398 -1.501007  0.037181 NaN
+2 -0.662690  1.534833 -0.859691 NaN
+3 -2.452949  1.237274 -0.133712 NaN
+4  1.414490  1.951676 -2.320422 NaN
+5 -0.494922 -1.649727 -1.084601 NaN
+6 -1.047551 -0.748572 -0.805479 NaN
+7       NaN       NaN       NaN NaN
+8       NaN       NaN       NaN NaN
+9       NaN       NaN       NaN NaN
+
+
+When doing an operation between DataFrame and Series, the default behavior is
+to align the Series index on the DataFrame columns, thus broadcasting
+row-wise. For example:
+In [98]: df - df.iloc[0]
+Out[98]: 
+          A         B         C         D
+0  0.000000  0.000000  0.000000  0.000000
+1 -1.359261 -0.248717 -0.453372 -1.754659
+2  0.253128  0.829678  0.010026 -1.991234
+3 -1.311128  0.054325 -1.724913 -1.620544
+4  0.573025  1.500742 -0.676070  1.367331
+5 -1.741248  0.781993 -1.241620 -2.053136
+6 -1.240774 -0.869551 -0.153282  0.000430
+7 -0.743894  0.411013 -0.929563 -0.282386
+8 -1.194921  1.320690  0.238224 -1.482644
+9  2.293786  1.856228  0.773289 -1.446531
+
+
+For explicit control over the matching and broadcasting behavior, see the
+section on flexible binary operations.
+Arithmetic operations with scalars operate element-wise:
+In [99]: df * 5 + 2
+Out[99]: 
+           A         B         C          D
+0   3.359299 -0.124862  4.835102   3.381160
+1  -3.437003 -1.368449  2.568242  -5.392133
+2   4.624938  4.023526  4.885230  -6.575010
+3  -3.196342  0.146766 -3.789461  -4.721559
+4   6.224426  7.378849  1.454750  10.217815
+5  -5.346940  3.785103 -1.373001  -6.884519
+6  -2.844569 -4.472618  4.068691   3.383309
+7  -0.360173  1.930201  0.187285   1.969232
+8  -2.615303  6.478587  6.026220  -4.032059
+9  14.828230  9.156280  8.701544  -3.851494
+
+In [100]: 1 / df
+Out[100]: 
+          A          B         C           D
+0  3.678365  -2.353094  1.763605    3.620145
+1 -0.919624  -1.484363  8.799067   -0.676395
+2  1.904807   2.470934  1.732964   -0.583090
+3 -0.962215  -2.697986 -0.863638   -0.743875
+4  1.183593   0.929567 -9.170108    0.608434
+5 -0.680555   2.800959 -1.482360   -0.562777
+6 -1.032084  -0.772485  2.416988    3.614523
+7 -2.118489 -71.634509 -2.758294 -162.507295
+8 -1.083352   1.116424  1.241860   -0.828904
+9  0.389765   0.698687  0.746097   -0.854483
+
+In [101]: df ** 4
+Out[101]: 
+           A             B         C             D
+0   0.005462  3.261689e-02  0.103370  5.822320e-03
+1   1.398165  2.059869e-01  0.000167  4.777482e+00
+2   0.075962  2.682596e-02  0.110877  8.650845e+00
+3   1.166571  1.887302e-02  1.797515  3.265879e+00
+4   0.509555  1.339298e+00  0.000141  7.297019e+00
+5   4.661717  1.624699e-02  0.207103  9.969092e+00
+6   0.881334  2.808277e+00  0.029302  5.858632e-03
+7   0.049647  3.797614e-08  0.017276  1.433866e-09
+8   0.725974  6.437005e-01  0.420446  2.118275e+00
+9  43.329821  4.196326e+00  3.227153  1.875802e+00
+
+
+Boolean operators operate element-wise as well:
+In [102]: df1 = pd.DataFrame({"a": [1, 0, 1], "b": [0, 1, 1]}, dtype=bool)
+
+In [103]: df2 = pd.DataFrame({"a": [0, 1, 1], "b": [1, 1, 0]}, dtype=bool)
+
+In [104]: df1 & df2
+Out[104]: 
+       a      b
+0  False  False
+1  False   True
+2   True  False
+
+In [105]: df1 | df2
+Out[105]: 
+      a     b
+0  True  True
+1  True  True
+2  True  True
+
+In [106]: df1 ^ df2
+Out[106]: 
+       a      b
+0   True   True
+1   True  False
+2  False   True
+
+In [107]: -df1
+Out[107]: 
+       a      b
+0  False   True
+1   True  False
+2  False  False
+
+
+
+
+Transposing#
+To transpose, access the T attribute or DataFrame.transpose(),
+similar to an ndarray:
+# only show the first 5 rows
+In [108]: df[:5].T
+Out[108]: 
+          0         1         2         3         4
+A  0.271860 -1.087401  0.524988 -1.039268  0.844885
+B -0.424972 -0.673690  0.404705 -0.370647  1.075770
+C  0.567020  0.113648  0.577046 -1.157892 -0.109050
+D  0.276232 -1.478427 -1.715002 -1.344312  1.643563
+
+
+
+
+DataFrame interoperability with NumPy functions#
+Most NumPy functions can be called directly on Series and DataFrame.
+In [109]: np.exp(df)
+Out[109]: 
+           A         B         C         D
+0   1.312403  0.653788  1.763006  1.318154
+1   0.337092  0.509824  1.120358  0.227996
+2   1.690438  1.498861  1.780770  0.179963
+3   0.353713  0.690288  0.314148  0.260719
+4   2.327710  2.932249  0.896686  5.173571
+5   0.230066  1.429065  0.509360  0.169161
+6   0.379495  0.274028  1.512461  1.318720
+7   0.623732  0.986137  0.695904  0.993865
+8   0.397301  2.449092  2.237242  0.299269
+9  13.009059  4.183951  3.820223  0.310274
+
+In [110]: np.asarray(df)
+Out[110]: 
+array([[ 0.2719, -0.425 ,  0.567 ,  0.2762],
+       [-1.0874, -0.6737,  0.1136, -1.4784],
+       [ 0.525 ,  0.4047,  0.577 , -1.715 ],
+       [-1.0393, -0.3706, -1.1579, -1.3443],
+       [ 0.8449,  1.0758, -0.109 ,  1.6436],
+       [-1.4694,  0.357 , -0.6746, -1.7769],
+       [-0.9689, -1.2945,  0.4137,  0.2767],
+       [-0.472 , -0.014 , -0.3625, -0.0062],
+       [-0.9231,  0.8957,  0.8052, -1.2064],
+       [ 2.5656,  1.4313,  1.3403, -1.1703]])
+
+
+DataFrame is not intended to be a drop-in replacement for ndarray as its
+indexing semantics and data model are quite different in places from an n-dimensional
+array.
+Series implements __array_ufunc__, which allows it to work with NumPy’s
+universal functions.
+The ufunc is applied to the underlying array in a Series.
+In [111]: ser = pd.Series([1, 2, 3, 4])
+
+In [112]: np.exp(ser)
+Out[112]: 
+0     2.718282
+1     7.389056
+2    20.085537
+3    54.598150
+dtype: float64
+
+
+When multiple Series are passed to a ufunc, they are aligned before
+performing the operation.
+Like other parts of the library, pandas will automatically align labeled inputs
+as part of a ufunc with multiple inputs. For example, using numpy.remainder()
+on two Series with differently ordered labels will align before the operation.
+In [113]: ser1 = pd.Series([1, 2, 3], index=["a", "b", "c"])
+
+In [114]: ser2 = pd.Series([1, 3, 5], index=["b", "a", "c"])
+
+In [115]: ser1
+Out[115]: 
+a    1
+b    2
+c    3
+dtype: int64
+
+In [116]: ser2
+Out[116]: 
+b    1
+a    3
+c    5
+dtype: int64
+
+In [117]: np.remainder(ser1, ser2)
+Out[117]: 
+a    1
+b    0
+c    3
+dtype: int64
+
+
+As usual, the union of the two indices is taken, and non-overlapping values are filled
+with missing values.
+In [118]: ser3 = pd.Series([2, 4, 6], index=["b", "c", "d"])
+
+In [119]: ser3
+Out[119]: 
+b    2
+c    4
+d    6
+dtype: int64
+
+In [120]: np.remainder(ser1, ser3)
+Out[120]: 
+a    NaN
+b    0.0
+c    3.0
+d    NaN
+dtype: float64
+
+
+When a binary ufunc is applied to a Series and Index, the Series
+implementation takes precedence and a Series is returned.
+In [121]: ser = pd.Series([1, 2, 3])
+
+In [122]: idx = pd.Index([4, 5, 6])
+
+In [123]: np.maximum(ser, idx)
+Out[123]: 
+0    4
+1    5
+2    6
+dtype: int64
+
+
+NumPy ufuncs are safe to apply to Series backed by non-ndarray arrays,
+for example arrays.SparseArray (see Sparse calculation). If possible,
+the ufunc is applied without converting the underlying data to an ndarray.
+
+
+Console display#
+A very large DataFrame will be truncated to display them in the console.
+You can also get a summary using info().
+(The baseball dataset is from the plyr R package):
+In [124]: baseball = pd.read_csv("data/baseball.csv")
+
+In [125]: print(baseball)
+       id     player  year  stint team  lg  ...    so  ibb  hbp   sh   sf  gidp
+0   88641  womacto01  2006      2  CHN  NL  ...   4.0  0.0  0.0  3.0  0.0   0.0
+1   88643  schilcu01  2006      1  BOS  AL  ...   1.0  0.0  0.0  0.0  0.0   0.0
+..    ...        ...   ...    ...  ...  ..  ...   ...  ...  ...  ...  ...   ...
+98  89533   aloumo01  2007      1  NYN  NL  ...  30.0  5.0  2.0  0.0  3.0  13.0
+99  89534  alomasa02  2007      1  NYN  NL  ...   3.0  0.0  0.0  0.0  0.0   0.0
+
+[100 rows x 23 columns]
+
+In [126]: baseball.info()
+<class 'pandas.DataFrame'>
+RangeIndex: 100 entries, 0 to 99
+Data columns (total 23 columns):
+ #   Column  Non-Null Count  Dtype  
+---  ------  --------------  -----  
+ 0   id      100 non-null    int64  
+ 1   player  100 non-null    str    
+ 2   year    100 non-null    int64  
+ 3   stint   100 non-null    int64  
+ 4   team    100 non-null    str    
+ 5   lg      100 non-null    str    
+ 6   g       100 non-null    int64  
+ 7   ab      100 non-null    int64  
+ 8   r       100 non-null    int64  
+ 9   h       100 non-null    int64  
+ 10  X2b     100 non-null    int64  
+ 11  X3b     100 non-null    int64  
+ 12  hr      100 non-null    int64  
+ 13  rbi     100 non-null    float64
+ 14  sb      100 non-null    float64
+ 15  cs      100 non-null    float64
+ 16  bb      100 non-null    int64  
+ 17  so      100 non-null    float64
+ 18  ibb     100 non-null    float64
+ 19  hbp     100 non-null    float64
+ 20  sh      100 non-null    float64
+ 21  sf      100 non-null    float64
+ 22  gidp    100 non-null    float64
+dtypes: float64(9), int64(11), str(3)
+memory usage: 19.5 KB
+
+
+However, using DataFrame.to_string() will return a string representation of the
+DataFrame in tabular form, though it won’t always fit the console width:
+In [127]: print(baseball.iloc[-20:, :12].to_string())
+       id     player  year  stint team  lg    g   ab   r    h  X2b  X3b
+80  89474  finlest01  2007      1  COL  NL   43   94   9   17    3    0
+81  89480  embreal01  2007      1  OAK  AL    4    0   0    0    0    0
+82  89481  edmonji01  2007      1  SLN  NL  117  365  39   92   15    2
+83  89482  easleda01  2007      1  NYN  NL   76  193  24   54    6    0
+84  89489  delgaca01  2007      1  NYN  NL  139  538  71  139   30    0
+85  89493  cormirh01  2007      1  CIN  NL    6    0   0    0    0    0
+86  89494  coninje01  2007      2  NYN  NL   21   41   2    8    2    0
+87  89495  coninje01  2007      1  CIN  NL   80  215  23   57   11    1
+88  89497  clemero02  2007      1  NYA  AL    2    2   0    1    0    0
+89  89498  claytro01  2007      2  BOS  AL    8    6   1    0    0    0
+90  89499  claytro01  2007      1  TOR  AL   69  189  23   48   14    0
+91  89501  cirilje01  2007      2  ARI  NL   28   40   6    8    4    0
+92  89502  cirilje01  2007      1  MIN  AL   50  153  18   40    9    2
+93  89521  bondsba01  2007      1  SFN  NL  126  340  75   94   14    0
+94  89523  biggicr01  2007      1  HOU  NL  141  517  68  130   31    3
+95  89525  benitar01  2007      2  FLO  NL   34    0   0    0    0    0
+96  89526  benitar01  2007      1  SFN  NL   19    0   0    0    0    0
+97  89530  ausmubr01  2007      1  HOU  NL  117  349  38   82   16    3
+98  89533   aloumo01  2007      1  NYN  NL   87  328  51  112   19    1
+99  89534  alomasa02  2007      1  NYN  NL    8   22   1    3    1    0
+
+
+Wide DataFrames will be printed across multiple rows by
+default:
+In [128]: pd.DataFrame(np.random.randn(3, 12))
+Out[128]: 
+         0         1         2   ...        9         10        11
+0 -1.226825  0.769804 -1.281247  ... -1.110336 -0.619976  0.149748
+1 -0.732339  0.687738  0.176444  ...  1.462696 -1.743161 -0.826591
+2 -0.345352  1.314232  0.690579  ...  0.896171 -0.487602 -0.082240
+
+[3 rows x 12 columns]
+
+
+You can change how much to print on a single row by setting the display.width
+option:
+In [129]: pd.set_option("display.width", 40)  # default is 80
+
+In [130]: pd.DataFrame(np.random.randn(3, 12))
+Out[130]: 
+         0         1         2   ...        9         10        11
+0 -2.182937  0.380396  0.084844  ... -0.023688  2.410179  1.450520
+1  0.206053 -0.251905 -2.213588  ... -0.025747 -0.988387  0.094055
+2  1.262731  1.289997  0.082423  ... -0.281461  0.030711  0.109121
+
+[3 rows x 12 columns]
+
+
+You can adjust the max width of the individual columns by setting display.max_colwidth
+In [131]: datafile = {
+   .....:     "filename": ["filename_01", "filename_02"],
+   .....:     "path": [
+   .....:         "media/user_name/storage/folder_01/filename_01",
+   .....:         "media/user_name/storage/folder_02/filename_02",
+   .....:     ],
+   .....: }
+   .....: 
+
+In [132]: pd.set_option("display.max_colwidth", 30)
+
+In [133]: pd.DataFrame(datafile)
+Out[133]: 
+      filename                           path
+0  filename_01  media/user_name/storage/fo...
+1  filename_02  media/user_name/storage/fo...
+
+In [134]: pd.set_option("display.max_colwidth", 100)
+
+In [135]: pd.DataFrame(datafile)
+Out[135]: 
+      filename                                           path
+0  filename_01  media/user_name/storage/folder_01/filename_01
+1  filename_02  media/user_name/storage/folder_02/filename_02
+
+
+You can also disable this feature via the expand_frame_repr option.
+This will print the table in one block.
+
+
+DataFrame column attribute access and IPython completion#
+If a DataFrame column label is a valid Python variable name, the column can be
+accessed like an attribute:
+In [136]: df = pd.DataFrame({"foo1": np.random.randn(5), "foo2": np.random.randn(5)})
+
+In [137]: df
+Out[137]: 
+       foo1      foo2
+0  1.126203  0.781836
+1 -0.977349 -1.071357
+2  1.474071  0.441153
+3 -0.064034  2.353925
+4 -1.282782  0.583787
+
+In [138]: df.foo1
+Out[138]: 
+0    1.126203
+1   -0.977349
+2    1.474071
+3   -0.064034
+4   -1.282782
+Name: foo1, dtype: float64
+
+
+The columns are also connected to the IPython
+completion mechanism so they can be tab-completed:
+In [5]: df.foo<TAB>  # noqa: E225, E999
+df.foo1  df.foo2
+
+
+
+
+
+
+
+
+
+
+
+previous
+10 minutes to pandas
+
+
+
+
+next
+Essential basic functionality
+
+
+
+
+
+
+
+
+
+
+ On this page
+  
+
+
+Series
+Series is ndarray-like
+Series is dict-like
+Vectorized operations and label alignment with Series
+Name attribute
+
+
+DataFrame
+From dict of Series or dicts
+From dict of ndarrays / lists
+From structured or record array
+From a list of dicts
+From a dict of tuples
+From a Series
+From a list of namedtuples
+From a list of dataclasses
+Alternate constructors
+Column selection, addition, deletion
+Assigning new columns in method chains
+Indexing / selection
+Data alignment and arithmetic
+Transposing
+DataFrame interoperability with NumPy functions
+Console display
+DataFrame column attribute access and IPython completion
+
+
+DataFrame also has the nlargest and nsmallest methods.
+In [339]: df = pd.DataFrame(
+   .....:     {
+   .....:         "a": [-2, -1, 1, 10, 8, 11, -1],
+   .....:         "b": list("abdceff"),
+   .....:         "c": [1.0, 2.0, 4.0, 3.2, np.nan, 3.0, 4.0],
+   .....:     }
+   .....: )
+   .....: 
+
+In [340]: df.nlargest(3, "a")
+Out[340]: 
+    a  b    c
+5  11  f  3.0
+3  10  c  3.2
+4   8  e  NaN
+
+In [341]: df.nlargest(5, ["a", "c"])
+Out[341]: 
+    a  b    c
+5  11  f  3.0
+3  10  c  3.2
+4   8  e  NaN
+2   1  d  4.0
+6  -1  f  4.0
+
+In [342]: df.nsmallest(3, "a")
+Out[342]: 
+   a  b    c
+0 -2  a  1.0
+1 -1  b  2.0
+6 -1  f  4.0
+
+In [343]: df.nsmallest(5, ["a", "c"])
+Out[343]: 
+   a  b    c
+0 -2  a  1.0
+1 -1  b  2.0
+6 -1  f  4.0
+2  1  d  4.0
+4  8  e  NaN
+
+
+
+
+Sorting by a MultiIndex column#
+You must be explicit about sorting when the column is a MultiIndex, and fully specify
+all levels to by.
+In [344]: df1.columns = pd.MultiIndex.from_tuples(
+   .....:     [("a", "one"), ("a", "two"), ("b", "three")]
+   .....: )
+   .....: 
+
+In [345]: df1.sort_values(by=("a", "two"))
+Out[345]: 
+    a         b
+  one two three
+0   2   1     5
+2   1   2     3
+1   1   3     4
+3   1   4     2
+
+
+
+
+
+Copying#
+The copy() method on pandas objects copies the underlying data (though not
+the axis indexes, since they are immutable) and returns a new object. Note that
+it is seldom necessary to copy objects. For example, there are only a
+handful of ways to alter a DataFrame in-place:
+
+Inserting, deleting, or modifying a column.
+Assigning to the index or columns attributes.
+For homogeneous data, directly modifying the values via the values
+attribute or advanced indexing.
+
+To be clear, no pandas method has the side effect of modifying your data;
+almost every method returns a new object, leaving the original object
+untouched. If the data is modified, it is because you did so explicitly.
+
+
+dtypes#
+For the most part, pandas uses NumPy arrays and dtypes for Series or individual
+columns of a DataFrame. NumPy provides support for float,
+int, bool, timedelta64[ns] and datetime64[ns] (note that NumPy
+does not support timezone-aware datetimes).
+pandas and third-party libraries extend NumPy’s type system in a few places.
+This section describes the extensions pandas has made internally.
+See Extension types for how to write your own extension that
+works with pandas. See the ecosystem page for a list of third-party
+libraries that have implemented an extension.
+The following table lists all of pandas extension types. For methods requiring dtype
+arguments, strings can be specified as indicated. See the respective
+documentation sections for more on each type.
+
+
+Kind of Data
+Data Type
+Scalar
+Array
+String Aliases
+
+
+
+tz-aware datetime
+DatetimeTZDtype
+Timestamp
+arrays.DatetimeArray
+'datetime64[ns, <tz>]'
+
+Categorical
+CategoricalDtype
+(none)
+Categorical
+'category'
+
+period (time spans)
+PeriodDtype
+Period
+arrays.PeriodArray
+'Period[<freq>]'
+'period[<freq>]',
+
+sparse
+SparseDtype
+(none)
+arrays.SparseArray
+'Sparse', 'Sparse[int]',
+'Sparse[float]'
+
+intervals
+IntervalDtype
+Interval
+arrays.IntervalArray
+'interval', 'Interval',
+'Interval[<numpy_dtype>]',
+'Interval[datetime64[ns, <tz>]]',
+'Interval[timedelta64[<freq>]]'
+
+nullable integer
+Int64Dtype, …
+(none)
+arrays.IntegerArray
+'Int8', 'Int16', 'Int32',
+'Int64', 'UInt8', 'UInt16',
+'UInt32', 'UInt64'
+
+nullable float
+Float64Dtype, …
+(none)
+arrays.FloatingArray
+'Float32', 'Float64'
+
+Strings
+StringDtype
+str
+arrays.StringArray
+'string'
+
+Boolean (with NA)
+BooleanDtype
+bool
+arrays.BooleanArray
+'boolean'
+
+
+
+
+pandas has two ways to store strings.
+
+object dtype, which can hold any Python object, including strings.
+StringDtype, which is dedicated to strings.
+
+Generally, we recommend using StringDtype. See Text data types for more.
+Finally, arbitrary objects may be stored using the object dtype, but should
+be avoided to the extent possible (for performance and interoperability with
+other libraries and methods. See object conversion).
+A convenient dtypes attribute for DataFrame returns a Series
+with the data type of each column.
+In [346]: dft = pd.DataFrame(
+   .....:     {
+   .....:         "A": np.random.rand(3),
+   .....:         "B": 1,
+   .....:         "C": "foo",
+   .....:         "D": pd.Timestamp("20010102"),
+   .....:         "E": pd.Series([1.0] * 3).astype("float32"),
+   .....:         "F": False,
+   .....:         "G": pd.Series([1] * 3, dtype="int8"),
+   .....:     }
+   .....: )
+   .....: 
+
+In [347]: dft
+Out[347]: 
+          A  B    C          D    E      F  G
+0  0.035962  1  foo 2001-01-02  1.0  False  1
+1  0.701379  1  foo 2001-01-02  1.0  False  1
+2  0.281885  1  foo 2001-01-02  1.0  False  1
+
+In [348]: dft.dtypes
+Out[348]: 
+A           float64
+B             int64
+C               str
+D    datetime64[us]
+E           float32
+F              bool
+G              int8
+dtype: object
+
+
+On a Series object, use the dtype attribute.
+In [349]: dft["A"].dtype
+Out[349]: dtype('float64')
+
+
+If a pandas object contains data with multiple dtypes in a single column, the
+dtype of the column will be chosen to accommodate all of the data types
+(object is the most general).
+# these ints are coerced to floats
+In [350]: pd.Series([1, 2, 3, 4, 5, 6.0])
+Out[350]: 
+0    1.0
+1    2.0
+2    3.0
+3    4.0
+4    5.0
+5    6.0
+dtype: float64
+
+# string data forces an ``object`` dtype
+In [351]: pd.Series([1, 2, 3, 6.0, "foo"])
+Out[351]: 
+0      1
+1      2
+2      3
+3    6.0
+4    foo
+dtype: object
+
+
+The number of columns of each type in a DataFrame can be found by calling
+DataFrame.dtypes.value_counts().
+In [352]: dft.dtypes.value_counts()
+Out[352]: 
+float64           1
+int64             1
+str               1
+datetime64[us]    1
+float32           1
+bool              1
+int8              1
+Name: count, dtype: int64
+
+
+Numeric dtypes will propagate and can coexist in DataFrames.
+If a dtype is passed (either directly via the dtype keyword, a passed ndarray,
+or a passed Series), then it will be preserved in DataFrame operations. Furthermore,
+different numeric dtypes will NOT be combined. The following example will give you a taste.
+In [353]: df1 = pd.DataFrame(np.random.randn(8, 1), columns=["A"], dtype="float64")
+
+In [354]: df1
+Out[354]: 
+          A
+0  0.224364
+1  1.890546
+2  0.182879
+3  0.787847
+4 -0.188449
+5  0.667715
+6 -0.011736
+7 -0.399073
+
+In [355]: df1.dtypes
+Out[355]: 
+A    float64
+dtype: object
+
+In [356]: df2 = pd.DataFrame(
+   .....:     {
+   .....:         "A": pd.Series(np.random.randn(8), dtype="float32"),
+   .....:         "B": pd.Series(np.random.randn(8)),
+   .....:         "C": pd.Series(np.random.randint(0, 255, size=8), dtype="uint8"),  # [0,255] (range of uint8)
+   .....:     }
+   .....: )
+   .....: 
+
+In [357]: df2
+Out[357]: 
+          A         B    C
+0  0.823270  0.256090   26
+1  1.607861  1.426469   86
+2 -0.333669 -0.416203   46
+3 -0.063467  1.139976  212
+4 -1.014637 -1.193477   26
+5  0.678758  0.096706    7
+6 -0.040865 -1.956850  184
+7 -0.357346 -0.714337  206
+
+In [358]: df2.dtypes
+Out[358]: 
+A    float32
+B    float64
+C      uint8
+dtype: object
+
+
+
+defaults#
+By default integer types are int64 and float types are float64,
+regardless of platform (32-bit or 64-bit).
+The following will all result in int64 dtypes.
+In [359]: pd.DataFrame([1, 2], columns=["a"]).dtypes
+Out[359]: 
+a    int64
+dtype: object
+
+In [360]: pd.DataFrame({"a": [1, 2]}).dtypes
+Out[360]: 
+a    int64
+dtype: object
+
+In [361]: pd.DataFrame({"a": 1}, index=list(range(2))).dtypes
+Out[361]: 
+a    int64
+dtype: object
+
+
+Note that Numpy will choose platform-dependent types when creating arrays.
+The following WILL result in int32 on 32-bit platform.
+In [362]: frame = pd.DataFrame(np.array([1, 2]))
+
+
+
+
+upcasting#
+Types can potentially be upcasted when combined with other types, meaning they are promoted
+from the current type (e.g. int to float).
+In [363]: df3 = df1.reindex_like(df2).fillna(value=0.0) + df2
+
+In [364]: df3
+Out[364]: 
+          A         B      C
+0  1.047634  0.256090   26.0
+1  3.498407  1.426469   86.0
+2 -0.150790 -0.416203   46.0
+3  0.724380  1.139976  212.0
+4 -1.203087 -1.193477   26.0
+5  1.346474  0.096706    7.0
+6 -0.052601 -1.956850  184.0
+7 -0.756419 -0.714337  206.0
+
+In [365]: df3.dtypes
+Out[365]: 
+A    float64
+B    float64
+C    float64
+dtype: object
+
+
+DataFrame.to_numpy() will return the lower-common-denominator of the dtypes, meaning
+the dtype that can accommodate ALL of the types in the resulting homogeneous dtyped NumPy array. This can
+force some upcasting.
+In [366]: df3.to_numpy().dtype
+Out[366]: dtype('float64')
+
+
+
+
+astype#
+You can use the astype() method to explicitly convert dtypes from one to another. These will by default return a copy,
+even if the dtype was unchanged (pass copy=False to change this behavior). In addition, they will raise an
+exception if the astype operation is invalid.
+Upcasting is always according to the NumPy rules. If two different dtypes are involved in an operation,
+then the more general one will be used as the result of the operation.
+In [367]: df3
+Out[367]: 
+          A         B      C
+0  1.047634  0.256090   26.0
+1  3.498407  1.426469   86.0
+2 -0.150790 -0.416203   46.0
+3  0.724380  1.139976  212.0
+4 -1.203087 -1.193477   26.0
+5  1.346474  0.096706    7.0
+6 -0.052601 -1.956850  184.0
+7 -0.756419 -0.714337  206.0
+
+In [368]: df3.dtypes
+Out[368]: 
+A    float64
+B    float64
+C    float64
+dtype: object
+
+# conversion of dtypes
+In [369]: df3.astype("float32").dtypes
+Out[369]: 
+A    float32
+B    float32
+C    float32
+dtype: object
+
+
+Convert a subset of columns to a specified type using astype().
+In [370]: dft = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+
+In [371]: dft[["a", "b"]] = dft[["a", "b"]].astype(np.uint8)
+
+In [372]: dft
+Out[372]: 
+   a  b  c
+0  1  4  7
+1  2  5  8
+2  3  6  9
+
+In [373]: dft.dtypes
+Out[373]: 
+a    uint8
+b    uint8
+c    int64
+dtype: object
+
+
+Convert certain columns to a specific dtype by passing a dict to astype().
+In [374]: dft1 = pd.DataFrame({"a": [1, 0, 1], "b": [4, 5, 6], "c": [7, 8, 9]})
+
+In [375]: dft1 = dft1.astype({"a": np.bool_, "c": np.float64})
+
+In [376]: dft1
+Out[376]: 
+       a  b    c
+0   True  4  7.0
+1  False  5  8.0
+2   True  6  9.0
+
+In [377]: dft1.dtypes
+Out[377]: 
+a       bool
+b      int64
+c    float64
+dtype: object
+
+
+
+Note
+When trying to convert a subset of columns to a specified type using astype()  and loc(), upcasting occurs.
+loc() tries to fit in what we are assigning to the current dtypes, while [] will overwrite them taking the dtype from the right hand side. Therefore the following piece of code produces the unintended result.
+In [378]: dft = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+
+In [379]: dft.loc[:, ["a", "b"]].astype(np.uint8).dtypes
+Out[379]: 
+a    uint8
+b    uint8
+dtype: object
+
+In [380]: dft.loc[:, ["a", "b"]] = dft.loc[:, ["a", "b"]].astype(np.uint8)
+
+In [381]: dft.dtypes
+Out[381]: 
+a    int64
+b    int64
+c    int64
+dtype: object
+
+
+
+
+
+object conversion#
+pandas offers various functions to try to force conversion of types from the object dtype to other types.
+In cases where the data is already of the correct type, but stored in an object array, the
+DataFrame.infer_objects() and Series.infer_objects() methods can be used to soft convert
+to the correct type.
+
+In [382]: import datetime
+
+In [383]: df = pd.DataFrame(
+   .....:     [
+   .....:         [1, 2],
+   .....:         ["a", "b"],
+   .....:         [datetime.datetime(2016, 3, 2), datetime.datetime(2016, 3, 2)],
+   .....:     ]
+   .....: )
+   .....: 
+
+In [384]: df = df.T
+
+In [385]: df
+Out[385]: 
+   0  1                    2
+0  1  a  2016-03-02 00:00:00
+1  2  b  2016-03-02 00:00:00
+
+In [386]: df.dtypes
+Out[386]: 
+0    object
+1    object
+2    object
+dtype: object
+
+
+
+Because the data was transposed the original inference stored all columns as object, which
+infer_objects will correct.
+
+In [387]: df.infer_objects().dtypes
+Out[387]: 
+0             int64
+1               str
+2    datetime64[us]
+dtype: object
+
+
+
+The following functions are available for one dimensional object arrays or scalars to perform
+hard conversion of objects to a specified type:
+
+to_numeric() (conversion to numeric dtypes)
+In [388]: m = ["1.1", 2, 3]
+
+In [389]: pd.to_numeric(m)
+Out[389]: array([1.1, 2. , 3. ])
+
+
+
+to_datetime() (conversion to datetime objects)
+In [390]: import datetime
+
+In [391]: m = ["2016-07-09", datetime.datetime(2016, 3, 2)]
+
+In [392]: pd.to_datetime(m)
+Out[392]: DatetimeIndex(['2016-07-09', '2016-03-02'], dtype='datetime64[us]', freq=None)
+
+
+
+to_timedelta() (conversion to timedelta objects)
+In [393]: m = ["5us", pd.Timedelta("1day")]
+
+In [394]: pd.to_timedelta(m)
+Out[394]: TimedeltaIndex(['0 days 00:00:00.000005', '1 days 00:00:00'], dtype='timedelta64[us]', freq=None)
+
+
+
+
+To force a conversion, we can pass in an errors argument, which specifies how pandas should deal with elements
+that cannot be converted to desired dtype or object. By default, errors='raise', meaning that any errors encountered
+will be raised during the conversion process. However, if errors='coerce', these errors will be ignored and pandas
+will convert problematic elements to pd.NaT (for datetime and timedelta) or np.nan (for numeric). This might be
+useful if you are reading in data which is mostly of the desired dtype (e.g. numeric, datetime), but occasionally has
+non-conforming elements intermixed that you want to represent as missing:
+In [395]: import datetime
+
+In [396]: m = ["apple", datetime.datetime(2016, 3, 2)]
+
+In [397]: pd.to_datetime(m, errors="coerce")
+Out[397]: DatetimeIndex(['NaT', '2016-03-02'], dtype='datetime64[us]', freq=None)
+
+In [398]: m = ["apple", 2, 3]
+
+In [399]: pd.to_numeric(m, errors="coerce")
+Out[399]: array([nan,  2.,  3.])
+
+In [400]: m = ["apple", pd.Timedelta("1day")]
+
+In [401]: pd.to_timedelta(m, errors="coerce")
+Out[401]: TimedeltaIndex([NaT, '1 days'], dtype='timedelta64[us]', freq=None)
+
+
+In addition to object conversion, to_numeric() provides another argument downcast, which gives the
+option of downcasting the newly (or already) numeric data to a smaller dtype, which can conserve memory:
+In [402]: m = ["1", 2, 3]
+
+In [403]: pd.to_numeric(m, downcast="integer")  # smallest signed int dtype
+Out[403]: array([1, 2, 3], dtype=int8)
+
+In [404]: pd.to_numeric(m, downcast="signed")  # same as 'integer'
+Out[404]: array([1, 2, 3], dtype=int8)
+
+In [405]: pd.to_numeric(m, downcast="unsigned")  # smallest unsigned int dtype
+Out[405]: array([1, 2, 3], dtype=uint8)
+
+In [406]: pd.to_numeric(m, downcast="float")  # smallest float dtype
+Out[406]: array([1., 2., 3.], dtype=float32)
+
+
+As these methods apply only to one-dimensional arrays, lists or scalars; they cannot be used directly on multi-dimensional objects such
+as DataFrames. However, with apply(), we can “apply” the function over each column efficiently:
+In [407]: import datetime
+
+In [408]: df = pd.DataFrame([["2016-07-09", datetime.datetime(2016, 3, 2)]] * 2, dtype="O")
+
+In [409]: df
+Out[409]: 
+            0                    1
+0  2016-07-09  2016-03-02 00:00:00
+1  2016-07-09  2016-03-02 00:00:00
+
+In [410]: df.apply(pd.to_datetime)
+Out[410]: 
+           0          1
+0 2016-07-09 2016-03-02
+1 2016-07-09 2016-03-02
+
+In [411]: df = pd.DataFrame([["1.1", 2, 3]] * 2, dtype="O")
+
+In [412]: df
+Out[412]: 
+     0  1  2
+0  1.1  2  3
+1  1.1  2  3
+
+In [413]: df.apply(pd.to_numeric)
+Out[413]: 
+     0  1  2
+0  1.1  2  3
+1  1.1  2  3
+
+In [414]: df = pd.DataFrame([["5us", pd.Timedelta("1day")]] * 2, dtype="O")
+
+In [415]: df
+Out[415]: 
+     0                1
+0  5us  1 days 00:00:00
+1  5us  1 days 00:00:00
+
+In [416]: df.apply(pd.to_timedelta)
+Out[416]: 
+                       0      1
+0 0 days 00:00:00.000005 1 days
+1 0 days 00:00:00.000005 1 days
+
+
+
+
+gotchas#
+Performing selection operations on integer type data can easily upcast the data to floating.
+The dtype of the input data will be preserved in cases where nans are not introduced.
+See also Support for integer NA.
+In [417]: dfi = df3.astype("int32")
+
+In [418]: dfi["E"] = 1
+
+In [419]: dfi
+Out[419]: 
+   A  B    C  E
+0  1  0   26  1
+1  3  1   86  1
+2  0  0   46  1
+3  0  1  212  1
+4 -1 -1   26  1
+5  1  0    7  1
+6  0 -1  184  1
+7  0  0  206  1
+
+In [420]: dfi.dtypes
+Out[420]: 
+A    int32
+B    int32
+C    int32
+E    int64
+dtype: object
+
+In [421]: casted = dfi[dfi > 0]
+
+In [422]: casted
+Out[422]: 
+     A    B    C  E
+0  1.0  NaN   26  1
+1  3.0  1.0   86  1
+2  NaN  NaN   46  1
+3  NaN  1.0  212  1
+4  NaN  NaN   26  1
+5  1.0  NaN    7  1
+6  NaN  NaN  184  1
+7  NaN  NaN  206  1
+
+In [423]: casted.dtypes
+Out[423]: 
+A    float64
+B    float64
+C      int32
+E      int64
+dtype: object
+
+
+While float dtypes are unchanged.
+In [424]: dfa = df3.copy()
+
+In [425]: dfa["A"] = dfa["A"].astype("float32")
+
+In [426]: dfa.dtypes
+Out[426]: 
+A    float32
+B    float64
+C    float64
+dtype: object
+
+In [427]: casted = dfa[df2 > 0]
+
+In [428]: casted
+Out[428]: 
+          A         B      C
+0  1.047634  0.256090   26.0
+1  3.498407  1.426469   86.0
+2       NaN       NaN   46.0
+3       NaN  1.139976  212.0
+4       NaN       NaN   26.0
+5  1.346474  0.096706    7.0
+6       NaN       NaN  184.0
+7       NaN       NaN  206.0
+
+In [429]: casted.dtypes
+Out[429]: 
+A    float32
+B    float64
+C    float64
+dtype: object
+
+
+
+
+
+Selecting columns based on dtype#
+The select_dtypes() method implements subsetting of columns
+based on their dtype.
+First, let’s create a DataFrame with a slew of different
+dtypes:
+In [430]: df = pd.DataFrame(
+   .....:     {
+   .....:         "string": list("abc"),
+   .....:         "int64": list(range(1, 4)),
+   .....:         "uint8": np.arange(3, 6).astype("u1"),
+   .....:         "float64": np.arange(4.0, 7.0),
+   .....:         "bool1": [True, False, True],
+   .....:         "bool2": [False, True, False],
+   .....:         "dates": pd.date_range("now", periods=3),
+   .....:         "category": pd.Series(list("ABC")).astype("category"),
+   .....:     }
+   .....: )
+   .....: 
+
+In [431]: df["tdeltas"] = df.dates.diff()
+
+In [432]: df["uint64"] = np.arange(3, 6).astype("u8")
+
+In [433]: df["other_dates"] = pd.date_range("20130101", periods=3)
+
+In [434]: df["tz_aware_dates"] = pd.date_range("20130101", periods=3, tz="US/Eastern")
+
+In [435]: df
+Out[435]: 
+  string  int64  uint8  ...  uint64  other_dates            tz_aware_dates
+0      a      1      3  ...       3   2013-01-01 2013-01-01 00:00:00-05:00
+1      b      2      4  ...       4   2013-01-02 2013-01-02 00:00:00-05:00
+2      c      3      5  ...       5   2013-01-03 2013-01-03 00:00:00-05:00
+
+[3 rows x 12 columns]
+
+
+And the dtypes:
+In [436]: df.dtypes
+Out[436]: 
+string                                   str
+int64                                  int64
+uint8                                  uint8
+float64                              float64
+bool1                                   bool
+bool2                                   bool
+dates                         datetime64[us]
+category                            category
+tdeltas                      timedelta64[us]
+uint64                                uint64
+other_dates                   datetime64[us]
+tz_aware_dates    datetime64[us, US/Eastern]
+dtype: object
+
+
+select_dtypes() has two parameters include and exclude that allow you to
+say “give me the columns with these dtypes” (include) and/or “give the
+columns without these dtypes” (exclude).
+For example, to select bool columns:
+In [437]: df.select_dtypes(include=[bool])
+Out[437]: 
+   bool1  bool2
+0   True  False
+1  False   True
+2   True  False
+
+
+You can also pass the name of a dtype in the NumPy dtype hierarchy:
+In [438]: df.select_dtypes(include=["bool"])
+Out[438]: 
+   bool1  bool2
+0   True  False
+1  False   True
+2   True  False
+
+
+select_dtypes() also works with generic dtypes as well.
+For example, to select all numeric and boolean columns while excluding unsigned
+integers:
+In [439]: df.select_dtypes(include=["number", "bool"], exclude=["unsignedinteger"])
+Out[439]: 
+   int64  float64  bool1  bool2 tdeltas
+0      1      4.0   True  False     NaT
+1      2      5.0  False   True  1 days
+2      3      6.0   True  False  1 days
+
+
+To select string columns include str:
+In [440]: df.select_dtypes(include=[str])
+Out[440]: 
+  string
+0      a
+1      b
+2      c
+
+
+
+Note
+This is a change in pandas 3.0. Previously strings were stored in object
+dtype columns, so would be selected with include=[object]. See
+the migration guide for details on
+how to write code that works with both versions.
+
+To see all the child dtypes of a generic dtype like numpy.number you
+can define a function that returns a tree of child dtypes:
+In [441]: def subdtypes(dtype):
+   .....:     subs = dtype.__subclasses__()
+   .....:     if not subs:
+   .....:         return dtype
+   .....:     return [dtype, [subdtypes(dt) for dt in subs]]
+   .....: 
+
+
+All NumPy dtypes are subclasses of numpy.generic:
+In [442]: subdtypes(np.generic)
+Out[442]: 
+[numpy.generic,
+ [[numpy.number,
+   [[numpy.integer,
+     [[numpy.signedinteger,
+       [numpy.int8,
+        numpy.int16,
+        numpy.int32,
+        numpy.int64,
+        numpy.longlong,
+        numpy.timedelta64]],
+      [numpy.unsignedinteger,
+       [numpy.uint8,
+        numpy.uint16,
+        numpy.uint32,
+        numpy.uint64,
+        numpy.ulonglong]]]],
+    [numpy.inexact,
+     [[numpy.floating,
+       [numpy.float16, numpy.float32, numpy.float64, numpy.longdouble]],
+      [numpy.complexfloating,
+       [numpy.complex64, numpy.complex128, numpy.clongdouble]]]]]],
+  [numpy.flexible,
+   [[numpy.character, [numpy.bytes_, numpy.str_]],
+    [numpy.void, [numpy.record]]]],
+  numpy.bool,
+  numpy.datetime64,
+  numpy.object_]]
+
+
+
+Note
+pandas also defines the types category, and datetime64[ns, tz], which are not integrated into the normal
+NumPy hierarchy and won’t show up with the above function.
+
+
+
+
+
+
+
+
+
+previous
+Intro to data structures
+
+
+
+
+next
+IO tools (text, CSV, HDF5, …)
+
+
+
+
+
+
+
+
+
+
+ On this page
+  
+
+
+Head and tail
+Attributes and underlying data
+Accelerated operations
+Flexible binary operations
+Matching / broadcasting behavior
+Missing data / operations with fill values
+Flexible comparisons
+Boolean reductions
+Comparing if objects are equivalent
+Comparing array-like objects
+Combining overlapping data sets
+General DataFrame combine
+
+
+Descriptive statistics
+Summarizing data: describe
+Index of min/max values
+Value counts (histogramming) / mode
+Discretization and quantiling
+
+
+Function application
+Tablewise function application
+Row or column-wise function application
+Aggregation API
+Aggregating with multiple functions
+Aggregating with a dict
+Custom describe
+
+
+Transform API
+Transform with multiple functions
+Transforming with a dict
+
+
+Applying elementwise functions
+
+
+Reindexing and altering labels
+Reindexing to align with another object
+Aligning objects with each other with align
+Filling while reindexing
+Limits on filling while reindexing
+Dropping labels from an axis
+Renaming / mapping labels
+
+
+Iteration
+items
+iterrows
+itertuples
+
+
+.dt accessor
+Vectorized string methods
+Sorting
+By index
+By values
+By indexes and values
+searchsorted
+smallest / largest values
+Sorting by a MultiIndex column
+
+
+Copying
+dtypes
+defaults
+upcasting
+astype
+object conversion
+gotchas
+
+
+Selecting columns based on dtype
+
+ 1    bb
+ 2    c-
+ 3    dd
+ 4    -e
+dtype: str
+
+
+The same alignment can be used when others is a DataFrame:
+In [79]: f = d.loc[[3, 2, 1, 0], :]
+
+In [80]: s
+Out[80]: 
+0    a
+1    b
+2    c
+3    d
+dtype: str
+
+In [81]: f
+Out[81]: 
+     0  1
+3    d  d
+2  NaN  c
+1    b  b
+0    a  a
+
+In [82]: s.str.cat(f, join="left", na_rep="-")
+Out[82]: 
+0    aaa
+1    bbb
+2    c-c
+3    ddd
+dtype: str
+
+
+
+
+Concatenating a Series and many objects into a Series#
+Several array-like items (specifically: Series, Index, and 1-dimensional variants of np.ndarray)
+can be combined in a list-like container (including iterators, dict-views, etc.).
+In [83]: s
+Out[83]: 
+0    a
+1    b
+2    c
+3    d
+dtype: str
+
+In [84]: u
+Out[84]: 
+1    b
+3    d
+0    a
+2    c
+dtype: str
+
+In [85]: s.str.cat([u, u.to_numpy()], join="left")
+Out[85]: 
+0    aab
+1    bbd
+2    cca
+3    ddc
+dtype: str
+
+
+All elements without an index (e.g. np.ndarray) within the passed list-like must match in length to the calling Series (or Index),
+but Series and Index may have arbitrary length (as long as alignment is not disabled with join=None):
+In [86]: v
+Out[86]: 
+-1    z
+ 0    a
+ 1    b
+ 3    d
+ 4    e
+dtype: str
+
+In [87]: s.str.cat([v, u, u.to_numpy()], join="outer", na_rep="-")
+Out[87]: 
+-1    -z--
+0     aaab
+1     bbbd
+2     c-ca
+3     dddc
+4     -e--
+dtype: str
+
+
+If using join='right' on a list-like of others that contains different indexes,
+the union of these indexes will be used as the basis for the final concatenation:
+In [88]: u.loc[[3]]
+Out[88]: 
+3    d
+dtype: str
+
+In [89]: v.loc[[-1, 0]]
+Out[89]: 
+-1    z
+ 0    a
+dtype: str
+
+In [90]: s.str.cat([u.loc[[3]], v.loc[[-1, 0]]], join="right", na_rep="-")
+Out[90]: 
+ 3    dd-
+-1    --z
+ 0    a-a
+dtype: str
+
+
+
+
+
+Indexing with .str#
+You can use [] notation to directly index by position locations. If you index past the end
+of the string, the result will be a NaN.
+In [91]: s = pd.Series(
+   ....:     ["A", "B", "C", "Aaba", "Baca", np.nan, "CABA", "dog", "cat"], dtype="str"
+   ....: )
+   ....: 
+
+In [92]: s.str[0]
+Out[92]: 
+0      A
+1      B
+2      C
+3      A
+4      B
+5    NaN
+6      C
+7      d
+8      c
+dtype: str
+
+In [93]: s.str[1]
+Out[93]: 
+0    NaN
+1    NaN
+2    NaN
+3      a
+4      a
+5    NaN
+6      A
+7      o
+8      a
+dtype: str
+
+
+
+
+Extracting substrings#
+
+Extract first match in each subject (extract)#
+The extract method accepts a regular expression with at least one
+capture group.
+Extracting a regular expression with more than one group returns a
+DataFrame with one column per group.
+In [94]: pd.Series(
+   ....:     ["a1", "b2", "c3"],
+   ....:     dtype="str",
+   ....: ).str.extract(r"([ab])(\d)", expand=False)
+   ....: 
+Out[94]: 
+     0    1
+0    a    1
+1    b    2
+2  NaN  NaN
+
+
+Elements that do not match return a row filled with NaN. Thus, a
+Series of messy strings can be “converted” into a like-indexed Series
+or DataFrame of cleaned-up or more useful strings, without
+necessitating get() to access tuples or re.match objects. The
+dtype of the result is always object, even if no match is found and
+the result only contains NaN.
+Named groups like
+In [95]: pd.Series(["a1", "b2", "c3"], dtype="str").str.extract(
+   ....:     r"(?P<letter>[ab])(?P<digit>\d)", expand=False
+   ....: )
+   ....: 
+Out[95]: 
+  letter digit
+0      a     1
+1      b     2
+2    NaN   NaN
+
+
+and optional groups like
+In [96]: pd.Series(
+   ....:     ["a1", "b2", "3"],
+   ....:     dtype="str",
+   ....: ).str.extract(r"([ab])?(\d)", expand=False)
+   ....: 
+Out[96]: 
+     0  1
+0    a  1
+1    b  2
+2  NaN  3
+
+
+can also be used. Note that any capture group names in the regular
+expression will be used for column names; otherwise capture group
+numbers will be used.
+Extracting a regular expression with one group returns a DataFrame
+with one column if expand=True.
+In [97]: pd.Series(["a1", "b2", "c3"], dtype="str").str.extract(r"[ab](\d)", expand=True)
+Out[97]: 
+     0
+0    1
+1    2
+2  NaN
+
+
+It returns a Series if expand=False.
+In [98]: pd.Series(["a1", "b2", "c3"], dtype="str").str.extract(r"[ab](\d)", expand=False)
+Out[98]: 
+0      1
+1      2
+2    NaN
+dtype: str
+
+
+Calling on an Index with a regex with exactly one capture group
+returns a DataFrame with one column if expand=True.
+In [99]: s = pd.Series(["a1", "b2", "c3"], ["A11", "B22", "C33"], dtype="str")
+
+In [100]: s
+Out[100]: 
+A11    a1
+B22    b2
+C33    c3
+dtype: str
+
+In [101]: s.index.str.extract("(?P<letter>[a-zA-Z])", expand=True)
+Out[101]: 
+  letter
+0      A
+1      B
+2      C
+
+
+It returns an Index if expand=False.
+In [102]: s.index.str.extract("(?P<letter>[a-zA-Z])", expand=False)
+Out[102]: Index(['A', 'B', 'C'], dtype='str', name='letter')
+
+
+Calling on an Index with a regex with more than one capture group
+returns a DataFrame if expand=True.
+In [103]: s.index.str.extract("(?P<letter>[a-zA-Z])([0-9]+)", expand=True)
+Out[103]: 
+  letter   1
+0      A  11
+1      B  22
+2      C  33
+
+
+It raises ValueError if expand=False.
+In [104]: s.index.str.extract("(?P<letter>[a-zA-Z])([0-9]+)", expand=False)
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+Cell In[104], line 1
+----> 1 s.index.str.extract("(?P<letter>[a-zA-Z])([0-9]+)", expand=False)
+
+File ~/work/pandas/pandas/pandas/core/strings/accessor.py:142, in forbid_nonstring_types.<locals>._forbid_nonstring_types.<locals>.wrapper(self, *args, **kwargs)
+    137     msg = (
+    138         f"Cannot use .str.{func_name} with values of "
+    139         f"inferred dtype '{self._inferred_dtype}'."
+    140     )
+    141     raise TypeError(msg)
+--> 142 return func(self, *args, **kwargs)
+
+File ~/work/pandas/pandas/pandas/core/strings/accessor.py:3425, in StringMethods.extract(self, pat, flags, expand)
+   3422     raise ValueError("pattern contains no capture groups")
+   3424 if not expand and regex.groups > 1 and isinstance(self._data, ABCIndex):
+-> 3425     raise ValueError("only one regex group is supported with Index")
+   3427 obj = self._data
+   3428 result_dtype = _result_dtype(obj)
+
+ValueError: only one regex group is supported with Index
+
+
+The table below summarizes the behavior of extract(expand=False)
+(input subject in first column, number of groups in regex in
+first row)
+
+
+
+1 group
+>1 group
+
+Index
+Index
+ValueError
+
+Series
+Series
+DataFrame
+
+
+
+
+
+
+Extract all matches in each subject (extractall)#
+Unlike extract (which returns only the first match),
+In [105]: s = pd.Series(["a1a2", "b1", "c1"], index=["A", "B", "C"], dtype="str")
+
+In [106]: s
+Out[106]: 
+A    a1a2
+B      b1
+C      c1
+dtype: str
+
+In [107]: two_groups = "(?P<letter>[a-z])(?P<digit>[0-9])"
+
+In [108]: s.str.extract(two_groups, expand=True)
+Out[108]: 
+  letter digit
+A      a     1
+B      b     1
+C      c     1
+
+
+the extractall method returns every match. The result of
+extractall is always a DataFrame with a MultiIndex on its
+rows. The last level of the MultiIndex is named match and
+indicates the order in the subject.
+In [109]: s.str.extractall(two_groups)
+Out[109]: 
+        letter digit
+  match             
+A 0          a     1
+  1          a     2
+B 0          b     1
+C 0          c     1
+
+
+When each subject string in the Series has exactly one match,
+In [110]: s = pd.Series(["a3", "b3", "c2"], dtype="str")
+
+In [111]: s
+Out[111]: 
+0    a3
+1    b3
+2    c2
+dtype: str
+
+
+then extractall(pat).xs(0, level='match') gives the same result as
+extract(pat).
+In [112]: extract_result = s.str.extract(two_groups, expand=True)
+
+In [113]: extract_result
+Out[113]: 
+  letter digit
+0      a     3
+1      b     3
+2      c     2
+
+In [114]: extractall_result = s.str.extractall(two_groups)
+
+In [115]: extractall_result
+Out[115]: 
+        letter digit
+  match             
+0 0          a     3
+1 0          b     3
+2 0          c     2
+
+In [116]: extractall_result.xs(0, level="match")
+Out[116]: 
+  letter digit
+0      a     3
+1      b     3
+2      c     2
+
+
+Index also supports .str.extractall. It returns a DataFrame which has the
+same result as a Series.str.extractall with a default index (starts from 0).
+In [117]: pd.Index(["a1a2", "b1", "c1"]).str.extractall(two_groups)
+Out[117]: 
+        letter digit
+  match             
+0 0          a     1
+  1          a     2
+1 0          b     1
+2 0          c     1
+
+In [118]: pd.Series(["a1a2", "b1", "c1"], dtype="str").str.extractall(two_groups)
+Out[118]: 
+        letter digit
+  match             
+0 0          a     1
+  1          a     2
+1 0          b     1
+2 0          c     1
+
+
+
+
+
+Testing for strings that match or contain a pattern#
+You can check whether elements contain a pattern:
+In [119]: pattern = r"[0-9][a-z]"
+
+In [120]: pd.Series(
+   .....:     ["1", "2", "3a", "3b", "03c", "4dx"],
+   .....:     dtype="str",
+   .....: ).str.contains(pattern)
+   .....: 
+Out[120]: 
+0    False
+1    False
+2     True
+3     True
+4     True
+5     True
+dtype: bool
+
+
+Or whether elements match a pattern:
+In [121]: pd.Series(
+   .....:     ["1", "2", "3a", "3b", "03c", "4dx"],
+   .....:     dtype="str",
+   .....: ).str.match(pattern)
+   .....: 
+Out[121]: 
+0    False
+1    False
+2     True
+3     True
+4    False
+5     True
+dtype: bool
+
+
+In [122]: pd.Series(
+   .....:     ["1", "2", "3a", "3b", "03c", "4dx"],
+   .....:     dtype="str",
+   .....: ).str.fullmatch(pattern)
+   .....: 
+Out[122]: 
+0    False
+1    False
+2     True
+3     True
+4    False
+5    False
+dtype: bool
+
+
+
+Note
+The distinction between match, fullmatch, and contains is strictness:
+fullmatch tests whether the entire string matches the regular expression;
+match tests whether there is a match of the regular expression that begins
+at the first character of the string; and contains tests whether there is
+a match of the regular expression at any position within the string.
+The corresponding functions in the re package for these three match modes are
+re.fullmatch,
+re.match, and
+re.search,
+respectively.
+
+Methods like match, fullmatch, contains, startswith, and
+endswith take an extra na argument so missing values can be considered
+True or False:
+In [123]: s4 = pd.Series(
+   .....:     ["A", "B", "C", "Aaba", "Baca", np.nan, "CABA", "dog", "cat"], dtype="str"
+   .....: )
+   .....: 
+
+In [124]: s4.str.contains("A", na=False)
+Out[124]: 
+0     True
+1    False
+2    False
+3     True
+4    False
+5    False
+6     True
+7    False
+8    False
+dtype: bool
+
+
+
+
+Creating indicator variables#
+You can extract dummy variables from string columns.
+For example if they are separated by a '|':
+In [125]: s = pd.Series(["a", "a|b", np.nan, "a|c"], dtype="str")
+
+In [126]: s.str.get_dummies(sep="|")
+Out[126]: 
+   a  b  c
+0  1  0  0
+1  1  1  0
+2  0  0  0
+3  1  0  1
+
+
+String Index also supports get_dummies which returns a MultiIndex.
+In [127]: idx = pd.Index(["a", "a|b", np.nan, "a|c"])
+
+In [128]: idx.str.get_dummies(sep="|")
+Out[128]: 
+MultiIndex([(1, 0, 0),
+            (1, 1, 0),
+            (0, 0, 0),
+            (1, 0, 1)],
+           names=['a', 'b', 'c'])
+
+
+See also get_dummies().
+
+
+Behavior differences#
+Differences in behavior will be primarily due to the kind of NA value.
+
+StringDtype with np.nan NA values#
+
+Like dtype="object", string accessor methods
+that return integer output will return a NumPy array that is
+either dtype int or float depending on the presence of NA values.
+Methods returning boolean output will return a NumPy array this is
+dtype bool, with the value False when an NA value is encountered.
+In [129]: s = pd.Series(["a", None, "b"], dtype="str")
+
+In [130]: s
+Out[130]: 
+0      a
+1    NaN
+2      b
+dtype: str
+
+In [131]: s.str.count("a")
+Out[131]: 
+0    1.0
+1    NaN
+2    0.0
+dtype: float64
+
+In [132]: s.dropna().str.count("a")
+Out[132]: 
+0    1
+2    0
+dtype: int64
+
+
+When NA values are present, the output dtype is float64. However
+boolean output results in False for the NA values.
+In [133]: s.str.isdigit()
+Out[133]: 
+0    False
+1    False
+2    False
+dtype: bool
+
+In [134]: s.str.match("a")
+Out[134]: 
+0     True
+1    False
+2    False
+dtype: bool
+
+
+
+Some string methods, like Series.str.decode(), are not
+available because the underlying array can only contain
+strings, not bytes.
+Comparison operations will return a NumPy array with dtype bool. Missing
+values will always compare as unequal just as np.nan does.
+
+
+
+StringDtype with pd.NA NA values#
+
+String accessor methods
+that return integer output will always return a nullable integer dtype,
+rather than either int or float dtype (depending on the presence of NA values).
+Methods returning boolean output will return a nullable boolean dtype.
+In [135]: s = pd.Series(["a", None, "b"], dtype="string")
+
+In [136]: s
+Out[136]: 
+0       a
+1    <NA>
+2       b
+dtype: string
+
+In [137]: s.str.count("a")
+Out[137]: 
+0       1
+1    <NA>
+2       0
+dtype: Int64
+
+In [138]: s.dropna().str.count("a")
+Out[138]: 
+0    1
+2    0
+dtype: Int64
+
+
+Both outputs are Int64 dtype. Similarly for methods returning boolean values.
+In [139]: s.str.isdigit()
+Out[139]: 
+0    False
+1     <NA>
+2    False
+dtype: boolean
+
+In [140]: s.str.match("a")
+Out[140]: 
+0     True
+1     <NA>
+2    False
+dtype: boolean
+
+
+
+Some string methods, like Series.str.decode() because the underlying
+array can only contain strings, not bytes.
+Comparison operations will return an object with BooleanDtype,
+rather than a bool dtype object. Missing values will propagate
+in comparison operations, rather than always comparing
+unequal like numpy.nan.
+
+
+Important
+Everything else that follows in the rest of this document applies equally to
+'str', 'string', and object dtype.
+
+
+
+
+The four StringDtype variants#
+There are four StringDtype variants that are available to users,
+controlled by the storage and na_value parameters of StringDtype.
+At runtime, these can be checked via the StringDtype.storage
+and StringDtype.na_value attributes.
+
+Python storage with np.nan values#
+
+Note
+This is the same as dtype='str' when PyArrow is not installed.
+
+The implementation uses a NumPy object array, which directly stores the
+Python string objects, hence why the storage here is called 'python'.
+NA values in this array are represented and behave as np.nan.
+In [141]: pd.Series(
+   .....:     ["a", "b", None, np.nan, pd.NA],
+   .....:     dtype=pd.StringDtype(storage="python", na_value=np.nan)
+   .....: )
+   .....: 
+Out[141]: 
+0      a
+1      b
+2    NaN
+3    NaN
+4    NaN
+dtype: str
+
+
+Notice that the last three values are all inferred by pandas as being
+NA values, and hence stored as np.nan.
+
+
+PyArrow storage with np.nan values#
+
+Note
+This is the same as dtype='str' when PyArrow is installed.
+
+The implementation uses a PyArrow array, however NA values in this array
+are represented and behave as np.nan.
+In [142]: pd.Series(
+   .....:     ["a", "b", None, np.nan, pd.NA],
+   .....:     dtype=pd.StringDtype(storage="pyarrow", na_value=np.nan)
+   .....: )
+   .....: 
+Out[142]: 
+0      a
+1      b
+2    NaN
+3    NaN
+4    NaN
+dtype: str
+
+
+Notice that the last three values are all inferred by pandas as being
+NA values, and hence stored as np.nan.
+
+
+Python storage with pd.NA values#
+
+Note
+This is the same as dtype='string' when PyArrow is not installed.
+
+The implementation uses a NumPy object array, which directly stores the
+Python string objects, hence why the storage here is called 'python'.
+NA values in this array are represented and behave as np.nan.
+In [143]: pd.Series(
+   .....:     ["a", "b", None, np.nan, pd.NA],
+   .....:     dtype=pd.StringDtype(storage="python", na_value=pd.NA)
+   .....: )
+   .....: 
+Out[143]: 
+0       a
+1       b
+2    <NA>
+3    <NA>
+4    <NA>
+dtype: string
+
+
+Notice that the last three values are all inferred by pandas as
+being an NA values, and hence stored as pd.NA.
+
+
+PyArrow storage with pd.NA values#
+
+Note
+This is the same as dtype='string' when PyArrow is installed.
+
+The implementation uses a PyArrow array. NA values in this array are
+represented and behave as pd.NA.
+In [144]: pd.Series(
+   .....:     ["a", "b", None, np.nan, pd.NA],
+   .....:     dtype=pd.StringDtype(storage="python", na_value=pd.NA)
+   .....: )
+   .....: 
+Out[144]: 
+0       a
+1       b
+2    <NA>
+3    <NA>
+4    <NA>
+dtype: string
+
+
+Notice that the last three values are all inferred by pandas as being an NA
+values, and hence stored as pd.NA.
+
+
+
+Method summary#
+
+
+
+
 
 
 Method
-Outlier detection
-Novelty detection
-
-
-
-fit_predict
-OK
-Not available
-
-predict
-Not available
-Use only on new data
+Description
 
-decision_function
-Not available
-Use only on new data
 
-score_samples
-Use negative_outlier_factor_
-Use only on new data
 
-negative_outlier_factor_
-OK
-OK
+cat()
+Concatenate strings
 
+split()
+Split strings on delimiter
 
+rsplit()
+Split strings on delimiter working from the end of the string
 
+get()
+Index into each element (retrieve i-th element)
 
+join()
+Join strings in each element of the Series with passed separator
 
-2.7.1. Overview of outlier detection methods#
-A comparison of the outlier detection algorithms in scikit-learn. Local
-Outlier Factor (LOF) does not show a decision boundary in black as it
-has no predict method to be applied on new data when it is used for outlier
-detection.
+get_dummies()
+Split strings on the delimiter returning DataFrame of dummy variables
 
+contains()
+Return boolean array if each string contains pattern/regex
 
+replace()
+Replace occurrences of pattern/regex/string with some other string or the return value of a callable given the occurrence
 
+removeprefix()
+Remove prefix from string i.e. only remove if string starts with prefix.
 
-ensemble.IsolationForest and neighbors.LocalOutlierFactor
-perform reasonably well on the data sets considered here.
-The svm.OneClassSVM is known to be sensitive to outliers and thus
-does not perform very well for outlier detection. That being said, outlier
-detection in high-dimension, or without any assumptions on the distribution
-of the inlying data is very challenging. svm.OneClassSVM may still
-be used with outlier detection but requires fine-tuning of its hyperparameter
-nu to handle outliers and prevent overfitting.
-linear_model.SGDOneClassSVM provides an implementation of a
-linear One-Class SVM with a linear complexity in the number of samples. This
-implementation is here used with a kernel approximation technique to obtain
-results similar to svm.OneClassSVM which uses a Gaussian kernel
-by default. Finally, covariance.EllipticEnvelope assumes the data is
-Gaussian and learns an ellipse. For more details on the different estimators
-refer to the example
-Comparing anomaly detection algorithms for outlier detection on toy datasets and the
-sections hereunder.
-Examples
+removesuffix()
+Remove suffix from string i.e. only remove if string ends with suffix.
 
-See Comparing anomaly detection algorithms for outlier detection on toy datasets
-for a comparison of the svm.OneClassSVM, the
-ensemble.IsolationForest, the
-neighbors.LocalOutlierFactor and
-covariance.EllipticEnvelope.
-See Evaluation of outlier detection estimators
-for an example showing how to evaluate outlier detection estimators,
-the neighbors.LocalOutlierFactor and the
-ensemble.IsolationForest, using ROC curves from
-metrics.RocCurveDisplay.
+repeat()
+Duplicate values (s.str.repeat(3) equivalent to x * 3)
 
+pad()
+Add whitespace to the sides of strings
 
+center()
+Equivalent to str.center
 
-2.7.2. Novelty Detection#
-Consider a data set of \(n\) observations from the same
-distribution described by \(p\) features.  Consider now that we
-add one more observation to that data set. Is the new observation so
-different from the others that we can doubt it is regular? (i.e. does
-it come from the same distribution?) Or on the contrary, is it so
-similar to the other that we cannot distinguish it from the original
-observations? This is the question addressed by the novelty detection
-tools and methods.
-In general, it is about to learn a rough, close frontier delimiting
-the contour of the initial observations distribution, plotted in
-embedding \(p\)-dimensional space. Then, if further observations
-lay within the frontier-delimited subspace, they are considered as
-coming from the same population as the initial
-observations. Otherwise, if they lay outside the frontier, we can say
-that they are abnormal with a given confidence in our assessment.
-The One-Class SVM has been introduced by Schölkopf et al. for that purpose
-and implemented in the Support Vector Machines module in the
-svm.OneClassSVM object. It requires the choice of a
-kernel and a scalar parameter to define a frontier.  The RBF kernel is
-usually chosen although there exists no exact formula or algorithm to
-set its bandwidth parameter. This is the default in the scikit-learn
-implementation. The nu parameter, also known as the margin of
-the One-Class SVM, corresponds to the probability of finding a new,
-but regular, observation outside the frontier.
-References
+ljust()
+Equivalent to str.ljust
 
-Estimating the support of a high-dimensional distribution
-Schölkopf, Bernhard, et al. Neural computation 13.7 (2001): 1443-1471.
-
-Examples
+rjust()
+Equivalent to str.rjust
 
-See One-class SVM with non-linear kernel (RBF) for visualizing the
-frontier learned around some data by a svm.OneClassSVM object.
-Species distribution modeling
+zfill()
+Equivalent to str.zfill
 
+wrap()
+Split long strings into lines with length less than a given width
 
+slice()
+Slice each string in the Series
 
+slice_replace()
+Replace slice in each string with passed value
 
+count()
+Count occurrences of pattern
 
+startswith()
+Equivalent to str.startswith(pat) for each element
 
-2.7.2.1. Scaling up the One-Class SVM#
-An online linear version of the One-Class SVM is implemented in
-linear_model.SGDOneClassSVM. This implementation scales linearly with
-the number of samples and can be used with a kernel approximation to
-approximate the solution of a kernelized svm.OneClassSVM whose
-complexity is at best quadratic in the number of samples. See section
-Online One-Class SVM for more details.
-Examples
+endswith()
+Equivalent to str.endswith(pat) for each element
 
-See One-Class SVM versus One-Class SVM using Stochastic Gradient Descent
-for an illustration of the approximation of a kernelized One-Class SVM
-with the linear_model.SGDOneClassSVM combined with kernel approximation.
+findall()
+Compute list of all occurrences of pattern/regex for each string
 
+match()
+Call re.match on each element returning matched groups as list
 
+extract()
+Call re.search on each element returning DataFrame with one row for each element and one column for each regex capture group
 
+extractall()
+Call re.findall on each element returning DataFrame with one row for each match and one column for each regex capture group
 
-2.7.3. Outlier Detection#
-Outlier detection is similar to novelty detection in the sense that
-the goal is to separate a core of regular observations from some
-polluting ones, called outliers. Yet, in the case of outlier
-detection, we don’t have a clean data set representing the population
-of regular observations that can be used to train any tool.
+len()
+Compute string lengths
 
-2.7.3.1. Fitting an elliptic envelope#
-One common way of performing outlier detection is to assume that the
-regular data come from a known distribution (e.g. data are Gaussian
-distributed). From this assumption, we generally try to define the
-“shape” of the data, and can define outlying observations as
-observations which stand far enough from the fit shape.
-The scikit-learn provides an object
-covariance.EllipticEnvelope that fits a robust covariance
-estimate to the data, and thus fits an ellipse to the central data
-points, ignoring points outside the central mode.
-For instance, assuming that the inlier data are Gaussian distributed, it
-will estimate the inlier location and covariance in a robust way (i.e.
-without being influenced by outliers). The Mahalanobis distances
-obtained from this estimate are used to derive a measure of outlyingness.
-This strategy is illustrated below.
-
-
-
-
-Examples
-
-See Robust covariance estimation and Mahalanobis distances relevance for
-an illustration of the difference between using a standard
-(covariance.EmpiricalCovariance) or a robust estimate
-(covariance.MinCovDet) of location and covariance to
-assess the degree of outlyingness of an observation.
-See Outlier detection on a real data set
-for an example of robust covariance estimation on a real data set.
-
-References
-
-Rousseeuw, P.J., Van Driessen, K. “A fast algorithm for the minimum
-covariance determinant estimator” Technometrics 41(3), 212 (1999)
-
-
-
-2.7.3.2. Isolation Forest#
-One efficient way of performing outlier detection in high-dimensional datasets
-is to use random forests.
-The ensemble.IsolationForest ‘isolates’ observations by randomly selecting
-a feature and then randomly selecting a split value between the maximum and
-minimum values of the selected feature.
-Since recursive partitioning can be represented by a tree structure, the
-number of splittings required to isolate a sample is equivalent to the path
-length from the root node to the terminating node.
-This path length, averaged over a forest of such random trees, is a
-measure of normality and our decision function.
-Random partitioning produces noticeably shorter paths for anomalies.
-Hence, when a forest of random trees collectively produce shorter path
-lengths for particular samples, they are highly likely to be anomalies.
-The implementation of ensemble.IsolationForest is based on an ensemble
-of tree.ExtraTreeRegressor. Following Isolation Forest original paper,
-the maximum depth of each tree is set to \(\lceil \log_2(n) \rceil\) where
-\(n\) is the number of samples used to build the tree (see [1]
-for more details).
-This algorithm is illustrated below.
+strip()
+Equivalent to str.strip
 
+rstrip()
+Equivalent to str.rstrip
 
+lstrip()
+Equivalent to str.lstrip
 
+partition()
+Equivalent to str.partition
 
-The ensemble.IsolationForest supports warm_start=True which
-allows you to add more trees to an already fitted model:
->>> from sklearn.ensemble import IsolationForest
->>> import numpy as np
->>> X = np.array([[-1, -1], [-2, -1], [-3, -2], [0, 0], [-20, 50], [3, 5]])
->>> clf = IsolationForest(n_estimators=10, warm_start=True)
->>> clf.fit(X)  # fit 10 trees
->>> clf.set_params(n_estimators=20)  # add 10 more trees
->>> clf.fit(X)  # fit the added trees
+rpartition()
+Equivalent to str.rpartition
 
+lower()
+Equivalent to str.lower
 
-Examples
+casefold()
+Equivalent to str.casefold
 
-See IsolationForest example for
-an illustration of the use of IsolationForest.
-See Comparing anomaly detection algorithms for outlier detection on toy datasets
-for a comparison of ensemble.IsolationForest with
-neighbors.LocalOutlierFactor,
-svm.OneClassSVM (tuned to perform like an outlier detection
-method), linear_model.SGDOneClassSVM, and a covariance-based
-outlier detection with covariance.EllipticEnvelope.
+upper()
+Equivalent to str.upper
 
-References
+find()
+Equivalent to str.find
 
+rfind()
+Equivalent to str.rfind
 
-[1]
-F. T. Liu, K. M. Ting and Z. -H. Zhou.
-“Isolation forest.”
-2008 Eighth IEEE International Conference on Data Mining (ICDM),
-2008, pp. 413-422.
+index()
+Equivalent to str.index
 
+rindex()
+Equivalent to str.rindex
 
+capitalize()
+Equivalent to str.capitalize
 
+swapcase()
+Equivalent to str.swapcase
 
-2.7.3.3. Local Outlier Factor#
-Another efficient way to perform outlier detection on moderately high dimensional
-datasets is to use the Local Outlier Factor (LOF) algorithm.
-The neighbors.LocalOutlierFactor (LOF) algorithm computes a score
-(called local outlier factor) reflecting the degree of abnormality of the
-observations.
-It measures the local density deviation of a given data point with respect to
-its neighbors. The idea is to detect the samples that have a substantially
-lower density than their neighbors.
-In practice the local density is obtained from the k-nearest neighbors.
-The LOF score of an observation is equal to the ratio of the
-average local density of its k-nearest neighbors, and its own local density:
-a normal instance is expected to have a local density similar to that of its
-neighbors, while abnormal data are expected to have much smaller local density.
-The number k of neighbors considered, (alias parameter n_neighbors) is
-typically chosen 1) greater than the minimum number of objects a cluster has to
-contain, so that other objects can be local outliers relative to this cluster,
-and 2) smaller than the maximum number of close by objects that can potentially
-be local outliers. In practice, such information is generally not available, and
-taking n_neighbors=20 appears to work well in general. When the proportion of
-outliers is high (i.e. greater than 10 %, as in the example below),
-n_neighbors should be greater (n_neighbors=35 in the example below).
-The strength of the LOF algorithm is that it takes both local and global
-properties of datasets into consideration: it can perform well even in datasets
-where abnormal samples have different underlying densities.
-The question is not, how isolated the sample is, but how isolated it is
-with respect to the surrounding neighborhood.
-When applying LOF for outlier detection, there are no predict,
-decision_function and score_samples methods but only a fit_predict
-method. The scores of abnormality of the training samples are accessible
-through the negative_outlier_factor_ attribute.
-Note that predict, decision_function and score_samples can be used
-on new unseen data when LOF is applied for novelty detection, i.e. when the
-novelty parameter is set to True, but the result of predict may
-differ from that of fit_predict. See Novelty detection with Local Outlier Factor.
-This strategy is illustrated below.
+normalize()
+Return Unicode normal form. Equivalent to unicodedata.normalize
 
+translate()
+Equivalent to str.translate
 
+isalnum()
+Equivalent to str.isalnum
 
+isalpha()
+Equivalent to str.isalpha
 
-Examples
+isdigit()
+Equivalent to str.isdigit
 
-See Outlier detection with Local Outlier Factor (LOF)
-for an illustration of the use of neighbors.LocalOutlierFactor.
-See Comparing anomaly detection algorithms for outlier detection on toy datasets
-for a comparison with other anomaly detection methods.
+isspace()
+Equivalent to str.isspace
 
-References
+islower()
+Equivalent to str.islower
 
-Breunig, Kriegel, Ng, and Sander (2000)
-LOF: identifying density-based local outliers.
-Proc. ACM SIGMOD
+isupper()
+Equivalent to str.isupper
 
+istitle()
+Equivalent to str.istitle
 
+isnumeric()
+Equivalent to str.isnumeric
 
+isdecimal()
+Equivalent to str.isdecimal
 
-2.7.4. Novelty detection with Local Outlier Factor#
-To use neighbors.LocalOutlierFactor for novelty detection, i.e.
-predict labels or compute the score of abnormality of new unseen data, you
-need to instantiate the estimator with the novelty parameter
-set to True before fitting the estimator:
-lof = LocalOutlierFactor(novelty=True)
-lof.fit(X_train)
 
 
-Note that fit_predict is not available in this case to avoid inconsistencies.
+
+
+
+
+
+
+
+
+
+previous
+Reshaping and pivot tables
+
+
+
+
+next
+Working with missing data
+
+
+
+
+
+
+
+
+
+
+ On this page
+  
+
+
+Text data types
+Specifying StringDtype explicitly
+String methods
+Splitting and replacing strings
+Concatenation
+Concatenating a single Series into a string
+Concatenating a Series and something list-like into a Series
+Concatenating a Series and something array-like into a Series
+Concatenating a Series and an indexed object into a Series, with alignment
+Concatenating a Series and many objects into a Series
+
+
+Indexing with .str
+Extracting substrings
+Extract first match in each subject (extract)
+Extract all matches in each subject (extractall)
+
+
+Testing for strings that match or contain a pattern
+Creating indicator variables
+Behavior differences
+StringDtype with np.nan NA values
+StringDtype with pd.NA NA values
+
+
+The four StringDtype variants
+Python storage with np.nan values
+PyArrow storage with np.nan values
+Python storage with pd.NA values
+PyArrow storage with pd.NA values
+
+In [55]: df_conv
+Out[55]: 
+      a     b
+0  <NA>  True
+1     2  <NA>
+
+In [56]: df_conv.dtypes
+Out[56]: 
+a      Int64
+b    boolean
+dtype: object
+
+
+
+
+
+
+Inserting missing data#
+You can insert missing values by simply assigning to a Series or DataFrame.
+The missing value sentinel used will be chosen based on the dtype.
+In [57]: ser = pd.Series([1., 2., 3.])
+
+In [58]: ser.loc[0] = None
+
+In [59]: ser
+Out[59]: 
+0    NaN
+1    2.0
+2    3.0
+dtype: float64
+
+In [60]: ser = pd.Series([pd.Timestamp("2021"), pd.Timestamp("2021")])
+
+In [61]: ser.iloc[0] = np.nan
+
+In [62]: ser
+Out[62]: 
+0          NaT
+1   2021-01-01
+dtype: datetime64[us]
+
+In [63]: ser = pd.Series([True, False], dtype="boolean[pyarrow]")
+
+In [64]: ser.iloc[0] = None
+
+In [65]: ser
+Out[65]: 
+0     <NA>
+1    False
+dtype: bool[pyarrow]
+
+
+For object types, pandas will use the value given:
+In [66]: s = pd.Series(["a", "b", "c"], dtype=object)
+
+In [67]: s.loc[0] = None
+
+In [68]: s.loc[1] = np.nan
+
+In [69]: s
+Out[69]: 
+0    None
+1     NaN
+2       c
+dtype: object
+
+
+
+
+Calculations with missing data#
+Missing values propagate through arithmetic operations between pandas objects.
+In [70]: ser1 = pd.Series([np.nan, np.nan, 2, 3])
+
+In [71]: ser2 = pd.Series([np.nan, 1, np.nan, 4])
+
+In [72]: ser1
+Out[72]: 
+0    NaN
+1    NaN
+2    2.0
+3    3.0
+dtype: float64
+
+In [73]: ser2
+Out[73]: 
+0    NaN
+1    1.0
+2    NaN
+3    4.0
+dtype: float64
+
+In [74]: ser1 + ser2
+Out[74]: 
+0    NaN
+1    NaN
+2    NaN
+3    7.0
+dtype: float64
+
+
+The descriptive statistics and computational methods discussed in the
+data structure overview (and listed here and here) all
+account for missing data.
+When summing data, NA values or empty data will be treated as zero.
+In [75]: pd.Series([np.nan]).sum()
+Out[75]: np.float64(0.0)
+
+In [76]: pd.Series([], dtype="float64").sum()
+Out[76]: np.float64(0.0)
+
+
+When taking the product, NA values or empty data will be treated as 1.
+In [77]: pd.Series([np.nan]).prod()
+Out[77]: np.float64(1.0)
+
+In [78]: pd.Series([], dtype="float64").prod()
+Out[78]: np.float64(1.0)
+
+
+Cumulative methods like cumsum() and cumprod()
+ignore NA values by default, but preserve them in the resulting array. To override
+this behaviour and include NA values in the calculation, use skipna=False.
+In [79]: ser = pd.Series([1, np.nan, 3, np.nan])
+
+In [80]: ser
+Out[80]: 
+0    1.0
+1    NaN
+2    3.0
+3    NaN
+dtype: float64
+
+In [81]: ser.cumsum()
+Out[81]: 
+0    1.0
+1    NaN
+2    4.0
+3    NaN
+dtype: float64
+
+In [82]: ser.cumsum(skipna=False)
+Out[82]: 
+0    1.0
+1    NaN
+2    NaN
+3    NaN
+dtype: float64
+
+
+
+
+Dropping missing data#
+dropna() drops rows or columns with missing data.
+In [83]: df = pd.DataFrame([[np.nan, 1, 2], [1, 2, np.nan], [1, 2, 3]])
+
+In [84]: df
+Out[84]: 
+     0  1    2
+0  NaN  1  2.0
+1  1.0  2  NaN
+2  1.0  2  3.0
+
+In [85]: df.dropna()
+Out[85]: 
+     0  1    2
+2  1.0  2  3.0
+
+In [86]: df.dropna(axis=1)
+Out[86]: 
+   1
+0  1
+1  2
+2  2
+
+In [87]: ser = pd.Series([1, pd.NA], dtype="int64[pyarrow]")
+
+In [88]: ser.dropna()
+Out[88]: 
+0    1
+dtype: int64[pyarrow]
+
+
+
+
+Filling missing data#
+
+Filling by value#
+fillna() replaces NA values with non-NA data.
+Replace NA with a scalar value
+In [89]: data = {"np": [1.0, np.nan, np.nan, 2], "arrow": pd.array([1.0, pd.NA, pd.NA, 2], dtype="float64[pyarrow]")}
+
+In [90]: df = pd.DataFrame(data)
+
+In [91]: df
+Out[91]: 
+    np  arrow
+0  1.0    1.0
+1  NaN   <NA>
+2  NaN   <NA>
+3  2.0    2.0
+
+In [92]: df.fillna(0)
+Out[92]: 
+    np  arrow
+0  1.0    1.0
+1  0.0    0.0
+2  0.0    0.0
+3  2.0    2.0
+
+
+When the data has object dtype, you can control what type of NA values are present.
+In [93]: df = pd.DataFrame({"a": [pd.NA, np.nan, None]}, dtype=object)
+
+In [94]: df
+Out[94]: 
+      a
+0  <NA>
+1   NaN
+2  None
+
+In [95]: df.fillna(None)
+Out[95]: 
+      a
+0  None
+1  None
+2  None
+
+In [96]: df.fillna(np.nan)
+Out[96]: 
+     a
+0  NaN
+1  NaN
+2  NaN
+
+In [97]: df.fillna(pd.NA)
+Out[97]: 
+      a
+0  <NA>
+1  <NA>
+2  <NA>
+
+
+However when the dtype is not object, these will all be replaced with the proper NA value for the dtype.
+In [98]: data = {"np": [1.0, np.nan, np.nan, 2], "arrow": pd.array([1.0, pd.NA, pd.NA, 2], dtype="float64[pyarrow]")}
+
+In [99]: df = pd.DataFrame(data)
+
+In [100]: df
+Out[100]: 
+    np  arrow
+0  1.0    1.0
+1  NaN   <NA>
+2  NaN   <NA>
+3  2.0    2.0
+
+In [101]: df.fillna(None)
+Out[101]: 
+    np  arrow
+0  1.0    1.0
+1  NaN   <NA>
+2  NaN   <NA>
+3  2.0    2.0
+
+In [102]: df.fillna(np.nan)
+Out[102]: 
+    np  arrow
+0  1.0    1.0
+1  NaN   <NA>
+2  NaN   <NA>
+3  2.0    2.0
+
+In [103]: df.fillna(pd.NA)
+Out[103]: 
+    np  arrow
+0  1.0    1.0
+1  NaN   <NA>
+2  NaN   <NA>
+3  2.0    2.0
+
+
+Fill gaps forward or backward
+In [104]: df.ffill()
+Out[104]: 
+    np  arrow
+0  1.0    1.0
+1  1.0    1.0
+2  1.0    1.0
+3  2.0    2.0
+
+In [105]: df.bfill()
+Out[105]: 
+    np  arrow
+0  1.0    1.0
+1  2.0    2.0
+2  2.0    2.0
+3  2.0    2.0
+
+
+Limit the number of NA values filled
+In [106]: df.ffill(limit=1)
+Out[106]: 
+    np  arrow
+0  1.0    1.0
+1  1.0    1.0
+2  NaN   <NA>
+3  2.0    2.0
+
+
+NA values can be replaced with corresponding value from a Series or DataFrame
+where the index and column aligns between the original object and the filled object.
+In [107]: dff = pd.DataFrame(np.arange(30, dtype=np.float64).reshape(10, 3), columns=list("ABC"))
+
+In [108]: dff.iloc[3:5, 0] = np.nan
+
+In [109]: dff.iloc[4:6, 1] = np.nan
+
+In [110]: dff.iloc[5:8, 2] = np.nan
+
+In [111]: dff
+Out[111]: 
+      A     B     C
+0   0.0   1.0   2.0
+1   3.0   4.0   5.0
+2   6.0   7.0   8.0
+3   NaN  10.0  11.0
+4   NaN   NaN  14.0
+5  15.0   NaN   NaN
+6  18.0  19.0   NaN
+7  21.0  22.0   NaN
+8  24.0  25.0  26.0
+9  27.0  28.0  29.0
+
+In [112]: dff.fillna(dff.mean())
+Out[112]: 
+       A     B          C
+0   0.00   1.0   2.000000
+1   3.00   4.0   5.000000
+2   6.00   7.0   8.000000
+3  14.25  10.0  11.000000
+4  14.25  14.5  14.000000
+5  15.00  14.5  13.571429
+6  18.00  19.0  13.571429
+7  21.00  22.0  13.571429
+8  24.00  25.0  26.000000
+9  27.00  28.0  29.000000
+
+
+
+Note
+DataFrame.where() can also be used to fill NA values. Same result as above.
+In [113]: dff.where(pd.notna(dff), dff.mean(), axis="columns")
+Out[113]: 
+       A     B          C
+0   0.00   1.0   2.000000
+1   3.00   4.0   5.000000
+2   6.00   7.0   8.000000
+3  14.25  10.0  11.000000
+4  14.25  14.5  14.000000
+5  15.00  14.5  13.571429
+6  18.00  19.0  13.571429
+7  21.00  22.0  13.571429
+8  24.00  25.0  26.000000
+9  27.00  28.0  29.000000
+
+
+
+
+
+Interpolation#
+DataFrame.interpolate() and Series.interpolate() fills NA values
+using various interpolation methods.
+In [114]: df = pd.DataFrame(
+   .....:     {
+   .....:         "A": [1, 2.1, np.nan, 4.7, 5.6, 6.8],
+   .....:         "B": [0.25, np.nan, np.nan, 4, 12.2, 14.4],
+   .....:     }
+   .....: )
+   .....: 
+
+In [115]: df
+Out[115]: 
+     A      B
+0  1.0   0.25
+1  2.1    NaN
+2  NaN    NaN
+3  4.7   4.00
+4  5.6  12.20
+5  6.8  14.40
+
+In [116]: df.interpolate()
+Out[116]: 
+     A      B
+0  1.0   0.25
+1  2.1   1.50
+2  3.4   2.75
+3  4.7   4.00
+4  5.6  12.20
+5  6.8  14.40
+
+In [117]: idx = pd.date_range("2020-01-01", periods=10, freq="D")
+
+In [118]: data = np.random.default_rng(2).integers(0, 10, 10).astype(np.float64)
+
+In [119]: ts = pd.Series(data, index=idx)
+
+In [120]: ts.iloc[[1, 2, 5, 6, 9]] = np.nan
+
+In [121]: ts
+Out[121]: 
+2020-01-01    8.0
+2020-01-02    NaN
+2020-01-03    NaN
+2020-01-04    2.0
+2020-01-05    4.0
+2020-01-06    NaN
+2020-01-07    NaN
+2020-01-08    0.0
+2020-01-09    3.0
+2020-01-10    NaN
+Freq: D, dtype: float64
+
+In [122]: ts.plot()
+Out[122]: <Axes: >
+
+
+
+In [123]: ts.interpolate()
+Out[123]: 
+2020-01-01    8.000000
+2020-01-02    6.000000
+2020-01-03    4.000000
+2020-01-04    2.000000
+2020-01-05    4.000000
+2020-01-06    2.666667
+2020-01-07    1.333333
+2020-01-08    0.000000
+2020-01-09    3.000000
+2020-01-10    3.000000
+Freq: D, dtype: float64
+
+In [124]: ts.interpolate().plot()
+Out[124]: <Axes: >
+
+
+
+Interpolation relative to a Timestamp in the DatetimeIndex
+is available by setting method="time"
+In [125]: ts2 = ts.iloc[[0, 1, 3, 7, 9]]
+
+In [126]: ts2
+Out[126]: 
+2020-01-01    8.0
+2020-01-02    NaN
+2020-01-04    2.0
+2020-01-08    0.0
+2020-01-10    NaN
+dtype: float64
+
+In [127]: ts2.interpolate()
+Out[127]: 
+2020-01-01    8.0
+2020-01-02    5.0
+2020-01-04    2.0
+2020-01-08    0.0
+2020-01-10    0.0
+dtype: float64
+
+In [128]: ts2.interpolate(method="time")
+Out[128]: 
+2020-01-01    8.0
+2020-01-02    6.0
+2020-01-04    2.0
+2020-01-08    0.0
+2020-01-10    0.0
+dtype: float64
+
+
+For a floating-point index, use method='values':
+In [129]: idx = [0.0, 1.0, 10.0]
+
+In [130]: ser = pd.Series([0.0, np.nan, 10.0], idx)
+
+In [131]: ser
+Out[131]: 
+0.0      0.0
+1.0      NaN
+10.0    10.0
+dtype: float64
+
+In [132]: ser.interpolate()
+Out[132]: 
+0.0      0.0
+1.0      5.0
+10.0    10.0
+dtype: float64
+
+In [133]: ser.interpolate(method="values")
+Out[133]: 
+0.0      0.0
+1.0      1.0
+10.0    10.0
+dtype: float64
+
+
+If you have scipy installed, you can pass the name of a 1-d interpolation routine to method.
+as specified in the scipy interpolation documentation and reference guide.
+The appropriate interpolation method will depend on the data type.
+
+Tip
+If you are dealing with a time series that is growing at an increasing rate,
+use method='barycentric'.
+If you have values approximating a cumulative distribution function,
+use method='pchip'.
+To fill missing values with goal of smooth plotting use method='akima'.
+In [134]: df = pd.DataFrame(
+   .....:    {
+   .....:       "A": [1, 2.1, np.nan, 4.7, 5.6, 6.8],
+   .....:       "B": [0.25, np.nan, np.nan, 4, 12.2, 14.4],
+   .....:    }
+   .....: )
+   .....: 
+
+In [135]: df
+Out[135]: 
+     A      B
+0  1.0   0.25
+1  2.1    NaN
+2  NaN    NaN
+3  4.7   4.00
+4  5.6  12.20
+5  6.8  14.40
+
+In [136]: df.interpolate(method="barycentric")
+Out[136]: 
+      A       B
+0  1.00   0.250
+1  2.10  -7.660
+2  3.53  -4.515
+3  4.70   4.000
+4  5.60  12.200
+5  6.80  14.400
+
+In [137]: df.interpolate(method="pchip")
+Out[137]: 
+         A          B
+0  1.00000   0.250000
+1  2.10000   0.672808
+2  3.43454   1.928950
+3  4.70000   4.000000
+4  5.60000  12.200000
+5  6.80000  14.400000
+
+In [138]: df.interpolate(method="akima")
+Out[138]: 
+          A          B
+0  1.000000   0.250000
+1  2.100000  -0.873316
+2  3.406667   0.320034
+3  4.700000   4.000000
+4  5.600000  12.200000
+5  6.800000  14.400000
+
+
+
+When interpolating via a polynomial or spline approximation, you must also specify
+the degree or order of the approximation:
+In [139]: df.interpolate(method="spline", order=2)
+Out[139]: 
+          A          B
+0  1.000000   0.250000
+1  2.100000  -0.428598
+2  3.404545   1.206900
+3  4.700000   4.000000
+4  5.600000  12.200000
+5  6.800000  14.400000
+
+In [140]: df.interpolate(method="polynomial", order=2)
+Out[140]: 
+          A          B
+0  1.000000   0.250000
+1  2.100000  -2.703846
+2  3.451351  -1.453846
+3  4.700000   4.000000
+4  5.600000  12.200000
+5  6.800000  14.400000
+
+
+Comparing several methods.
+In [141]: np.random.seed(2)
+
+In [142]: ser = pd.Series(np.arange(1, 10.1, 0.25) ** 2 + np.random.randn(37))
+
+In [143]: missing = np.array([4, 13, 14, 15, 16, 17, 18, 20, 29])
+
+In [144]: ser.iloc[missing] = np.nan
+
+In [145]: methods = ["linear", "quadratic", "cubic"]
+
+In [146]: df = pd.DataFrame({m: ser.interpolate(method=m) for m in methods})
+
+In [147]: df.plot()
+Out[147]: <Axes: >
+
+
+
+Interpolating new observations from expanding data with Series.reindex().
+In [148]: ser = pd.Series(np.sort(np.random.uniform(size=100)))
+
+# interpolate at new_index
+In [149]: new_index = ser.index.union(pd.Index([49.25, 49.5, 49.75, 50.25, 50.5, 50.75]))
+
+In [150]: interp_s = ser.reindex(new_index).interpolate(method="pchip")
+
+In [151]: interp_s.loc[49:51]
+Out[151]: 
+49.00    0.471410
+49.25    0.476841
+49.50    0.481780
+49.75    0.485998
+50.00    0.489266
+50.25    0.491814
+50.50    0.493995
+50.75    0.495763
+51.00    0.497074
+dtype: float64
+
+
+
+Interpolation limits#
+interpolate() accepts a limit keyword
+argument to limit the number of consecutive NaN values
+filled since the last valid observation
+In [152]: ser = pd.Series([np.nan, np.nan, 5, np.nan, np.nan, np.nan, 13, np.nan, np.nan])
+
+In [153]: ser
+Out[153]: 
+0     NaN
+1     NaN
+2     5.0
+3     NaN
+4     NaN
+5     NaN
+6    13.0
+7     NaN
+8     NaN
+dtype: float64
+
+In [154]: ser.interpolate()
+Out[154]: 
+0     NaN
+1     NaN
+2     5.0
+3     7.0
+4     9.0
+5    11.0
+6    13.0
+7    13.0
+8    13.0
+dtype: float64
+
+In [155]: ser.interpolate(limit=1)
+Out[155]: 
+0     NaN
+1     NaN
+2     5.0
+3     7.0
+4     NaN
+5     NaN
+6    13.0
+7    13.0
+8     NaN
+dtype: float64
+
+
+By default, NaN values are filled in a forward direction. Use
+limit_direction parameter to fill backward or from both directions.
+In [156]: ser.interpolate(limit=1, limit_direction="backward")
+Out[156]: 
+0     NaN
+1     5.0
+2     5.0
+3     NaN
+4     NaN
+5    11.0
+6    13.0
+7     NaN
+8     NaN
+dtype: float64
+
+In [157]: ser.interpolate(limit=1, limit_direction="both")
+Out[157]: 
+0     NaN
+1     5.0
+2     5.0
+3     7.0
+4     NaN
+5    11.0
+6    13.0
+7    13.0
+8     NaN
+dtype: float64
+
+In [158]: ser.interpolate(limit_direction="both")
+Out[158]: 
+0     5.0
+1     5.0
+2     5.0
+3     7.0
+4     9.0
+5    11.0
+6    13.0
+7    13.0
+8    13.0
+dtype: float64
+
+
+By default, NaN values are filled whether they are surrounded by
+existing valid values or outside existing valid values. The limit_area
+parameter restricts filling to either inside or outside values.
+# fill one consecutive inside value in both directions
+In [159]: ser.interpolate(limit_direction="both", limit_area="inside", limit=1)
+Out[159]: 
+0     NaN
+1     NaN
+2     5.0
+3     7.0
+4     NaN
+5    11.0
+6    13.0
+7     NaN
+8     NaN
+dtype: float64
+
+# fill all consecutive outside values backward
+In [160]: ser.interpolate(limit_direction="backward", limit_area="outside")
+Out[160]: 
+0     5.0
+1     5.0
+2     5.0
+3     NaN
+4     NaN
+5     NaN
+6    13.0
+7     NaN
+8     NaN
+dtype: float64
+
+# fill all consecutive outside values in both directions
+In [161]: ser.interpolate(limit_direction="both", limit_area="outside")
+Out[161]: 
+0     5.0
+1     5.0
+2     5.0
+3     NaN
+4     NaN
+5     NaN
+6    13.0
+7    13.0
+8    13.0
+dtype: float64
+
+
+
+
+
+Replacing values#
+Series.replace() and DataFrame.replace() can be used similar to
+Series.fillna() and DataFrame.fillna() to replace or insert missing values.
+In [162]: df = pd.DataFrame(np.eye(3))
+
+In [163]: df
+Out[163]: 
+     0    1    2
+0  1.0  0.0  0.0
+1  0.0  1.0  0.0
+2  0.0  0.0  1.0
+
+In [164]: df_missing = df.replace(0, np.nan)
+
+In [165]: df_missing
+Out[165]: 
+     0    1    2
+0  1.0  NaN  NaN
+1  NaN  1.0  NaN
+2  NaN  NaN  1.0
+
+In [166]: df_filled = df_missing.replace(np.nan, 2)
+
+In [167]: df_filled
+Out[167]: 
+     0    1    2
+0  1.0  2.0  2.0
+1  2.0  1.0  2.0
+2  2.0  2.0  1.0
+
+
+Replacing more than one value is possible by passing a list.
+In [168]: df_filled.replace([1, 44], [2, 28])
+Out[168]: 
+     0    1    2
+0  2.0  2.0  2.0
+1  2.0  2.0  2.0
+2  2.0  2.0  2.0
+
+
+Replacing using a mapping dict.
+In [169]: df_filled.replace({1: 44, 2: 28})
+Out[169]: 
+      0     1     2
+0  44.0  28.0  28.0
+1  28.0  44.0  28.0
+2  28.0  28.0  44.0
+
+
+
+Regular expression replacement#
+
+Note
+Python strings prefixed with the r character such as r'hello world'
+are “raw” strings.
+They have different semantics regarding backslashes than strings without this prefix.
+Backslashes in raw strings  will be interpreted as an escaped backslash, e.g., r'\' == '\\'.
+
+Replace the ‘.’ with NaN
+In [170]: d = {"a": list(range(4)), "b": list("ab.."), "c": ["a", "b", np.nan, "d"]}
+
+In [171]: df = pd.DataFrame(d)
+
+In [172]: df.replace(".", np.nan)
+Out[172]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  NaN  NaN
+3  3  NaN    d
+
+
+Replace the ‘.’ with NaN with regular expression that removes surrounding whitespace
+In [173]: df.replace(r"\s*\.\s*", np.nan, regex=True)
+Out[173]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  NaN  NaN
+3  3  NaN    d
+
+
+Replace with a list of regexes.
+In [174]: df.replace([r"\.", r"(a)"], ["dot", r"\1stuff"], regex=True)
+Out[174]: 
+   a       b       c
+0  0  astuff  astuff
+1  1       b       b
+2  2     dot     NaN
+3  3     dot       d
+
+
+Replace with a regex in a mapping dict.
+In [175]: df.replace({"b": r"\s*\.\s*"}, {"b": np.nan}, regex=True)
+Out[175]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  NaN  NaN
+3  3  NaN    d
+
+
+Pass nested dictionaries of regular expressions that use the regex keyword.
+In [176]: df.replace({"b": {"b": r""}}, regex=True)
+Out[176]: 
+   a  b    c
+0  0  a    a
+1  1       b
+2  2  .  NaN
+3  3  .    d
+
+In [177]: df.replace(regex={"b": {r"\s*\.\s*": np.nan}})
+Out[177]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  NaN  NaN
+3  3  NaN    d
+
+In [178]: df.replace({"b": r"\s*(\.)\s*"}, {"b": r"\1ty"}, regex=True)
+Out[178]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  .ty  NaN
+3  3  .ty    d
+
+
+Pass a list of regular expressions that will replace matches with a scalar.
+In [179]: df.replace([r"\s*\.\s*", r"a|b"], "placeholder", regex=True)
+Out[179]: 
+   a            b            c
+0  0  placeholder  placeholder
+1  1  placeholder  placeholder
+2  2  placeholder          NaN
+3  3  placeholder            d
+
+
+All of the regular expression examples can also be passed with the
+to_replace argument as the regex argument. In this case the value
+argument must be passed explicitly by name or regex must be a nested
+dictionary.
+In [180]: df.replace(regex=[r"\s*\.\s*", r"a|b"], value="placeholder")
+Out[180]: 
+   a            b            c
+0  0  placeholder  placeholder
+1  1  placeholder  placeholder
+2  2  placeholder          NaN
+3  3  placeholder            d
+
+
+
+Note
+A regular expression object from re.compile is a valid input as well.
+
+
+
+
+
+
+
+
+
+
+
+previous
+Working with text data
+
+
+
+
+next
+Duplicate Labels
+
+
+
+
+
+
+
+
+
+
+ On this page
+  
+
+
+Values considered “missing”
+NA semantics
+Propagation in arithmetic and comparison operations
+Logical operations
+NA in a boolean context
+NumPy ufuncs
+Conversion
+
+
+
+
+Inserting missing data
+Calculations with missing data
+Dropping missing data
+Filling missing data
+Filling by value
+Interpolation
+Interpolation limits
+
+
+Replacing values
+Regular expression replacement
+
+     0    1    2
+0  1.0  NaN  NaN
+1  NaN  1.0  NaN
+2  NaN  NaN  1.0
+
+In [166]: df_filled = df_missing.replace(np.nan, 2)
+
+In [167]: df_filled
+Out[167]: 
+     0    1    2
+0  1.0  2.0  2.0
+1  2.0  1.0  2.0
+2  2.0  2.0  1.0
+
+
+Replacing more than one value is possible by passing a list.
+In [168]: df_filled.replace([1, 44], [2, 28])
+Out[168]: 
+     0    1    2
+0  2.0  2.0  2.0
+1  2.0  2.0  2.0
+2  2.0  2.0  2.0
+
+
+Replacing using a mapping dict.
+In [169]: df_filled.replace({1: 44, 2: 28})
+Out[169]: 
+      0     1     2
+0  44.0  28.0  28.0
+1  28.0  44.0  28.0
+2  28.0  28.0  44.0
+
+
+
+Regular expression replacement#
+
+Note
+Python strings prefixed with the r character such as r'hello world'
+are “raw” strings.
+They have different semantics regarding backslashes than strings without this prefix.
+Backslashes in raw strings  will be interpreted as an escaped backslash, e.g., r'\' == '\\'.
+
+Replace the ‘.’ with NaN
+In [170]: d = {"a": list(range(4)), "b": list("ab.."), "c": ["a", "b", np.nan, "d"]}
+
+In [171]: df = pd.DataFrame(d)
+
+In [172]: df.replace(".", np.nan)
+Out[172]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  NaN  NaN
+3  3  NaN    d
+
+
+Replace the ‘.’ with NaN with regular expression that removes surrounding whitespace
+In [173]: df.replace(r"\s*\.\s*", np.nan, regex=True)
+Out[173]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  NaN  NaN
+3  3  NaN    d
+
+
+Replace with a list of regexes.
+In [174]: df.replace([r"\.", r"(a)"], ["dot", r"\1stuff"], regex=True)
+Out[174]: 
+   a       b       c
+0  0  astuff  astuff
+1  1       b       b
+2  2     dot     NaN
+3  3     dot       d
+
+
+Replace with a regex in a mapping dict.
+In [175]: df.replace({"b": r"\s*\.\s*"}, {"b": np.nan}, regex=True)
+Out[175]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  NaN  NaN
+3  3  NaN    d
+
+
+Pass nested dictionaries of regular expressions that use the regex keyword.
+In [176]: df.replace({"b": {"b": r""}}, regex=True)
+Out[176]: 
+   a  b    c
+0  0  a    a
+1  1       b
+2  2  .  NaN
+3  3  .    d
+
+In [177]: df.replace(regex={"b": {r"\s*\.\s*": np.nan}})
+Out[177]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  NaN  NaN
+3  3  NaN    d
+
+In [178]: df.replace({"b": r"\s*(\.)\s*"}, {"b": r"\1ty"}, regex=True)
+Out[178]: 
+   a    b    c
+0  0    a    a
+1  1    b    b
+2  2  .ty  NaN
+3  3  .ty    d
+
+
+Pass a list of regular expressions that will replace matches with a scalar.
+In [179]: df.replace([r"\s*\.\s*", r"a|b"], "placeholder", regex=True)
+Out[179]: 
+   a            b            c
+0  0  placeholder  placeholder
+1  1  placeholder  placeholder
+2  2  placeholder          NaN
+3  3  placeholder            d
+
+
+All of the regular expression examples can also be passed with the
+to_replace argument as the regex argument. In this case the value
+argument must be passed explicitly by name or regex must be a nested
+dictionary.
+In [180]: df.replace(regex=[r"\s*\.\s*", r"a|b"], value="placeholder")
+Out[180]: 
+   a            b            c
+0  0  placeholder  placeholder
+1  1  placeholder  placeholder
+2  2  placeholder          NaN
+3  3  placeholder            d
+
+
+
+Note
+A regular expression object from re.compile is a valid input as well.
+
+
+
+
+
+
+
+
+
+
+
+previous
+Working with text data
+
+
+
+
+next
+Duplicate Labels
+
+
+
+
+
+
+
+
+
+
+ On this page
+  
+
+
+Values considered “missing”
+NA semantics
+Propagation in arithmetic and comparison operations
+Logical operations
+NA in a boolean context
+NumPy ufuncs
+Conversion
+
+
+
+
+Inserting missing data
+Calculations with missing data
+Dropping missing data
+Filling missing data
+Filling by value
+Interpolation
+Interpolation limits
+
+
+Replacing values
+Regular expression replacement
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    © 2026, pandas via NumFOCUS, Inc. Hosted by OVHcloud.
+
+
+
+    Created using Sphinx 9.0.4.
+    
+
+
+
+
+
+
+
+  Built with the PyData Sphinx Theme 0.16.1.
+
+
+
+
+
+
+title: <title>Working with missing data — pandas 3.0.3 documentation</title>
+url: https://pandas.pydata.org/docs/user_guide/missing_data.html
+❯ cd "/Users/eyasusmieja/Dev/GitHub/ResourceRecommendationEngine/data"
+❯ python -u "/Users/eyasusmieja/Dev/GitHub/ResourceRecommendationEngine/data/extract_documentation_text.py"
+
+
+
+
+
+
+Duplicate Labels — pandas 3.0.3 documentation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Skip to main content
+
+
+Back to top
+
+
+
+
+Ctrl+K
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Getting started
+  
+
+
+
+    User Guide
+  
+
+
+
+    API reference
+  
+
+
+
+    Development
+  
+
+
+
+    Release notes
+  
+
+
+
+
+
+
+
+
+Search
+Ctrl+K
+
+
+
+
+
+    Choose version  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GitHub
+
+
+
+X
+
+
+
+Mastodon
+
+
+
+
+
+
+
+Search
+Ctrl+K
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Getting started
+  
+
+
+
+    User Guide
+  
+
+
+
+    API reference
+  
+
+
+
+    Development
+  
+
+
+
+    Release notes
+  
+
+
+
+
+
+
+
+
+    Choose version  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GitHub
+
+
+
+X
+
+
+
+Mastodon
+
+
+
+
+
+
+
+
+10 minutes to pandas
+Intro to data structures
+Essential basic functionality
+IO tools (text, CSV, HDF5, …)
+PyArrow Functionality
+Indexing and selecting data
+MultiIndex / advanced indexing
+Copy-on-Write (CoW)
+Merge, join, concatenate and compare
+Reshaping and pivot tables
+Working with text data
+Working with missing data
+Duplicate Labels
+Categorical data
+Nullable integer data type
+Nullable Boolean data type
+Chart visualization
+Table Visualization
+User-Defined Functions (UDFs)
+Group by: split-apply-combine
+Windowing operations
+Time series / date functionality
+Time deltas
+Options and settings
+Enhancing performance
+Scaling to large datasets
+Sparse data structures
+Migration guide for the new string data type (pandas 3.0)
+Frequently Asked Questions (FAQ)
+Cookbook
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+User Guide
+Duplicate Labels
+
+
+
+
+
+
+
+
+
+Duplicate Labels#
+Index objects are not required to be unique; you can have duplicate row
+or column labels. This may be a bit confusing at first. If you’re familiar with
+SQL, you know that row labels are similar to a primary key on a table, and you
+would never want duplicates in a SQL table. But one of pandas’ roles is to clean
+messy, real-world data before it goes to some downstream system. And real-world
+data has duplicates, even in fields that are supposed to be unique.
+This section describes how duplicate labels change the behavior of certain
+operations, and how prevent duplicates from arising during operations, or to
+detect them if they do.
+In [1]: import pandas as pd
+
+In [2]: import numpy as np
+
+
+
+Consequences of Duplicate Labels#
+Some pandas methods (Series.reindex() for example) just don’t work with
+duplicates present. The output can’t be determined, and so pandas raises.
+In [3]: s1 = pd.Series([0, 1, 2], index=["a", "b", "b"])
+
+In [4]: s1.reindex(["a", "b", "c"])
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+Cell In[4], line 1
+----> 1 s1.reindex(["a", "b", "c"])
+
+File ~/work/pandas/pandas/pandas/core/series.py:5525, in Series.reindex(self, index, axis, method, copy, level, fill_value, limit, tolerance)
+   5299 def reindex(  # type: ignore[override]
+   5300     self,
+   5301     index=None,
+   (...)   5309     tolerance=None,
+   5310 ) -> Series:
+   5311     """
+   5312     Conform Series to new index with optional filling logic.
+   5313 
+   (...)   5523     See the :ref:`user guide <basics.reindexing>` for more.
+   5524     """
+-> 5525     return super().reindex(
+   5526         index=index,
+   5527         method=method,
+   5528         level=level,
+   5529         fill_value=fill_value,
+   5530         limit=limit,
+   5531         tolerance=tolerance,
+   5532         copy=copy,
+   5533     )
+
+File ~/work/pandas/pandas/pandas/core/generic.py:5476, in NDFrame.reindex(self, labels, index, columns, axis, method, copy, level, fill_value, limit, tolerance)
+   5472         if self._needs_reindex_multi(axes, method, level):
+   5473             return self._reindex_multi(axes, fill_value)
+   5474 
+   5475         # perform the reindex on the axes
+-> 5476         return self._reindex_axes(
+   5477             axes, level, limit, tolerance, method, fill_value
+   5478         ).__finalize__(self, method="reindex")
+
+File ~/work/pandas/pandas/pandas/core/generic.py:5498, in NDFrame._reindex_axes(self, axes, level, limit, tolerance, method, fill_value)
+   5494             if labels is None:
+   5495                 continue
+   5496 
+   5497             ax = self._get_axis(a)
+-> 5498             new_index, indexer = ax.reindex(
+   5499                 labels, level=level, limit=limit, tolerance=tolerance, method=method
+   5500             )
+   5501 
+
+File ~/work/pandas/pandas/pandas/core/indexes/base.py:4253, in Index.reindex(self, target, method, level, limit, tolerance)
+   4250     raise ValueError("cannot handle a non-unique multi-index!")
+   4251 elif not self.is_unique:
+   4252     # GH#42568
+-> 4253     raise ValueError("cannot reindex on an axis with duplicate labels")
+   4254 else:
+   4255     indexer, _ = self.get_indexer_non_unique(target)
+
+ValueError: cannot reindex on an axis with duplicate labels
+
+
+Other methods, like indexing, can give very surprising results. Typically
+indexing with a scalar will reduce dimensionality. Slicing a DataFrame
+with a scalar will return a Series. Slicing a Series with a scalar will
+return a scalar. But with duplicates, this isn’t the case.
+In [5]: df1 = pd.DataFrame([[0, 1, 2], [3, 4, 5]], columns=["A", "A", "B"])
+
+In [6]: df1
+Out[6]: 
+   A  A  B
+0  0  1  2
+1  3  4  5
+
+
+We have duplicates in the columns. If we slice 'B', we get back a Series
+In [7]: df1["B"]  # a series
+Out[7]: 
+0    2
+1    5
+Name: B, dtype: int64
+
+
+But slicing 'A' returns a DataFrame
+In [8]: df1["A"]  # a DataFrame
+Out[8]: 
+   A  A
+0  0  1
+1  3  4
+
+
+This applies to row labels as well
+In [9]: df2 = pd.DataFrame({"A": [0, 1, 2]}, index=["a", "a", "b"])
+
+In [10]: df2
+Out[10]: 
+   A
+a  0
+a  1
+b  2
+
+In [11]: df2.loc["b", "A"]  # a scalar
+Out[11]: np.int64(2)
+
+In [12]: df2.loc["a", "A"]  # a Series
+Out[12]: 
+a    0
+a    1
+Name: A, dtype: int64
+
+
+
+
+Duplicate Label Detection#
+You can check whether an Index (storing the row or column labels) is
+unique with Index.is_unique:
+In [13]: df2
+Out[13]: 
+   A
+a  0
+a  1
+b  2
+
+In [14]: df2.index.is_unique
+Out[14]: False
+
+In [15]: df2.columns.is_unique
+Out[15]: True
+
+
+
+Note
+Checking whether an index is unique is somewhat expensive for large datasets.
+pandas does cache this result, so re-checking on the same index is very fast.
+
+Index.duplicated() will return a boolean ndarray indicating whether a
+label is repeated.
+In [16]: df2.index.duplicated()
+Out[16]: array([False,  True, False])
+
+
+Which can be used as a boolean filter to drop duplicate rows.
+In [17]: df2.loc[~df2.index.duplicated(), :]
+Out[17]: 
+   A
+a  0
+b  2
+
+
+If you need additional logic to handle duplicate labels, rather than just
+dropping the repeats, using groupby() on the index is a common
+trick. For example, we’ll resolve duplicates by taking the average of all rows
+with the same label.
+In [18]: df2.groupby(level=0).mean()
+Out[18]: 
+     A
+a  0.5
+b  2.0
+
+
+
+
+Disallowing Duplicate Labels#
+As noted above, handling duplicates is an important feature when reading in raw
+data. That said, you may want to avoid introducing duplicates as part of a data
+processing pipeline (from methods like pandas.concat(),
+rename(), etc.). Both Series and DataFrame
+disallow duplicate labels by calling .set_flags(allows_duplicate_labels=False).
+(the default is to allow them). If there are duplicate labels, an exception
+will be raised.
+In [19]: pd.Series([0, 1, 2], index=["a", "b", "b"]).set_flags(allows_duplicate_labels=False)
+---------------------------------------------------------------------------
+DuplicateLabelError                       Traceback (most recent call last)
+Cell In[19], line 1
+----> 1 pd.Series([0, 1, 2], index=["a", "b", "b"]).set_flags(allows_duplicate_labels=False)
+
+File ~/work/pandas/pandas/pandas/core/generic.py:469, in NDFrame.set_flags(self, copy, allows_duplicate_labels)
+    465         """
+    466         self._check_copy_deprecation(copy)
+    467         df = self.copy(deep=False)
+    468         if allows_duplicate_labels is not None:
+--> 469             df.flags["allows_duplicate_labels"] = allows_duplicate_labels
+    470         return df
+
+File ~/work/pandas/pandas/pandas/core/flags.py:121, in Flags.__setitem__(self, key, value)
+    119 if key not in self._keys:
+    120     raise ValueError(f"Unknown flag {key}. Must be one of {self._keys}")
+--> 121 setattr(self, key, value)
+
+File ~/work/pandas/pandas/pandas/core/flags.py:108, in Flags.allows_duplicate_labels(self, value)
+    106 if not value:
+    107     for ax in obj.axes:
+--> 108         ax._maybe_check_unique()
+    110 self._allows_duplicate_labels = value
+
+File ~/work/pandas/pandas/pandas/core/indexes/base.py:721, in Index._maybe_check_unique(self)
+    718 duplicates = self._format_duplicate_message()
+    719 msg += f"\n{duplicates}"
+--> 721 raise DuplicateLabelError(msg)
+
+DuplicateLabelError: Index has duplicates.
+      positions
+label          
+b        [1, 2]
+
+
+This applies to both row and column labels for a DataFrame
+In [20]: pd.DataFrame([[0, 1, 2], [3, 4, 5]], columns=["A", "B", "C"],).set_flags(
+   ....:     allows_duplicate_labels=False
+   ....: )
+   ....: 
+Out[20]: 
+   A  B  C
+0  0  1  2
+1  3  4  5
+
+
+This attribute can be checked or set with allows_duplicate_labels,
+which indicates whether that object can have duplicate labels.
+In [21]: df = pd.DataFrame({"A": [0, 1, 2, 3]}, index=["x", "y", "X", "Y"]).set_flags(
+   ....:     allows_duplicate_labels=False
+   ....: )
+   ....: 
+
+In [22]: df
+Out[22]: 
+   A
+x  0
+y  1
+X  2
+Y  3
+
+In [23]: df.flags.allows_duplicate_labels
+Out[23]: False
+
+
+DataFrame.set_flags() can be used to return a new DataFrame with attributes
+like allows_duplicate_labels set to some value
+In [24]: df2 = df.set_flags(allows_duplicate_labels=True)
+
+In [25]: df2.flags.allows_duplicate_labels
+Out[25]: True
+
+
+The new DataFrame returned is a view on the same data as the old DataFrame.
+Or the property can just be set directly on the same object
+In [26]: df2.flags.allows_duplicate_labels = False
+
+In [27]: df2.flags.allows_duplicate_labels
+Out[27]: False
+
+
+When processing raw, messy data you might initially read in the messy data
+(which potentially has duplicate labels), deduplicate, and then disallow duplicates
+going forward, to ensure that your data pipeline doesn’t introduce duplicates.
+>>> raw = pd.read_csv("...")
+>>> deduplicated = raw.groupby(level=0).first()  # remove duplicates
+>>> deduplicated.flags.allows_duplicate_labels = False  # disallow going forward
+
+
+Setting allows_duplicate_labels=False on a Series or DataFrame with duplicate
+labels or performing an operation that introduces duplicate labels on a Series or
+DataFrame that disallows duplicates will raise an
+errors.DuplicateLabelError.
+In [28]: df.rename(str.upper)
+---------------------------------------------------------------------------
+DuplicateLabelError                       Traceback (most recent call last)
+Cell In[28], line 1
+----> 1 df.rename(str.upper)
+
+File ~/work/pandas/pandas/pandas/core/frame.py:6483, in DataFrame.rename(self, mapper, index, columns, axis, copy, inplace, level, errors)
+   6479         2  2  5
+   6480         4  3  6
+   6481         """
+   6482         self._check_copy_deprecation(copy)
+-> 6483         return super()._rename(
+   6484             mapper=mapper,
+   6485             index=index,
+   6486             columns=columns,
+
+File ~/work/pandas/pandas/pandas/core/generic.py:1072, in NDFrame._rename(self, mapper, index, columns, axis, inplace, level, errors)
+   1068         if inplace:
+   1069             self._update_inplace(result)
+   1070             return None
+   1071         else:
+-> 1072             return result.__finalize__(self, method="rename")
+
+File ~/work/pandas/pandas/pandas/core/generic.py:6167, in NDFrame.__finalize__(self, other, method, **kwargs)
+   6163                 # impact if attrs are not used; i.e. attrs is an empty dict.
+   6164                 # One could make the deepcopy unconditionally, but a deepcopy
+   6165                 # of an empty dict is 50x more expensive than the empty check.
+   6166                 self.attrs = deepcopy(other.attrs)
+-> 6167             self.flags.allows_duplicate_labels = (
+   6168                 self.flags.allows_duplicate_labels
+   6169                 and other.flags.allows_duplicate_labels
+   6170             )
+
+File ~/work/pandas/pandas/pandas/core/flags.py:108, in Flags.allows_duplicate_labels(self, value)
+    106 if not value:
+    107     for ax in obj.axes:
+--> 108         ax._maybe_check_unique()
+    110 self._allows_duplicate_labels = value
+
+File ~/work/pandas/pandas/pandas/core/indexes/base.py:721, in Index._maybe_check_unique(self)
+    718 duplicates = self._format_duplicate_message()
+    719 msg += f"\n{duplicates}"
+--> 721 raise DuplicateLabelError(msg)
+
+DuplicateLabelError: Index has duplicates.
+      positions
+label          
+X        [0, 2]
+Y        [1, 3]
+
+
+This error message contains the labels that are duplicated, and the numeric positions
+of all the duplicates (including the “original”) in the Series or DataFrame
+
+Duplicate Label Propagation#
+In general, disallowing duplicates is “sticky”. It’s preserved through
+operations.
+In [29]: s1 = pd.Series(0, index=["a", "b"]).set_flags(allows_duplicate_labels=False)
+
+In [30]: s1
+Out[30]: 
+a    0
+b    0
+dtype: int64
+
+In [31]: s1.head().rename({"a": "b"})
+---------------------------------------------------------------------------
+DuplicateLabelError                       Traceback (most recent call last)
+Cell In[31], line 1
+----> 1 s1.head().rename({"a": "b"})
+
+File ~/work/pandas/pandas/pandas/core/series.py:5231, in Series.rename(self, index, axis, copy, inplace, level, errors)
+   5224     axis = self._get_axis_number(axis)
+   5226 if callable(index) or is_dict_like(index):
+   5227     # error: Argument 1 to "_rename" of "NDFrame" has incompatible
+   5228     # type "Union[Union[Mapping[Any, Hashable], Callable[[Any],
+   5229     # Hashable]], Hashable, None]"; expected "Union[Mapping[Any,
+   5230     # Hashable], Callable[[Any], Hashable], None]"
+-> 5231     return super()._rename(
+   5232         index,  # type: ignore[arg-type]
+   5233         inplace=inplace,
+   5234         level=level,
+   5235         errors=errors,
+   5236     )
+   5237 else:
+   5238     return self._set_name(index, inplace=inplace)
+
+File ~/work/pandas/pandas/pandas/core/generic.py:1072, in NDFrame._rename(self, mapper, index, columns, axis, inplace, level, errors)
+   1068         if inplace:
+   1069             self._update_inplace(result)
+   1070             return None
+   1071         else:
+-> 1072             return result.__finalize__(self, method="rename")
+
+File ~/work/pandas/pandas/pandas/core/generic.py:6167, in NDFrame.__finalize__(self, other, method, **kwargs)
+   6163                 # impact if attrs are not used; i.e. attrs is an empty dict.
+   6164                 # One could make the deepcopy unconditionally, but a deepcopy
+   6165                 # of an empty dict is 50x more expensive than the empty check.
+   6166                 self.attrs = deepcopy(other.attrs)
+-> 6167             self.flags.allows_duplicate_labels = (
+   6168                 self.flags.allows_duplicate_labels
+   6169                 and other.flags.allows_duplicate_labels
+   6170             )
+
+File ~/work/pandas/pandas/pandas/core/flags.py:108, in Flags.allows_duplicate_labels(self, value)
+    106 if not value:
+    107     for ax in obj.axes:
+--> 108         ax._maybe_check_unique()
+    110 self._allows_duplicate_labels = value
+
+File ~/work/pandas/pandas/pandas/core/indexes/base.py:721, in Index._maybe_check_unique(self)
+    718 duplicates = self._format_duplicate_message()
+    719 msg += f"\n{duplicates}"
+--> 721 raise DuplicateLabelError(msg)
+
+DuplicateLabelError: Index has duplicates.
+      positions
+label          
+b        [0, 1]
+
+
 
 Warning
-Novelty detection with Local Outlier Factor
-When novelty is set to True be aware that you must only use
-predict, decision_function and score_samples on new unseen data
-and not on the training samples as this would lead to wrong results.
-I.e., the result of predict will not be the same as fit_predict.
-The scores of abnormality of the training samples are always accessible
-through the negative_outlier_factor_ attribute.
+This is an experimental feature. Currently, many methods fail to
+propagate the allows_duplicate_labels value. In future versions
+it is expected that every method taking or returning one or more
+DataFrame or Series objects will propagate allows_duplicate_labels.
 
-Novelty detection with neighbors.LocalOutlierFactor is illustrated below
-(see Novelty detection with Local Outlier Factor (LOF)).
+
+
+
+
+
+
+
+
+
+previous
+Working with missing data
+
+
+
+
+next
+Categorical data
+
+
+
+
+
+
+
+
+
+
+ On this page
+  
+
+
+Consequences of Duplicate Labels
+Duplicate Label Detection
+Disallowing Duplicate Labels
+Duplicate Label Propagation
+
+
+return_type
+Faceted
+Output type
+
+
+
+None
+No
+axes
+
+None
+Yes
+2-D ndarray of axes
+
+'axes'
+No
+axes
+
+'axes'
+Yes
+Series of axes
+
+'dict'
+No
+dict of artists
+
+'dict'
+Yes
+Series of dicts of artists
+
+'both'
+No
+namedtuple
+
+'both'
+Yes
+Series of namedtuples
+
+
+
+
+Groupby.boxplot always returns a Series of return_type.
+In [61]: np.random.seed(1234)
+
+In [62]: df_box = pd.DataFrame(np.random.randn(50, 2))
+
+In [63]: df_box["g"] = np.random.choice(["A", "B"], size=50)
+
+In [64]: df_box.loc[df_box["g"] == "B", 1] += 3
+
+In [65]: bp = df_box.boxplot(by="g")
+
+
+
+The subplots above are split by the numeric columns first, then the value of
+the g column. Below the subplots are first split by the value of g,
+then by the numeric columns.
+In [66]: bp = df_box.groupby("g").boxplot()
+
+
+
+
+
+Area plot#
+You can create area plots with Series.plot.area() and DataFrame.plot.area().
+Area plots are stacked by default. To produce stacked area plot, each column must be either all positive or all negative values.
+When input data contains NaN, it will be automatically filled by 0. If you want to drop or fill by different values, use dataframe.dropna() or dataframe.fillna() before calling plot.
+In [67]: df = pd.DataFrame(np.random.rand(10, 4), columns=["a", "b", "c", "d"])
+
+In [68]: df.plot.area();
+
+
+
+To produce an unstacked plot, pass stacked=False. Alpha value is set to 0.5 unless otherwise specified:
+In [69]: df.plot.area(stacked=False);
+
+
+
+
+
+Scatter plot#
+Scatter plot can be drawn by using the DataFrame.plot.scatter() method.
+Scatter plot requires numeric columns for the x and y axes.
+These can be specified by the x and y keywords.
+In [70]: df = pd.DataFrame(np.random.rand(50, 4), columns=["a", "b", "c", "d"])
+
+In [71]: df["species"] = pd.Categorical(
+   ....:     ["setosa"] * 20 + ["versicolor"] * 20 + ["virginica"] * 10
+   ....: )
+   ....: 
+
+In [72]: df.plot.scatter(x="a", y="b");
+
+
+
+To plot multiple column groups in a single axes, repeat plot method specifying target ax.
+It is recommended to specify color and label keywords to distinguish each groups.
+In [73]: ax = df.plot.scatter(x="a", y="b", color="DarkBlue", label="Group 1")
+
+In [74]: df.plot.scatter(x="c", y="d", color="DarkGreen", label="Group 2", ax=ax);
+
+
+
+The keyword c may be given as the name of a column to provide colors for
+each point:
+In [75]: df.plot.scatter(x="a", y="b", c="c", s=50);
+
+
+
+If a categorical column is passed to c, then a discrete colorbar will be produced:
+In [76]: df.plot.scatter(x="a", y="b", c="species", cmap="viridis", s=50);
+
+
+
+You can pass other keywords supported by matplotlib
+scatter. The example  below shows a
+bubble chart using a column of the DataFrame as the bubble size.
+In [77]: df.plot.scatter(x="a", y="b", s=df["c"] * 200);
+
+
+
+See the scatter method and the
+matplotlib scatter documentation for more.
+
+
+Hexagonal bin plot#
+You can create hexagonal bin plots with DataFrame.plot.hexbin().
+Hexbin plots can be a useful alternative to scatter plots if your data are
+too dense to plot each point individually.
+In [78]: df = pd.DataFrame(np.random.randn(1000, 2), columns=["a", "b"])
+
+In [79]: df["b"] = df["b"] + np.arange(1000)
+
+In [80]: df.plot.hexbin(x="a", y="b", gridsize=25);
+
+
+
+A useful keyword argument is gridsize; it controls the number of hexagons
+in the x-direction, and defaults to 100. A larger gridsize means more, smaller
+bins.
+By default, a histogram of the counts around each (x, y) point is computed.
+You can specify alternative aggregations by passing values to the C and
+reduce_C_function arguments. C specifies the value at each (x, y) point
+and reduce_C_function is a function of one argument that reduces all the
+values in a bin to a single number (e.g. mean, max, sum, std).  In this
+example the positions are given by columns a and b, while the value is
+given by column z. The bins are aggregated with NumPy’s max function.
+In [81]: df = pd.DataFrame(np.random.randn(1000, 2), columns=["a", "b"])
+
+In [82]: df["b"] = df["b"] + np.arange(1000)
+
+In [83]: df["z"] = np.random.uniform(0, 3, 1000)
+
+In [84]: df.plot.hexbin(x="a", y="b", C="z", reduce_C_function=np.max, gridsize=25);
+
+
+
+See the hexbin method and the
+matplotlib hexbin documentation for more.
+
+
+Pie plot#
+You can create a pie plot with DataFrame.plot.pie() or Series.plot.pie().
+If your data includes any NaN, they will be automatically filled with 0.
+A ValueError will be raised if there are any negative values in your data.
+In [85]: series = pd.Series(3 * np.random.rand(4), index=["a", "b", "c", "d"], name="series")
+
+In [86]: series.plot.pie(figsize=(6, 6));
+
+
+
+For pie plots it’s best to use square figures, i.e. a figure aspect ratio 1.
+You can create the figure with equal width and height, or force the aspect ratio
+to be equal after plotting by calling ax.set_aspect('equal') on the returned
+axes object.
+Note that pie plot with DataFrame requires that you either specify a
+target column by the y argument or subplots=True. When y is
+specified, pie plot of selected column will be drawn. If subplots=True is
+specified, pie plots for each column are drawn as subplots. A legend will be
+drawn in each pie plots by default; specify legend=False to hide it.
+In [87]: df = pd.DataFrame(
+   ....:     3 * np.random.rand(4, 2), index=["a", "b", "c", "d"], columns=["x", "y"]
+   ....: )
+   ....: 
+
+In [88]: df.plot.pie(subplots=True, figsize=(8, 4));
+
+
+
+You can use the labels and colors keywords to specify the labels and colors of each wedge.
+
+Warning
+Most pandas plots use the label and color arguments (note the lack of “s” on those).
+To be consistent with matplotlib.pyplot.pie() you must use labels and colors.
+
+If you want to hide wedge labels, specify labels=None.
+If fontsize is specified, the value will be applied to wedge labels.
+Also, other keywords supported by matplotlib.pyplot.pie() can be used.
+In [89]: series.plot.pie(
+   ....:     labels=["AA", "BB", "CC", "DD"],
+   ....:     colors=["r", "g", "b", "c"],
+   ....:     autopct="%.2f",
+   ....:     fontsize=20,
+   ....:     figsize=(6, 6),
+   ....: );
+   ....: 
+
+
+
+If you pass values whose sum total is less than 1.0 they will be rescaled so that they sum to 1.
+In [90]: series = pd.Series([0.1] * 4, index=["a", "b", "c", "d"], name="series2")
+
+In [91]: series.plot.pie(figsize=(6, 6));
+
+
+
+See the matplotlib pie documentation for more.
+
+
+
+Plotting with missing data#
+pandas tries to be pragmatic about plotting DataFrames or Series
+that contain missing data. Missing values are dropped, left out, or filled
+depending on the plot type.
+
+
+Plot Type
+NaN Handling
+
+
+
+Line
+Leave gaps at NaNs
+
+Line (stacked)
+Fill 0’s
+
+Bar
+Fill 0’s
+
+Scatter
+Drop NaNs
+
+Histogram
+Drop NaNs (column-wise)
+
+Box
+Drop NaNs (column-wise)
+
+Area
+Fill 0’s
+
+KDE
+Drop NaNs (column-wise)
+
+Hexbin
+Drop NaNs
+
+Pie
+Fill 0’s
+
+
+
+
+If any of these defaults are not what you want, or if you want to be
+explicit about how missing values are handled, consider using
+fillna() or dropna()
+before plotting.
+
+
+Plotting tools#
+These functions can be imported from pandas.plotting
+and take a Series or DataFrame as an argument.
+
+Scatter matrix plot#
+You can create a scatter plot matrix using the
+scatter_matrix method in pandas.plotting:
+In [92]: from pandas.plotting import scatter_matrix
+
+In [93]: df = pd.DataFrame(np.random.randn(1000, 4), columns=["a", "b", "c", "d"])
+
+In [94]: scatter_matrix(df, alpha=0.2, figsize=(6, 6), diagonal="kde");
+
+
+
+
+
+Density plot#
+You can create density plots using the Series.plot.kde() and DataFrame.plot.kde() methods.
+In [95]: ser = pd.Series(np.random.randn(1000))
+
+In [96]: ser.plot.kde();
+
+
+
+
+
+Andrews curves#
+Andrews curves allow one to plot multivariate data as a large number
+of curves that are created using the attributes of samples as coefficients
+for Fourier series, see the Wikipedia entry
+for more information. By coloring these curves differently for each class
+it is possible to visualize data clustering. Curves belonging to samples
+of the same class will usually be closer together and form larger structures.
+Note: The “Iris” dataset is available here.
+In [97]: from pandas.plotting import andrews_curves
+
+In [98]: data = pd.read_csv("data/iris.data")
+
+In [99]: plt.figure();
+
+In [100]: andrews_curves(data, "Name");
+
+
+
+
+
+Parallel coordinates#
+Parallel coordinates is a plotting technique for plotting multivariate data,
+see the Wikipedia entry
+for an introduction.
+Parallel coordinates allows one to see clusters in data and to estimate other statistics visually.
+Using parallel coordinates points are represented as connected line segments.
+Each vertical line represents one attribute. One set of connected line segments
+represents one data point. Points that tend to cluster will appear closer together.
+In [101]: from pandas.plotting import parallel_coordinates
+
+In [102]: data = pd.read_csv("data/iris.data")
+
+In [103]: plt.figure();
+
+In [104]: parallel_coordinates(data, "Name");
+
+
+
+
+
+Lag plot#
+Lag plots are used to check if a data set or time series is random. Random
+data should not exhibit any structure in the lag plot. Non-random structure
+implies that the underlying data are not random. The lag argument may
+be passed, and when lag=1 the plot is essentially data[:-1] vs.
+data[1:].
+In [105]: from pandas.plotting import lag_plot
+
+In [106]: plt.figure();
+
+In [107]: spacing = np.linspace(-99 * np.pi, 99 * np.pi, num=1000)
+
+In [108]: data = pd.Series(0.1 * np.random.rand(1000) + 0.9 * np.sin(spacing))
+
+In [109]: lag_plot(data);
+
+
+
+
+
+Autocorrelation plot#
+Autocorrelation plots are often used for checking randomness in time series.
+This is done by computing autocorrelations for data values at varying time lags.
+If time series is random, such autocorrelations should be near zero for any and
+all time-lag separations. If time series is non-random then one or more of the
+autocorrelations will be significantly non-zero. The horizontal lines displayed
+in the plot correspond to 95% and 99% confidence bands. The dashed line is 99%
+confidence band. See the
+Wikipedia entry for more about
+autocorrelation plots.
+In [110]: from pandas.plotting import autocorrelation_plot
+
+In [111]: plt.figure();
+
+In [112]: spacing = np.linspace(-9 * np.pi, 9 * np.pi, num=1000)
+
+In [113]: data = pd.Series(0.7 * np.random.rand(1000) + 0.3 * np.sin(spacing))
+
+In [114]: autocorrelation_plot(data);
+
+
+
+
+
+Bootstrap plot#
+Bootstrap plots are used to visually assess the uncertainty of a statistic, such
+as mean, median, midrange, etc. A random subset of a specified size is selected
+from a data set, the statistic in question is computed for this subset and the
+process is repeated a specified number of times. Resulting plots and histograms
+are what constitutes the bootstrap plot.
+In [115]: from pandas.plotting import bootstrap_plot
+
+In [116]: data = pd.Series(np.random.rand(1000))
+
+In [117]: bootstrap_plot(data, size=50, samples=500, color="grey");
+
+
+
+
+
+RadViz#
+RadViz is a way of visualizing multi-variate data. It is based on a simple
+spring tension minimization algorithm. Basically you set up a bunch of points in
+a plane. In our case they are equally spaced on a unit circle. Each point
+represents a single attribute. You then pretend that each sample in the data set
+is attached to each of these points by a spring, the stiffness of which is
+proportional to the numerical value of that attribute (they are normalized to
+unit interval). The point in the plane, where our sample settles to (where the
+forces acting on our sample are at an equilibrium) is where a dot representing
+our sample will be drawn. Depending on which class that sample belongs it will
+be colored differently.
+See the R package Radviz
+for more information.
+Note: The “Iris” dataset is available here.
+In [118]: from pandas.plotting import radviz
+
+In [119]: data = pd.read_csv("data/iris.data")
+
+In [120]: plt.figure();
+
+In [121]: radviz(data, "Name");
+
+
+
+
+
+
+Plot formatting#
+
+Setting the plot style#
+From version 1.5 and up, matplotlib offers a range of pre-configured plotting styles. Setting the
+style can be used to easily give plots the general look that you want.
+Setting the style is as easy as calling matplotlib.style.use(my_plot_style) before
+creating your plot. For example you could write matplotlib.style.use('ggplot') for ggplot-style
+plots.
+You can see the various available style names at matplotlib.style.available and it’s very
+easy to try them out.
+
+
+General plot style arguments#
+Most plotting methods have a set of keyword arguments that control the
+layout and formatting of the returned plot:
+In [122]: plt.figure();
+
+In [123]: ts.plot(style="k--", label="Series");
+
+
+
+For each kind of plot (e.g. line, bar, scatter) any additional arguments
+keywords are passed along to the corresponding matplotlib function
+(ax.plot(),
+ax.bar(),
+ax.scatter()). These can be used
+to control additional styling, beyond what pandas provides.
+
+
+Controlling the legend#
+You may set the legend argument to False to hide the legend, which is
+shown by default.
+In [124]: df = pd.DataFrame(np.random.randn(1000, 4), index=ts.index, columns=list("ABCD"))
+
+In [125]: df = df.cumsum()
+
+In [126]: df.plot(legend=False);
+
+
+
+
+
+Controlling the labels#
+You may set the xlabel and ylabel arguments to give the plot custom labels
+for x and y axis. By default, pandas will pick up index name as xlabel, while leaving
+it empty for ylabel.
+In [127]: df.plot();
+
+In [128]: df.plot(xlabel="new x", ylabel="new y");
+
+
+
+
+
+Scales#
+You may pass logy to get a log-scale Y axis.
+In [129]: ts = pd.Series(np.random.randn(1000), index=pd.date_range("1/1/2000", periods=1000))
+
+In [130]: ts = np.exp(ts.cumsum())
+
+In [131]: ts.plot(logy=True);
+
+
+
+See also the logx and loglog keyword arguments.
+
+
+Plotting on a secondary y-axis#
+To plot data on a secondary y-axis, use the secondary_y keyword:
+In [132]: df["A"].plot();
+
+In [133]: df["B"].plot(secondary_y=True, style="g");
+
+
+
+To plot some columns in a DataFrame, give the column names to the secondary_y
+keyword:
+In [134]: plt.figure();
+
+In [135]: ax = df.plot(secondary_y=["A", "B"])
+
+In [136]: ax.set_ylabel("CD scale");
+
+In [137]: ax.right_ax.set_ylabel("AB scale");
+
+
+
+Note that the columns plotted on the secondary y-axis is automatically marked
+with “(right)” in the legend. To turn off the automatic marking, use the
+mark_right=False keyword:
+In [138]: plt.figure();
+
+In [139]: df.plot(secondary_y=["A", "B"], mark_right=False);
+
+
+
+
+
+Custom formatters for timeseries plots#
+pandas provides custom formatters for timeseries plots. These change the
+formatting of the axis labels for dates and times. By default,
+the custom formatters are applied only to plots created by pandas with
+DataFrame.plot() or Series.plot(). To have them apply to all
+plots, including those made by matplotlib, set the option
+pd.options.plotting.matplotlib.register_converters = True or use
+pandas.plotting.register_matplotlib_converters().
+
+
+Suppressing tick resolution adjustment#
+pandas includes automatic tick resolution adjustment for regular frequency
+time-series data. For limited cases where pandas cannot infer the frequency
+information (e.g., in an externally created twinx), you can choose to
+suppress this behavior for alignment purposes.
+Here is the default behavior, notice how the x-axis tick labeling is performed:
+In [140]: plt.figure();
+
+In [141]: df["A"].plot();
+
+
+
+Using the x_compat parameter, you can suppress this behavior:
+In [142]: plt.figure();
+
+In [143]: df["A"].plot(x_compat=True);
+
+
+
+If you have more than one plot that needs to be suppressed, the use method
+in pandas.plotting.plot_params can be used in a with statement:
+In [144]: plt.figure();
+
+In [145]: with pd.plotting.plot_params.use("x_compat", True):
+   .....:     df["A"].plot(color="r")
+   .....:     df["B"].plot(color="g")
+   .....:     df["C"].plot(color="b")
+   .....: 
+
+
+
+
+
+Automatic date tick adjustment#
+TimedeltaIndex now uses the native matplotlib
+tick locator methods, it is useful to call the automatic
+date tick adjustment from matplotlib for figures whose ticklabels overlap.
+See the autofmt_xdate method and the
+matplotlib documentation for more.
+
+
+Subplots#
+Each Series in a DataFrame can be plotted on a different axis
+with the subplots keyword:
+In [146]: df.plot(subplots=True, figsize=(6, 6));
+
+
+
+
+
+Using layout and targeting multiple axes#
+The layout of subplots can be specified by the layout keyword. It can accept
+(rows, columns). The layout keyword can be used in
+hist and boxplot also. If the input is invalid, a ValueError will be raised.
+The number of axes which can be contained by rows x columns specified by layout must be
+larger than the number of required subplots. If layout can contain more axes than required,
+blank axes are not drawn. Similar to a NumPy array’s reshape method, you
+can use -1 for one dimension to automatically calculate the number of rows
+or columns needed, given the other.
+In [147]: df.plot(subplots=True, layout=(2, 3), figsize=(6, 6), sharex=False);
+
+
+
+The above example is identical to using:
+In [148]: df.plot(subplots=True, layout=(2, -1), figsize=(6, 6), sharex=False);
+
+
+The required number of columns (3) is inferred from the number of series to plot
+and the given number of rows (2).
+You can pass multiple axes created beforehand as list-like via ax keyword.
+This allows more complicated layouts.
+The passed axes must be the same number as the subplots being drawn.
+When multiple axes are passed via the ax keyword, layout, sharex and sharey keywords
+don’t affect to the output. You should explicitly pass sharex=False and sharey=False,
+otherwise you will see a warning.
+In [149]: fig, axes = plt.subplots(4, 4, figsize=(9, 9))
+
+In [150]: plt.subplots_adjust(wspace=0.5, hspace=0.5)
+
+In [151]: target1 = [axes[0][0], axes[1][1], axes[2][2], axes[3][3]]
+
+In [152]: target2 = [axes[3][0], axes[2][1], axes[1][2], axes[0][3]]
+
+In [153]: df.plot(subplots=True, ax=target1, legend=False, sharex=False, sharey=False);
+
+In [154]: (-df).plot(subplots=True, ax=target2, legend=False, sharex=False, sharey=False);
+
+
+
+Another option is passing an ax argument to Series.plot() to plot on a particular axis:
+In [155]: np.random.seed(123456)
+
+In [156]: ts = pd.Series(np.random.randn(1000), index=pd.date_range("1/1/2000", periods=1000))
+
+In [157]: ts = ts.cumsum()
+
+In [158]: df = pd.DataFrame(np.random.randn(1000, 4), index=ts.index, columns=list("ABCD"))
+
+In [159]: df = df.cumsum()
+
+
+In [160]: fig, axes = plt.subplots(nrows=2, ncols=2)
+
+In [161]: plt.subplots_adjust(wspace=0.2, hspace=0.5)
+
+In [162]: df["A"].plot(ax=axes[0, 0]);
+
+In [163]: axes[0, 0].set_title("A");
+
+In [164]: df["B"].plot(ax=axes[0, 1]);
+
+In [165]: axes[0, 1].set_title("B");
+
+In [166]: df["C"].plot(ax=axes[1, 0]);
+
+In [167]: axes[1, 0].set_title("C");
+
+In [168]: df["D"].plot(ax=axes[1, 1]);
+
+In [169]: axes[1, 1].set_title("D");
+
+
+
+
+
+Plotting with error bars#
+Plotting with error bars is supported in DataFrame.plot() and Series.plot().
+Horizontal and vertical error bars can be supplied to the xerr and yerr keyword arguments to plot(). The error values can be specified using a variety of formats:
+
+As a DataFrame or dict of errors with column names matching the columns attribute of the plotting DataFrame or matching the name attribute of the Series.
+As a str indicating which of the columns of plotting DataFrame contain the error values.
+As raw values (list, tuple, or np.ndarray). Must be the same length as the plotting DataFrame/Series.
+
+Here is an example of one way to easily plot group means with standard deviations from the raw data.
+# Generate the data
+In [170]: ix3 = pd.MultiIndex.from_arrays(
+   .....:     [
+   .....:         ["a", "a", "a", "a", "a", "b", "b", "b", "b", "b"],
+   .....:         ["foo", "foo", "foo", "bar", "bar", "foo", "foo", "bar", "bar", "bar"],
+   .....:     ],
+   .....:     names=["letter", "word"],
+   .....: )
+   .....: 
+
+In [171]: df3 = pd.DataFrame(
+   .....:     {
+   .....:         "data1": [9, 3, 2, 4, 3, 2, 4, 6, 3, 2],
+   .....:         "data2": [9, 6, 5, 7, 5, 4, 5, 6, 5, 1],
+   .....:     },
+   .....:     index=ix3,
+   .....: )
+   .....: 
+
+# Group by index labels and take the means and standard deviations
+# for each group
+In [172]: gp3 = df3.groupby(level=("letter", "word"))
+
+In [173]: means = gp3.mean()
+
+In [174]: errors = gp3.std()
+
+In [175]: means
+Out[175]: 
+                data1     data2
+letter word                    
+a      bar   3.500000  6.000000
+       foo   4.666667  6.666667
+b      bar   3.666667  4.000000
+       foo   3.000000  4.500000
+
+In [176]: errors
+Out[176]: 
+                data1     data2
+letter word                    
+a      bar   0.707107  1.414214
+       foo   3.785939  2.081666
+b      bar   2.081666  2.645751
+       foo   1.414214  0.707107
+
+# Plot
+In [177]: fig, ax = plt.subplots()
+
+In [178]: means.plot.bar(yerr=errors, ax=ax, capsize=4, rot=0);
+
+
+
+Asymmetrical error bars are also supported, however raw error values must be provided in this case. For a N length Series, a 2xN array should be provided indicating lower and upper (or left and right) errors. For a MxN DataFrame, asymmetrical errors should be in a Mx2xN array.
+Here is an example of one way to plot the min/max range using asymmetrical error bars.
+In [179]: mins = gp3.min()
+
+In [180]: maxs = gp3.max()
+
+# errors should be positive, and defined in the order of lower, upper
+In [181]: errors = [[means[c] - mins[c], maxs[c] - means[c]] for c in df3.columns]
+
+# Plot
+In [182]: fig, ax = plt.subplots()
+
+In [183]: means.plot.bar(yerr=errors, ax=ax, capsize=4, rot=0);
+
+
+
+
+
+Plotting tables#
+Plotting with matplotlib table is now supported in  DataFrame.plot() and Series.plot() with a table keyword. The table keyword can accept bool, DataFrame or Series. The simple way to draw a table is to specify table=True. Data will be transposed to meet matplotlib’s default layout.
+In [184]: np.random.seed(123456)
+
+In [185]: fig, ax = plt.subplots(1, 1, figsize=(7, 6.5))
+
+In [186]: df = pd.DataFrame(np.random.rand(5, 3), columns=["a", "b", "c"])
+
+In [187]: ax.xaxis.tick_top()  # Display x-axis ticks on top.
+
+In [188]: df.plot(table=True, ax=ax);
+
+
+
+Also, you can pass a different DataFrame or Series to the
+table keyword. The data will be drawn as displayed in print method
+(not transposed automatically). If required, it should be transposed manually
+as seen in the example below.
+In [189]: fig, ax = plt.subplots(1, 1, figsize=(7, 6.75))
+
+In [190]: ax.xaxis.tick_top()  # Display x-axis ticks on top.
+
+In [191]: df.plot(table=np.round(df.T, 2), ax=ax);
+
+
+
+There also exists a helper function pandas.plotting.table, which creates a
+table from DataFrame or Series, and adds it to an
+matplotlib.Axes instance. This function can accept keywords which the
+matplotlib table has.
+In [192]: from pandas.plotting import table
+
+In [193]: fig, ax = plt.subplots(1, 1)
+
+In [194]: table(ax, np.round(df.describe(), 2), loc="upper right", colWidths=[0.2, 0.2, 0.2]);
+
+In [195]: df.plot(ax=ax, ylim=(0, 2), legend=None);
+
+
+
+Note: You can get table instances on the axes using axes.tables property for further decorations. See the matplotlib table documentation for more.
+
+
+Colormaps#
+A potential issue when plotting a large number of columns is that it can be
+difficult to distinguish some series due to repetition in the default colors. To
+remedy this, DataFrame plotting supports the use of the colormap argument,
+which accepts either a Matplotlib colormap
+or a string that is a name of a colormap registered with Matplotlib. A
+visualization of the default matplotlib colormaps is available here.
+As matplotlib does not directly support colormaps for line-based plots, the
+colors are selected based on an even spacing determined by the number of columns
+in the DataFrame. There is no consideration made for background color, so some
+colormaps will produce lines that are not easily visible.
+To use the cubehelix colormap, we can pass colormap='cubehelix'.
+In [196]: np.random.seed(123456)
+
+In [197]: df = pd.DataFrame(np.random.randn(1000, 10), index=ts.index)
+
+In [198]: df = df.cumsum()
+
+In [199]: plt.figure();
+
+In [200]: df.plot(colormap="cubehelix");
+
+
+
+Alternatively, we can pass the colormap itself:
+In [201]: from matplotlib import cm
+
+In [202]: plt.figure();
+
+In [203]: df.plot(colormap=cm.cubehelix);
+
+
+
+Colormaps can also be used other plot types, like bar charts:
+In [204]: np.random.seed(123456)
+
+In [205]: dd = pd.DataFrame(np.random.randn(10, 10)).map(abs)
+
+In [206]: dd = dd.cumsum()
+
+In [207]: plt.figure();
+
+In [208]: dd.plot.bar(colormap="Greens");
+
+
+
+Parallel coordinates charts:
+In [209]: plt.figure();
+
+In [210]: parallel_coordinates(data, "Name", colormap="gist_rainbow");
+
+
+
+Andrews curves charts:
+In [211]: plt.figure();
+
+In [212]: andrews_curves(data, "Name", colormap="winter");
+
+
+
+
+
+
+Plotting directly with Matplotlib#
+In some situations it may still be preferable or necessary to prepare plots
+directly with matplotlib, for instance when a certain type of plot or
+customization is not (yet) supported by pandas. Series and DataFrame
+objects behave like arrays and can therefore be passed directly to
+matplotlib functions without explicit casts.
+pandas also automatically registers formatters and locators that recognize date
+indices, thereby extending date and time support to practically all plot types
+available in matplotlib. Although this formatting does not provide the same
+level of refinement you would get when plotting via pandas, it can be faster
+when plotting a large number of points.
+In [213]: np.random.seed(123456)
+
+In [214]: price = pd.Series(
+   .....:     np.random.randn(150).cumsum(),
+   .....:     index=pd.date_range("2000-1-1", periods=150, freq="B"),
+   .....: )
+   .....: 
+
+In [215]: ma = price.rolling(20).mean()
+
+In [216]: mstd = price.rolling(20).std()
+
+In [217]: plt.figure();
+
+In [218]: plt.plot(price.index, price, "k");
+
+In [219]: plt.plot(ma.index, ma, "b");
+
+In [220]: plt.fill_between(mstd.index, ma - 2 * mstd, ma + 2 * mstd, color="b", alpha=0.2);
+
+
+
+
+
+Plotting backends#
+pandas can be extended with third-party plotting backends. The
+main idea is letting users select a plotting backend different than the provided
+one based on Matplotlib.
+This can be done by passing ‘backend.module’ as the argument backend in plot
+function. For example:
+>>> Series([1, 2, 3]).plot(backend="backend.module")
+
+
+Alternatively, you can also set this option globally, do you don’t need to specify
+the keyword in each plot call. For example:
+>>> pd.set_option("plotting.backend", "backend.module")
+>>> pd.Series([1, 2, 3]).plot()
+
+
+Or:
+>>> pd.options.plotting.backend = "backend.module"
+>>> pd.Series([1, 2, 3]).plot()
+
+
+This would be more or less equivalent to:
+>>> import backend.module
+>>> backend.module.plot(pd.Series([1, 2, 3]))
+
+
+The backend module can then use other visualization tools (Bokeh, Altair, hvplot,…)
+to generate the plots. Some libraries implementing a backend for pandas are listed
+on the ecosystem page.
+Developers guide can be found at
+https://pandas.pydata.org/docs/dev/development/extending.html#plotting-backends
+
+
+
+
+
+
+
+
+previous
+Nullable Boolean data type
+
+
+
+
+next
+Table Visualization
+
+
+
+
+
+
+
+
+
+
+ On this page
+  
+
+
+Basic plotting: plot
+Other plots
+Bar plots
+Histograms
+Box plots
+Area plot
+Scatter plot
+Hexagonal bin plot
+Pie plot
+
+
+Plotting with missing data
+Plotting tools
+Scatter matrix plot
+Density plot
+Andrews curves
+Parallel coordinates
+Lag plot
+Autocorrelation plot
+Bootstrap plot
+RadViz
+
+
+Plot formatting
+Setting the plot style
+General plot style arguments
+Controlling the legend
+Controlling the labels
+Scales
+Plotting on a secondary y-axis
+Custom formatters for timeseries plots
+Suppressing tick resolution adjustment
+Automatic date tick adjustment
+Subplots
+Using layout and targeting multiple axes
+Plotting with error bars
+Plotting tables
+Colormaps
+
+
+Plotting directly with Matplotlib
+Plotting backends
+
+-0.114006
+3.087706
+2.300142
+0.076813
+0.196742
+0.578260
+0.670854
+-1.762740
+0.162442
+1.925445
+0.480773
+0.577355
+0.608718
+2.024258
+-0.011330
+0.970385
+-0.280658
+0.074342
+-0.431743
+0.365820
+0.450379
+
+
+3
+1.121756
+0.710349
+0.430601
+0.985152
+-2.173496
+0.872914
+0.978413
+1.344284
+-0.071663
+0.888738
+0.745448
+0.428647
+-0.694635
+1.132672
+-1.109910
+0.761550
+1.539451
+0.761828
+0.035713
+0.045577
+-0.876563
+0.572533
+-0.581069
+0.185480
+1.616837
+1.774903
+-0.411192
+1.311047
+0.053226
+-0.014970
+-1.448013
+0.217059
+0.282747
+0.551690
+0.529080
+-1.117209
+0.335344
+-0.442260
+0.011515
+0.041130
+0.668873
+0.213405
+0.890941
+-0.951026
+-0.112152
+-0.488449
+-0.820326
+-1.818035
+-0.143478
+0.673228
+-1.340787
+-1.775970
+-0.966175
+0.372417
+-0.161372
+-0.925949
+0.426195
+-1.110662
+-0.259896
+1.724938
+-0.122744
+0.158431
+-0.387574
+0.605886
+0.061110
+-0.777561
+0.454724
+0.545073
+0.555228
+0.346889
+0.076970
+-2.229131
+-0.152898
+-1.116531
+0.443946
+1.847260
+-0.504217
+-1.470197
+0.658005
+-0.491693
+-0.680128
+-0.465588
+0.899679
+-0.216725
+0.592645
+0.092111
+-1.312965
+0.341167
+-0.191551
+0.635754
+-0.246323
+0.469217
+2.286650
+1.466498
+-0.384137
+-0.723277
+-0.624582
+-0.267565
+0.511589
+0.651240
+
+
+
+
+
+
+HTML Escaping#
+Suppose you have to display HTML within HTML, that can be a bit of pain when the renderer can’t distinguish. You can use the escape formatting option to handle this, and even use it within a formatter that contains HTML itself.
+Note that if you’re using Styler on untrusted, user-provided input to serve HTML then you should escape the input to prevent security vulnerabilities. See the Jinja2 documentation for more.
+
+[66]:
+
+
+df4 = pd.DataFrame([["<div></div>", '"&other"', "<span></span>"]])
+df4.style
+
+
+
+
+[66]:
+
+
+
+
+
+
+
+ 
+0
+1
+2
+
+
+
+
+0
+
+"&other"
+
+
+
+
+
+
+[67]:
+
+
+df4.style.format(escape="html")
+
+
+
+
+[67]:
+
+
+
+
+
+
+
+ 
+0
+1
+2
+
+
+
+
+0
+<div></div>
+"&other"
+<span></span>
+
+
+
+
+
+[68]:
+
+
+df4.style.format(
+    '<a href="https://pandas.pydata.org" target="_blank">{}</a>', escape="html"
+)
+
+
+
+
+[68]:
+
+
+
+
+
+
+
+ 
+0
+1
+2
+
+
+
+
+0
+<div></div>
+"&other"
+<span></span>
+
+
+
+
+
+
+
+Export to Excel#
+Some support (since version 0.20.0) is available for exporting styled DataFrames to Excel worksheets using the OpenPyXL or XlsxWriter engines. CSS2.2 properties handled include:
+
+background-color
+border-style properties
+border-width properties
+border-color properties
+color
+font-family
+font-style
+font-weight
+text-align
+text-decoration
+vertical-align
+white-space: nowrap
+Shorthand and side-specific border properties are supported (e.g. border-style and border-left-style) as well as the border shorthands for all sides (border: 1px solid green) or specified sides (border-left: 1px solid green). Using a border shorthand will override any border properties set before it (See CSS Working Group for more details)
+Only CSS2 named colors and hex colors of the form #rgb or #rrggbb are currently supported.
+The following pseudo CSS properties are also available to set Excel specific style properties:
+
+number-format
+border-style (for Excel-specific styles: “hair”, “mediumDashDot”, “dashDotDot”, “mediumDashDotDot”, “dashDot”, “slantDashDot”, or “mediumDashed”)
+
+
+
+Table level styles, and data cell CSS-classes are not included in the export to Excel: individual cells must have their properties mapped by the Styler.apply and/or Styler.map methods.
+
+[69]:
+
+
+df2.style.map(style_negative, props="color:red;").highlight_max(axis=0).to_excel(
+    "styled.xlsx", engine="openpyxl"
+)
+
+
+
+A screenshot of the output:
+
+
+
+Export to LaTeX#
+There is support (since version 1.3.0) to export Styler to LaTeX. The documentation for the .to_latex method gives further detail and numerous examples.
+
+
+More About CSS and HTML#
+Cascading Style Sheet (CSS) language, which is designed to influence how a browser renders HTML elements, has its own peculiarities. It never reports errors: it just silently ignores them and doesn’t render your objects how you intend so can sometimes be frustrating. Here is a very brief primer on how Styler creates HTML and interacts with CSS, with advice on common pitfalls to avoid.
+
+CSS Classes and Ids#
+The precise structure of the CSS class attached to each cell is as follows.
+
+Cells with Index and Column names include index_name and level<k> where k is its level in a MultiIndex
+Index label cells include
+
+row_heading
+level<k> where k is the level in a MultiIndex
+row<m> where m is the numeric position of the row
+
+
+Column label cells include
+
+col_heading
+level<k> where k is the level in a MultiIndex
+col<n> where n is the numeric position of the column
+
+
+Data cells include
+
+data
+row<m>, where m is the numeric position of the cell.
+col<n>, where n is the numeric position of the cell.
+
+
+Blank cells include blank
+Trimmed cells include col_trim or row_trim
+
+The structure of the id is T_uuid_level<k>_row<m>_col<n> where level<k> is used only on headings, and headings will only have either row<m> or col<n> whichever is needed. By default we’ve also prepended each row/column identifier with a UUID unique to each DataFrame so that the style from one doesn’t collide with the styling from another within the same notebook or page. You can read more about the use of UUIDs in Optimization.
+We can see example of the HTML by calling the .to_html() method.
+
+[70]:
+
+
+print(
+    pd.DataFrame(
+        [[1, 2], [3, 4]], index=["i1", "i2"], columns=["c1", "c2"]
+    ).style.to_html()
+)
+
+
+
+
+
+
+
+
+<style type="text/css">
+</style>
+<table id="T_fc828">
+  <thead>
+    <tr>
+      <th class="blank level0" >&nbsp;</th>
+      <th id="T_fc828_level0_col0" class="col_heading level0 col0" >c1</th>
+      <th id="T_fc828_level0_col1" class="col_heading level0 col1" >c2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th id="T_fc828_level0_row0" class="row_heading level0 row0" >i1</th>
+      <td id="T_fc828_row0_col0" class="data row0 col0" >1</td>
+      <td id="T_fc828_row0_col1" class="data row0 col1" >2</td>
+    </tr>
+    <tr>
+      <th id="T_fc828_level0_row1" class="row_heading level0 row1" >i2</th>
+      <td id="T_fc828_row1_col0" class="data row1 col0" >3</td>
+      <td id="T_fc828_row1_col1" class="data row1 col1" >4</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+CSS Hierarchies#
+The examples have shown that when CSS styles overlap, the one that comes last in the HTML render, takes precedence. So the following yield different results:
+
+[71]:
+
+
+df4 = pd.DataFrame([["text"]])
+df4.style.map(lambda x: "color:green;").map(lambda x: "color:red;")
+
+
+
+
+[71]:
+
+
+
+
+
+
+
+ 
+0
+
+
+
+
+0
+text
+
+
+
+
+
+[72]:
+
+
+df4.style.map(lambda x: "color:red;").map(lambda x: "color:green;")
+
+
+
+
+[72]:
+
+
+
+
+
+
+
+ 
+0
+
+
+
+
+0
+text
+
+
+
+
+This is only true for CSS rules that are equivalent in hierarchy, or importance. You can read more about CSS specificity here but for our purposes it suffices to summarize the key points:
+A CSS importance score for each HTML element is derived by starting at zero and adding:
+
+1000 for an inline style attribute
+100 for each ID
+10 for each attribute, class or pseudo-class
+1 for each element name or pseudo-element
+
+Let’s use this to describe the action of the following configurations
+
+[73]:
+
+
+df4.style.set_uuid("a_").set_table_styles(
+    [{"selector": "td", "props": "color:red;"}]
+).map(lambda x: "color:green;")
+
+
+
+
+[73]:
+
+
+
+
+
+
+
+ 
+0
+
+
+
+
+0
+text
+
+
+
+
+This text is red because the generated selector #T_a_ td is worth 101 (ID plus element), whereas #T_a_row0_col0 is only worth 100 (ID), so is considered inferior even though in the HTML it comes after the previous.
+
+[74]:
+
+
+df4.style.set_uuid("b_").set_table_styles(
+    [
+        {"selector": "td", "props": "color:red;"},
+        {"selector": ".cls-1", "props": "color:blue;"},
+    ]
+).map(lambda x: "color:green;").set_td_classes(pd.DataFrame([["cls-1"]]))
+
+
+
+
+[74]:
+
+
+
+
+
+
+
+ 
+0
+
+
+
+
+0
+text
+
+
+
+
+In the above case the text is blue because the selector #T_b_ .cls-1 is worth 110 (ID plus class), which takes precedence.
+
+[75]:
+
+
+df4.style.set_uuid("c_").set_table_styles(
+    [
+        {"selector": "td", "props": "color:red;"},
+        {"selector": ".cls-1", "props": "color:blue;"},
+        {"selector": "td.data", "props": "color:yellow;"},
+    ]
+).map(lambda x: "color:green;").set_td_classes(pd.DataFrame([["cls-1"]]))
+
+
+
+
+[75]:
+
+
+
+
+
+
+
+ 
+0
+
+
+
+
+0
+text
+
+
+
+
+Now we have created another table style this time the selector T_c_ td.data (ID plus element plus class) gets bumped up to 111.
+If your style fails to be applied, and its really frustrating, try the !important trump card.
+
+[76]:
+
+
+df4.style.set_uuid("d_").set_table_styles(
+    [
+        {"selector": "td", "props": "color:red;"},
+        {"selector": ".cls-1", "props": "color:blue;"},
+        {"selector": "td.data", "props": "color:yellow;"},
+    ]
+).map(lambda x: "color:green !important;").set_td_classes(pd.DataFrame([["cls-1"]]))
+
+
+
+
+[76]:
+
+
+
+
+
+
+
+ 
+0
+
+
+
+
+0
+text
+
+
+
+
+Finally got that green text after all!
+
+
+
+Extensibility#
+The core of pandas is, and will remain, its “high-performance, easy-to-use data structures”. With that in mind, we hope that DataFrame.style accomplishes two goals
+
+Provide an API that is pleasing to use interactively and is “good enough” for many tasks
+Provide the foundations for dedicated libraries to build on
+
+If you build a great library on top of this, let us know and we’ll link to it.
+
+Subclassing#
+If the default template doesn’t quite suit your needs, you can subclass Styler and extend or override the template. We’ll show an example of extending the default template to insert a custom header before each table.
+
+[77]:
+
+
+from jinja2 import Environment, ChoiceLoader, FileSystemLoader
+from IPython.display import HTML
+from pandas.io.formats.style import Styler
+
+
+
+We’ll use the following template:
+
+[78]:
+
+
+with open("templates/myhtml.tpl") as f_html:
+    print(f_html.read())
+
+
+
+
+
+
+
+
+{% extends "html_table.tpl" %}
+{% block table %}
+<h1>{{ table_title|default("My Table") }}</h1>
+{{ super() }}
+{% endblock table %}
+
+
+
+Now that we’ve created a template, we need to set up a subclass of Styler that knows about it.
+
+[79]:
+
+
+class MyStyler(Styler):
+    env = Environment(
+        loader=ChoiceLoader(
+            [
+                FileSystemLoader("templates"),  # contains ours
+                Styler.loader,  # the default
+            ]
+        )
+    )
+    template_html_table = env.get_template("myhtml.tpl")
+
+
+
+Notice that we include the original loader in our environment’s loader. That’s because we extend the original template, so the Jinja environment needs to be able to find it.
+Now we can use that custom styler. It’s __init__ takes a DataFrame.
+
+[80]:
+
+
+MyStyler(df3)
+
+
+
+
+[80]:
+
+
+
+
+My Table
+
+
+
+ 
+ 
+c1
+c2
+c3
+c4
+
+
+
+
+A
+r1
+0.986006
+0.385101
+1.249342
+0.509096
+
+
+r2
+0.412069
+-0.269821
+-0.074191
+0.063617
+
+
+B
+r1
+0.288273
+1.647746
+0.229242
+0.295998
+
+
+r2
+-0.132955
+-1.134032
+0.044834
+-0.610927
+
+
+
+
+Our custom template accepts a table_title keyword. We can provide the value in the .to_html method.
+
+[81]:
+
+
+HTML(MyStyler(df3).to_html(table_title="Extending Example"))
+
+
+
+
+[81]:
+
+
+
+
+Extending Example
+
+
+
+ 
+ 
+c1
+c2
+c3
+c4
+
+
+
+
+A
+r1
+0.986006
+0.385101
+1.249342
+0.509096
+
+
+r2
+0.412069
+-0.269821
+-0.074191
+0.063617
+
+
+B
+r1
+0.288273
+1.647746
+0.229242
+0.295998
+
+
+r2
+-0.132955
+-1.134032
+0.044834
+-0.610927
+
+
+
+
+For convenience, we provide the Styler.from_custom_template method that does the same as the custom subclass.
+
+[82]:
+
+
+EasyStyler = Styler.from_custom_template("templates", "myhtml.tpl")
+HTML(EasyStyler(df3).to_html(table_title="Another Title"))
+
+
+
+
+[82]:
+
+
+
+
+Another Title
+
+
+
+ 
+ 
+c1
+c2
+c3
+c4
+
+
+
+
+A
+r1
+0.986006
+0.385101
+1.249342
+0.509096
+
+
+r2
+0.412069
+-0.269821
+-0.074191
+0.063617
+
+
+B
+r1
+0.288273
+1.647746
+0.229242
+0.295998
+
+
+r2
+-0.132955
+-1.134032
+0.044834
+-0.610927
+
+
+
+
+
+Template Structure#
+Here’s the template structure for the both the style generation template and the table generation template:
+Style template:
+
+[84]:
+
+
+HTML(style_structure)
+
+
+
+
+[84]:
+
+
+
+
+
+before_style
+style
+    <style type="text/css">
+table_styles
+before_cellstyle
+cellstyle
+</style>
+
+
+Table template:
+
+[86]:
+
+
+HTML(table_structure)
+
+
+
+
+[86]:
+
+
+
+
+
+before_table
+table
+    <table ...>
+caption
+thead
+        before_head_rows
+head_tr (loop over headers)
+after_head_rows
+
+tbody
+        before_rows
+tr (loop over data rows)
+after_rows
+
+</table>
+
+after_table
+
+See the template in the GitHub repo for more details.
+
+
+
+
+
+
+
+
+
+
+previous
+Chart visualization
+
+
+
+
+next
+User-Defined Functions (UDFs)
+
+
+
+
+
+
+
+
+
+
+ On this page
+  
+
+
+Styler Object and Customising the Display
+Formatting the Display
+Formatting Values
+Hiding Data
+Concatenating DataFrame Outputs
+
+
+Styler Object and HTML
+Methods to Add Styles
+Table Styles
+Setting Classes and Linking to External CSS
+Table Attributes
+Data Cell CSS Classes
+
+
+Styler Functions
+Acting on Data
+Acting on the Index and Column Headers
+
+
+Tooltips and Captions
+Finer Control with Slicing
+Optimization
+1. Remove UUID and cell_ids
+2. Use table styles
+3. Set classes instead of using Styler functions
+4. Don’t use tooltips
+5. If every byte counts use string replacement
+
+
+Builtin Styles
+Highlight Null
+Highlight Min or Max
+Highlight Between
+Highlight Quantile
+Background Gradient and Text Gradient
+Set properties
+Bar charts
+
+
+Sharing styles
+Limitations
+Other Fun and Useful Stuff
+Widgets
+Magnify
+Sticky Headers
+HTML Escaping
+
+
+Export to Excel
+Export to LaTeX
+More About CSS and HTML
+CSS Classes and Ids
+CSS Hierarchies
+
+
+Extensibility
+Subclassing
+Template Structure

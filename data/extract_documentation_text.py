@@ -18,7 +18,7 @@ def extract_resources_text(link, parser="html.parser"):
 
 
 
-extract_resources_text(f'https://scikit-learn.org/stable/modules/outlier_detection.html')
+extract_resources_text(f'https://pandas.pydata.org/docs/user_guide/style.html')
 
 def pdf_text_parser(link):
     response = requests.get(link)
