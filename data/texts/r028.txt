@@ -1,0 +1,2627 @@
+This is a 3.
+It's sloppily written and rendered at an extremely low resolution of 28x28 pixels,
+but your brain has no trouble recognizing it as a 3.
+And I want you to take a moment to appreciate how
+crazy it is that brains can do this so effortlessly.
+I mean, this, this and this are also recognizable as 3s,
+even though the specific values of each pixel is very different from one
+image to the next.
+The particular light-sensitive cells in your eye that are firing when you
+see this 3 are very different from the ones firing when you see this 3.
+But something in that crazy-smart visual cortex of yours resolves these as representing
+the same idea, while at the same time recognizing other images as their own distinct
+ideas.
+But if I told you, hey, sit down and write for me a program that takes in a grid of
+28x28 pixels like this and outputs a single number between 0 and 10,
+telling you what it thinks the digit is, well the task goes from comically trivial to
+dauntingly difficult.
+Series preview
+Unless you've been living under a rock, I think I hardly need to motivate the relevance
+and importance of machine learning and neural networks to the present and to the future.
+But what I want to do here is show you what a neural network actually is,
+assuming no background, and to help visualize what it's doing,
+not as a buzzword but as a piece of math.
+My hope is that you come away feeling like the structure itself is motivated,
+and to feel like you know what it means when you read,
+or you hear about a neural network quote-unquote learning.
+This video is just going to be devoted to the structure component of that,
+and the following one is going to tackle learning.
+What we're going to do is put together a neural
+network that can learn to recognize handwritten digits.
+This is a somewhat classic example for introducing the topic,
+and I'm happy to stick with the status quo here,
+because at the end of the two videos I want to point you to a couple good
+resources where you can learn more, and where you can download the code that
+does this and play with it on your own computer.
+There are many many variants of neural networks,
+and in recent years there's been sort of a boom in research towards these variants,
+but in these two introductory videos you and I are just going to look at the simplest
+plain vanilla form with no added frills.
+This is kind of a necessary prerequisite for understanding any of the more powerful
+modern variants, and trust me it still has plenty of complexity for us to wrap our minds
+around.
+But even in this simplest form it can learn to recognize handwritten digits,
+which is a pretty cool thing for a computer to be able to do.
+And at the same time you'll see how it does fall
+short of a couple hopes that we might have for it.
+What are neurons?
+As the name suggests neural networks are inspired by the brain, but let's break that down.
+What are the neurons, and in what sense are they linked together?
+Right now when I say neuron all I want you to think about is a thing that holds a number,
+specifically a number between 0 and 1.
+It's really not more than that.
+For example the network starts with a bunch of neurons corresponding to
+each of the 28x28 pixels of the input image, which is 784 neurons in total.
+Each one of these holds a number that represents the grayscale value of the
+corresponding pixel, ranging from 0 for black pixels up to 1 for white pixels.
+This number inside the neuron is called its activation,
+and the image you might have in mind here is that each neuron is lit up when its
+activation is a high number.
+Introducing layers
+So all of these 784 neurons make up the first layer of our network.
+Now jumping over to the last layer, this has 10 neurons,
+each representing one of the digits.
+The activation in these neurons, again some number that's between 0 and 1,
+represents how much the system thinks that a given image corresponds with a given digit.
+There's also a couple layers in between called the hidden layers,
+which for the time being should just be a giant question mark for
+how on earth this process of recognizing digits is going to be handled.
+In this network I chose two hidden layers, each one with 16 neurons,
+and admittedly that's kind of an arbitrary choice.
+To be honest I chose two layers based on how I want to motivate the structure in
+just a moment, and 16, well that was just a nice number to fit on the screen.
+In practice there is a lot of room for experiment with a specific structure here.
+The way the network operates, activations in one
+layer determine the activations of the next layer.
+And of course the heart of the network as an information processing mechanism comes down
+to exactly how those activations from one layer bring about activations in the next
+layer.
+It's meant to be loosely analogous to how in biological networks of neurons,
+some groups of neurons firing cause certain others to fire.
+Now the network I'm showing here has already been trained to recognize digits,
+and let me show you what I mean by that.
+It means if you feed in an image, lighting up all 784 neurons of the input layer
+according to the brightness of each pixel in the image,
+that pattern of activations causes some very specific pattern in the next layer
+which causes some pattern in the one after it,
+which finally gives some pattern in the output layer.
+And the brightest neuron of that output layer is the network's choice,
+so to speak, for what digit this image represents.
+Why layers?
+And before jumping into the math for how one layer influences the next,
+or how training works, let's just talk about why it's even reasonable
+to expect a layered structure like this to behave intelligently.
+What are we expecting here?
+What is the best hope for what those middle layers might be doing?
+Well, when you or I recognize digits, we piece together various components.
+A 9 has a loop up top and a line on the right.
+An 8 also has a loop up top, but it's paired with another loop down low.
+A 4 basically breaks down into three specific lines, and things like that.
+Now in a perfect world, we might hope that each neuron in the second
+to last layer corresponds with one of these subcomponents,
+that anytime you feed in an image with, say, a loop up top,
+like a 9 or an 8, there's some specific neuron whose activation is
+going to be close to 1.
+And I don't mean this specific loop of pixels,
+the hope would be that any generally loopy pattern towards the top sets off this neuron.
+That way, going from the third layer to the last one just requires
+learning which combination of subcomponents corresponds to which digits.
+Of course, that just kicks the problem down the road,
+because how would you recognize these subcomponents,
+or even learn what the right subcomponents should be?
+And I still haven't even talked about how one layer influences the next,
+but run with me on this one for a moment.
+Recognizing a loop can also break down into subproblems.
+One reasonable way to do this would be to first
+recognize the various little edges that make it up.
+Similarly, a long line, like the kind you might see in the digits 1 or 4 or 7,
+is really just a long edge, or maybe you think of it as a certain pattern of several
+smaller edges.
+So maybe our hope is that each neuron in the second layer of
+the network corresponds with the various relevant little edges.
+Maybe when an image like this one comes in, it lights up all of the
+neurons associated with around 8 to 10 specific little edges,
+which in turn lights up the neurons associated with the upper loop
+and a long vertical line, and those light up the neuron associated with a 9.
+Whether or not this is what our final network actually does is another question,
+one that I'll come back to once we see how to train the network,
+but this is a hope that we might have, a sort of goal with the layered structure
+like this.
+Moreover, you can imagine how being able to detect edges and patterns
+like this would be really useful for other image recognition tasks.
+And even beyond image recognition, there are all sorts of intelligent
+things you might want to do that break down into layers of abstraction.
+Parsing speech, for example, involves taking raw audio and picking out distinct sounds,
+which combine to make certain syllables, which combine to form words,
+which combine to make up phrases and more abstract thoughts, etc.
+But getting back to how any of this actually works,
+picture yourself right now designing how exactly the activations in one layer might
+determine the activations in the next.
+The goal is to have some mechanism that could conceivably combine pixels into edges,
+or edges into patterns, or patterns into digits.
+Edge detection example
+And to zoom in on one very specific example, let's say the hope
+is for one particular neuron in the second layer to pick up
+on whether or not the image has an edge in this region here.
+The question at hand is what parameters should the network have?
+What dials and knobs should you be able to tweak so that it's expressive
+enough to potentially capture this pattern, or any other pixel pattern,
+or the pattern that several edges can make a loop, and other such things?
+Well, what we'll do is assign a weight to each one of the
+connections between our neuron and the neurons from the first layer.
+These weights are just numbers.
+Then take all of those activations from the first layer
+and compute their weighted sum according to these weights.
+I find it helpful to think of these weights as being organized into a
+little grid of their own, and I'm going to use green pixels to indicate
+positive weights, and red pixels to indicate negative weights,
+where the brightness of that pixel is some loose depiction of the weight's value.
+Now if we made the weights associated with almost all of the pixels zero
+except for some positive weights in this region that we care about,
+then taking the weighted sum of all the pixel values really just amounts
+to adding up the values of the pixel just in the region that we care about.
+And if you really wanted to pick up on whether there's an edge here,
+what you might do is have some negative weights associated with the surrounding pixels.
+Then the sum is largest when those middle pixels
+are bright but the surrounding pixels are darker.
+When you compute a weighted sum like this, you might come out with any number,
+but for this network what we want is for activations to be some value between 0 and 1.
+So a common thing to do is to pump this weighted sum into some function
+that squishes the real number line into the range between 0 and 1.
+And a common function that does this is called the sigmoid function,
+also known as a logistic curve.
+Basically very negative inputs end up close to 0, positive inputs end up close to 1,
+and it just steadily increases around the input 0.
+So the activation of the neuron here is basically a
+measure of how positive the relevant weighted sum is.
+But maybe it's not that you want the neuron to
+light up when the weighted sum is bigger than 0.
+Maybe you only want it to be active when the sum is bigger than say 10.
+That is, you want some bias for it to be inactive.
+What we'll do then is just add in some other number like negative 10 to this
+weighted sum before plugging it through the sigmoid squishification function.
+That additional number is called the bias.
+So the weights tell you what pixel pattern this neuron in the second
+layer is picking up on, and the bias tells you how high the weighted
+sum needs to be before the neuron starts getting meaningfully active.
+Counting weights and biases
+And that is just one neuron.
+Every other neuron in this layer is going to be connected to
+all 784 pixel neurons from the first layer, and each one of
+those 784 connections has its own weight associated with it.
+Also, each one has some bias, some other number that you add
+on to the weighted sum before squishing it with the sigmoid.
+And that's a lot to think about!
+With this hidden layer of 16 neurons, that's a total of 784 times 16 weights,
+along with 16 biases.
+And all of that is just the connections from the first layer to the second.
+The connections between the other layers also have
+a bunch of weights and biases associated with them.
+All said and done, this network has almost exactly 13,000 total weights and biases.
+13,000 knobs and dials that can be tweaked and turned
+to make this network behave in different ways.
+How learning relates
+So when we talk about learning, what that's referring to is
+getting the computer to find a valid setting for all of these
+many many numbers so that it'll actually solve the problem at hand.
+One thought experiment that is at once fun and kind of horrifying is to imagine sitting
+down and setting all of these weights and biases by hand,
+purposefully tweaking the numbers so that the second layer picks up on edges,
+the third layer picks up on patterns, etc.
+I personally find this satisfying rather than just treating the network as a total black
+box, because when the network doesn't perform the way you anticipate,
+if you've built up a little bit of a relationship with what those weights and biases
+actually mean, you have a starting place for experimenting with how to change the
+structure to improve.
+Or when the network does work but not for the reasons you might expect,
+digging into what the weights and biases are doing is a good way to challenge
+your assumptions and really expose the full space of possible solutions.
+Notation and linear algebra
+By the way, the actual function here is a little cumbersome to write down,
+don't you think?
+So let me show you a more notationally compact way that these connections are represented.
+This is how you'd see it if you choose to read up more about neural networks.
+Organize all of the activations from one layer into a column as a vector.
+Then organize all of the weights as a matrix, where each row of that matrix corresponds
+to the connections between one layer and a particular neuron in the next layer.
+What that means is that taking the weighted sum of the activations in
+the first layer according to these weights corresponds to one of the
+terms in the matrix vector product of everything we have on the left here.
+By the way, so much of machine learning just comes down to having a good
+grasp of linear algebra, so for any of you who want a nice visual
+understanding for matrices and what matrix vector multiplication means,
+take a look at the series I did on linear algebra, especially chapter 3.
+Back to our expression, instead of talking about adding the bias to each one of
+these values independently, we represent it by organizing all those biases into
+a vector, and adding the entire vector to the previous matrix vector product.
+Then as a final step, I'll wrap a sigmoid around the outside here,
+and what that's supposed to represent is that you're going to apply the
+sigmoid function to each specific component of the resulting vector inside.
+So once you write down this weight matrix and these vectors as their own symbols,
+you can communicate the full transition of activations from one layer to the next in an
+extremely tight and neat little expression, and this makes the relevant code both a lot
+simpler and a lot faster, since many libraries optimize the heck out of matrix
+multiplication.
+Recap
+Remember how earlier I said these neurons are simply things that hold numbers?
+Well of course the specific numbers that they hold depends on the image you feed in,
+so it's actually more accurate to think of each neuron as a function,
+one that takes in the outputs of all the neurons in the previous layer and spits out a
+number between 0 and 1.
+Really the entire network is just a function, one that takes in
+784 numbers as an input and spits out 10 numbers as an output.
+It's an absurdly complicated function, one that involves 13,000 parameters
+in the forms of these weights and biases that pick up on certain patterns,
+and which involves iterating many matrix vector products and the sigmoid
+squishification function, but it's just a function nonetheless.
+And in a way it's kind of reassuring that it looks complicated.
+I mean if it were any simpler, what hope would we have
+that it could take on the challenge of recognizing digits?
+And how does it take on that challenge?
+How does this network learn the appropriate weights and biases just by looking at data?
+Well that's what I'll show in the next video, and I'll also dig a little
+more into what this particular network we're seeing is really doing.
+Some final words
+Now is the point I suppose I should say subscribe to stay notified
+about when that video or any new videos come out,
+but realistically most of you don't actually receive notifications from YouTube, do you?
+Maybe more honestly I should say subscribe so that the neural networks
+that underlie YouTube's recommendation algorithm are primed to believe
+that you want to see content from this channel get recommended to you.
+Anyway, stay posted for more.
+Thank you very much to everyone supporting these videos on Patreon.
+I've been a little slow to progress in the probability series this summer,
+but I'm jumping back into it after this project,
+so patrons you can look out for updates there.
+ReLU vs Sigmoid
+To close things off here I have with me Lisha Li who did her PhD work on the
+theoretical side of deep learning and who currently works at a venture capital
+firm called Amplify Partners who kindly provided some of the funding for this video.
+So Lisha one thing I think we should quickly bring up is this sigmoid function.
+As I understand it early networks use this to squish the relevant weighted
+sum into that interval between zero and one, you know kind of motivated
+by this biological analogy of neurons either being inactive or active.
+Exactly. But relatively few modern networks actually use sigmoid anymore.
+Yeah. It's kind of old school right?
+Yeah or rather ReLU seems to be much easier to train.
+And ReLU, ReLU stands for rectified linear unit?
+Yes it's this kind of function where you're just taking a max of zero
+and a where a is given by what you were explaining in the video and
+what this was sort of motivated from I think was a partially by a
+biological analogy with how neurons would either be activated or not.
+And so if it passes a certain threshold it would be the identity function but if it did
+not then it would just not be activated so it'd be zero so it's kind of a simplification.
+Using sigmoids didn't help training or it was very difficult to
+train at some point and people just tried ReLU and it happened
+to work very well for these incredibly deep neural networks.
+All right thank you Lisha.
+
+Last video I laid out the structure of a neural network.
+I'll give a quick recap here so that it's fresh in our minds,
+and then I have two main goals for this video.
+The first is to introduce the idea of gradient descent,
+which underlies not only how neural networks learn,
+but how a lot of other machine learning works as well.
+Then after that we'll dig in a little more into how this particular network performs,
+and what those hidden layers of neurons end up looking for.
+As a reminder, our goal here is the classic example of handwritten digit recognition,
+Recap
+the hello world of neural networks.
+These digits are rendered on a 28x28 pixel grid,
+each pixel with some grayscale value between 0 and 1.
+Those are what determine the activations of 784 neurons in the input layer of the network.
+And then the activation for each neuron in the following layers is based on a weighted
+sum of all the activations in the previous layer, plus some special number called a bias.
+Then you compose that sum with some other function,
+like the sigmoid squishification, or a relu, the way I walked through last video.
+In total, given the somewhat arbitrary choice of two hidden layers with 16 neurons each,
+the network has about 13,000 weights and biases that we can adjust,
+and it's these values that determine what exactly the network actually does.
+Then what we mean when we say that this network classifies a given digit is that
+the brightest of those 10 neurons in the final layer corresponds to that digit.
+And remember, the motivation we had in mind here for the layered structure
+was that maybe the second layer could pick up on the edges,
+and the third layer might pick up on patterns like loops and lines,
+and the last one could just piece together those patterns to recognize digits.
+Using training data
+So here, we learn how the network learns.
+What we want is an algorithm where you can show this network a whole bunch of
+training data, which comes in the form of a bunch of different images of handwritten
+digits, along with labels for what they're supposed to be,
+and it'll adjust those 13,000 weights and biases so as to improve its performance
+on the training data.
+Hopefully, this layered structure will mean that what it
+learns generalizes to images beyond that training data.
+The way we test that is that after you train the network,
+you show it more labeled data that it's never seen before,
+and you see how accurately it classifies those new images.
+Fortunately for us, and what makes this such a common example to start with,
+is that the good people behind the MNIST database have put together a collection of tens
+of thousands of handwritten digit images, each one labeled with the numbers they're
+supposed to be.
+And as provocative as it is to describe a machine as learning,
+once you see how it works, it feels a lot less like some crazy sci-fi premise,
+and a lot more like a calculus exercise.
+I mean, basically it comes down to finding the minimum of a certain function.
+Cost functions
+Remember, conceptually, we're thinking of each neuron as being connected to all
+the neurons in the previous layer, and the weights in the weighted sum defining
+its activation are kind of like the strengths of those connections,
+and the bias is some indication of whether that neuron tends to be active or inactive.
+And to start things off, we're just going to initialize
+all of those weights and biases totally randomly.
+Needless to say, this network is going to perform pretty horribly on
+a given training example, since it's just doing something random.
+For example, you feed in this image of a 3, and the output layer just looks like a mess.
+So what you do is define a cost function, a way of telling the computer,
+no, bad computer, that output should have activations which are 0 for most neurons,
+but 1 for this neuron, what you gave me is utter trash.
+To say that a little more mathematically, you add up the squares of the differences
+between each of those trash output activations and the value you want them to have,
+and this is what we'll call the cost of a single training example.
+Notice this sum is small when the network confidently classifies the image correctly,
+but it's large when the network seems like it doesn't know what it's doing.
+So then what you do is consider the average cost over all of
+the tens of thousands of training examples at your disposal.
+This average cost is our measure for how lousy the network is,
+and how bad the computer should feel.
+And that's a complicated thing.
+Remember how the network itself was basically a function,
+one that takes in 784 numbers as inputs, the pixel values,
+and spits out 10 numbers as its output, and in a sense it's parameterized
+by all these weights and biases?
+Well the cost function is a layer of complexity on top of that.
+It takes as its input those 13,000 or so weights and biases,
+and spits out a single number describing how bad those weights and biases are,
+and the way it's defined depends on the network's behavior over all the tens of
+thousands of pieces of training data.
+That's a lot to think about.
+But just telling the computer what a crappy job it's doing isn't very helpful.
+You want to tell it how to change those weights and biases so that it gets better.
+To make it easier, rather than struggling to imagine a function with 13,000 inputs,
+just imagine a simple function that has one number as an input and one number as an
+output.
+How do you find an input that minimizes the value of this function?
+Calculus students will know that you can sometimes figure out that minimum explicitly,
+but that's not always feasible for really complicated functions,
+certainly not in the 13,000 input version of this situation for our crazy complicated
+neural network cost function.
+A more flexible tactic is to start at any input,
+and figure out which direction you should step to make that output lower.
+Specifically, if you can figure out the slope of the function where you are,
+then shift to the left if that slope is positive,
+and shift the input to the right if that slope is negative.
+If you do this repeatedly, at each point checking the new slope and taking the
+appropriate step, you're going to approach some local minimum of the function.
+The image you might have in mind here is a ball rolling down a hill.
+Notice, even for this really simplified single input function,
+there are many possible valleys that you might land in,
+depending on which random input you start at,
+and there's no guarantee that the local minimum you land in is going to
+be the smallest possible value of the cost function.
+That will carry over to our neural network case as well.
+And I also want you to notice how if you make your step sizes proportional to the slope,
+then when the slope is flattening out towards the minimum,
+your steps get smaller and smaller, and that kind of helps you from overshooting.
+Gradient descent
+Bumping up the complexity a bit, imagine instead
+a function with two inputs and one output.
+You might think of the input space as the xy-plane,
+and the cost function as being graphed as a surface above it.
+Now instead of asking about the slope of the function,
+you have to ask which direction you should step in this input
+space so as to decrease the output of the function most quickly.
+In other words, what's the downhill direction?
+Again, it's helpful to think of a ball rolling down that hill.
+Those of you familiar with multivariable calculus will know that the
+gradient of a function gives you the direction of steepest ascent,
+which direction should you step to increase the function most quickly.
+Naturally enough, taking the negative of that gradient gives you
+the direction to step that decreases the function most quickly.
+Even more than that, the length of this gradient vector is
+an indication for just how steep that steepest slope is.
+If you're unfamiliar with multivariable calculus and want to learn more,
+check out some of the work I did for Khan Academy on the topic.
+Honestly though, all that matters for you and me right now is that
+in principle there exists a way to compute this vector,
+this vector that tells you what the downhill direction is and how steep it is.
+You'll be okay if that's all you know and you're not rock solid on the details.
+Cause If you can get that, the algorithm for minimizing the function is to compute this
+gradient direction, then take a small step downhill, and repeat that over and over.
+It's the same basic idea for a function that has 13,000 inputs instead of 2 inputs.
+Imagine organizing all 13,000 weights and biases
+of our network into a giant column vector.
+The negative gradient of the cost function is just a vector,
+it's some direction inside this insanely huge input space that tells you which
+nudges to all of those numbers is going to cause the most rapid decrease to
+the cost function.
+And of course, with our specially designed cost function,
+changing the weights and biases to decrease it means making the
+output of the network on each piece of training data look less like
+a random array of 10 values, and more like an actual decision we want it to make.
+It's important to remember, this cost function involves an average over all of the
+training data, so if you minimize it, it means it's a better performance on all of those
+samples.
+The algorithm for computing this gradient efficiently,
+which is effectively the heart of how a neural network learns,
+is called backpropagation, and it's what I'm going to be talking about next video.
+There, I really want to take the time to walk through what exactly happens to
+each weight and bias for a given piece of training data,
+trying to give an intuitive feel for what's happening beyond the pile of relevant
+calculus and formulas.
+Right here, right now, the main thing I want you to know,
+independent of implementation details, is that what we mean when we
+talk about a network learning is that it's just minimizing a cost function.
+And notice, one consequence of that is that it's important for this cost function to have
+a nice smooth output, so that we can find a local minimum by taking little steps
+downhill.
+This is why, by the way, artificial neurons have continuously ranging activations,
+rather than simply being active or inactive in a binary way,
+the way biological neurons are.
+This process of repeatedly nudging an input of a function by some
+multiple of the negative gradient is called gradient descent.
+It's a way to converge towards some local minimum of a cost function,
+basically a valley in this graph.
+I'm still showing the picture of a function with two inputs, of course,
+because nudges in a 13,000 dimensional input space are a little hard to
+wrap your mind around, but there is a nice non-spatial way to think about this.
+Each component of the negative gradient tells us two things.
+The sign, of course, tells us whether the corresponding
+component of the input vector should be nudged up or down.
+But importantly, the relative magnitudes of all these
+components kind of tells you which changes matter more.
+You see, in our network, an adjustment to one of the weights might have a much
+greater impact on the cost function than the adjustment to some other weight.
+Some of these connections just matter more for our training data.
+More on gradient vectors
+So a way you can think about this gradient vector of our mind-warpingly massive
+cost function is that it encodes the relative importance of each weight and bias,
+that is, which of these changes is going to carry the most bang for your buck.
+This really is just another way of thinking about direction.
+To take a simpler example, if you have some function with two variables as an input,
+and you compute that its gradient at some particular point comes out as 3,1,
+then on the one hand you can interpret that as saying that when you're
+standing at that input, moving along this direction increases the function most quickly,
+that when you graph the function above the plane of input points,
+that vector is what's giving you the straight uphill direction.
+But another way to read that is to say that changes to this first variable have 3
+times the importance as changes to the second variable,
+that at least in the neighborhood of the relevant input,
+nudging the x-value carries a lot more bang for your buck.
+Gradient descent recap
+Let's zoom out and sum up where we are so far.
+The network itself is this function with 784 inputs and 10 outputs,
+defined in terms of all these weighted sums.
+The cost function is a layer of complexity on top of that.
+It takes the 13,000 weights and biases as inputs and spits out
+a single measure of lousiness based on the training examples.
+And the gradient of the cost function is one more layer of complexity still.
+It tells us what nudges to all these weights and biases cause the
+fastest change to the value of the cost function,
+which you might interpret as saying which changes to which weights matter the most.
+Analyzing the network
+So, when you initialize the network with random weights and biases,
+and adjust them many times based on this gradient descent process,
+how well does it actually perform on images it's never seen before?
+The one I've described here, with the two hidden layers of 16 neurons each,
+chosen mostly for aesthetic reasons, is not bad,
+classifying about 96% of the new images it sees correctly.
+And honestly, if you look at some of the examples it messes up on,
+you feel compelled to cut it a little slack.
+Now if you play around with the hidden layer structure and make a couple tweaks,
+you can get this up to 98%.
+And that's pretty good!
+It's not the best, you can certainly get better performance by getting more sophisticated
+than this plain vanilla network, but given how daunting the initial task is,
+I think there's something incredible about any network doing this well on images it's
+never seen before, given that we never specifically told it what patterns to look for.
+Originally, the way I motivated this structure was by describing a hope we might have,
+that the second layer might pick up on little edges,
+that the third layer would piece together those edges to recognize loops
+and longer lines, and that those might be pieced together to recognize digits.
+So is this what our network is actually doing?
+Well, for this one at least, not at all.
+Remember how last video we looked at how the weights of the connections from all
+the neurons in the first layer to a given neuron in the second layer can be
+visualized as a given pixel pattern that the second layer neuron is picking up on?
+Well, when we actually do that for the weights associated with these transitions,
+from the first layer to the next, instead of picking up on isolated little edges here
+and there, they look, well, almost random, just with some very loose patterns in the
+middle there.
+It would seem that in the unfathomably large 13,000 dimensional space
+of possible weights and biases, our network found itself a happy
+little local minimum that, despite successfully classifying most images,
+doesn't exactly pick up on the patterns we might have hoped for.
+And to really drive this point home, watch what happens when you input a random image.
+If the system was smart, you might expect it to feel uncertain,
+maybe not really activating any of those 10 output neurons or activating them
+all evenly, but instead it confidently gives you some nonsense answer,
+as if it feels as sure that this random noise is a 5 as it does that an actual
+image of a 5 is a 5.
+Phrased differently, even if this network can recognize digits pretty well,
+it has no idea how to draw them.
+A lot of this is because it's such a tightly constrained training setup.
+I mean, put yourself in the network's shoes here.
+From its point of view, the entire universe consists of nothing but clearly
+defined unmoving digits centered in a tiny grid,
+and its cost function never gave it any incentive to be anything but utterly
+confident in its decisions.
+So with this as the image of what those second layer neurons are really doing,
+you might wonder why I would introduce this network with the
+motivation of picking up on edges and patterns.
+I mean, that's just not at all what it ends up doing.
+Well, this is not meant to be our end goal, but instead a starting point.
+Frankly, this is old technology, the kind researched in the 80s and 90s,
+and you do need to understand it before you can understand more detailed modern
+variants, and it clearly is capable of solving some interesting problems,
+but the more you dig into what those hidden layers are really doing,
+the less intelligent it seems.
+Learning more
+Shifting the focus for a moment from how networks learn to how you learn,
+that'll only happen if you engage actively with the material here somehow.
+One pretty simple thing I want you to do is just pause right now and think deeply
+for a moment about what changes you might make to this system and how it perceives
+images if you wanted it to better pick up on things like edges and patterns.
+But better than that, to actually engage with the material,
+I highly recommend the book by Michael Nielsen on deep learning and neural networks.
+In it, you can find the code and the data to download and play with for this exact
+example, and the book will walk you through step by step what that code is doing.
+What's awesome is that this book is free and publicly available,
+so if you do get something out of it, consider joining me in making a donation towards
+Nielsen's efforts.
+I've also linked a couple other resources I like a lot in the description,
+including the phenomenal and beautiful blog post by Chris Ola and the articles in
+Distill.
+Lisha Li interview
+To close things off here for the last few minutes,
+I want to jump back into a snippet of the interview I had with Leisha Lee.
+You might remember her from the last video, she did her PhD work in deep learning.
+In this little snippet she talks about two recent papers that really dig into
+how some of the more modern image recognition networks are actually learning.
+Just to set up where we were in the conversation,
+the first paper took one of these particularly deep neural networks that's really good
+at image recognition, and instead of training it on a properly labeled dataset,
+shuffled all the labels around before training.
+Obviously the testing accuracy here was going to be no better than random,
+since everything's just randomly labeled. But it was still able to achieve
+the same training accuracy as you would on a properly labeled dataset.
+Basically, the millions of weights for this particular network were
+enough for it to just memorize the random data,
+which raises the question for whether minimizing this cost function
+actually corresponds to any sort of structure in the image, or is it just memorization?
+...to memorize the entire dataset of what the correct classification is.
+And so half a year later at ICML this year, there was not exactly rebuttal paper,
+but paper that addressed some aspects of like, hey,
+actually these networks are doing something a little bit smarter than that.
+If you look at that accuracy curve if you were just training on a random data set
+that curve went down very slowly, almost in a linear fashion.
+So you’re really struggling to find that local minimum of the right weights.
+Whereas if you're actually training on a structured dataset,
+one that has the right labels, you fiddle around a little bit in the beginning,
+but then you kind of dropped very fast to get to that accuracy level,
+and so in some sense it was easier to find that local maxima.
+And so what was also interesting about that is it brings into light another paper from
+actually a couple of years ago, which has a lot more simplifications about the network
+layers, but one of the results was saying how if you look at the optimization landscape,
+the local minima that these networks tend to learn are actually of equal quality,
+so in some sense if your dataset is structured,
+you should be able to find that much more easily.
+Closing thoughts
+My thanks, as always, to those of you supporting on Patreon.
+I've said before just what a game changer Patreon is,
+but these videos really would not be possible without you.
+I also want to give a special thanks to the VC firm Amplify Partners
+and their support of these initial videos in the series. Thank you.
+
+Here, we tackle backpropagation, the core algorithm behind how neural networks learn.
+After a quick recap for where we are, the first thing I'll do is an intuitive walkthrough
+for what the algorithm is actually doing, without any reference to the formulas.
+Then, for those of you who do want to dive into the math,
+the next video goes into the calculus underlying all this.
+Recap
+If you watched the last two videos, or if you're just jumping in with the appropriate
+background, you know what a neural network is, and how it feeds forward information.
+Here, we're doing the classic example of recognizing handwritten digits whose pixel
+values get fed into the first layer of the network with 784 neurons,
+and I've been showing a network with two hidden layers having just 16 neurons each,
+and an output layer of 10 neurons, indicating which digit the network is choosing
+as its answer.
+I'm also expecting you to understand gradient descent,
+as described in the last video, and how what we mean by learning is
+that we want to find which weights and biases minimize a certain cost function.
+As a quick reminder, for the cost of a single training example,
+you take the output the network gives, along with the output you wanted it to give,
+and add up the squares of the differences between each component.
+Doing this for all of your tens of thousands of training examples and
+averaging the results, this gives you the total cost of the network.
+And as if that's not enough to think about, as described in the last video,
+the thing that we're looking for is the negative gradient of this cost function,
+which tells you how you need to change all of the weights and biases,
+all of these connections, so as to most efficiently decrease the cost.
+Backpropagation, the topic of this video, is an
+algorithm for computing that crazy complicated gradient.
+And the one idea from the last video that I really want you to hold firmly
+in your mind right now is that because thinking of the gradient vector
+as a direction in 13,000 dimensions is, to put it lightly,
+beyond the scope of our imaginations, there's another way you can think about it.
+The magnitude of each component here is telling you how
+sensitive the cost function is to each weight and bias.
+For example, let's say you go through the process I'm about to describe,
+and you compute the negative gradient, and the component associated with the weight on
+this edge here comes out to be 3.2, while the component associated with this edge here
+comes out as 0.1.
+The way you would interpret that is that the cost of the function is 32 times more
+sensitive to changes in that first weight, so if you were to wiggle that value
+just a little bit, it's going to cause some change to the cost,
+and that change is 32 times greater than what the same wiggle to that second
+weight would give.
+Personally, when I was first learning about backpropagation,
+I think the most confusing aspect was just the notation and the index chasing of it all.
+But once you unwrap what each part of this algorithm is really doing,
+each individual effect it's having is actually pretty intuitive,
+it's just that there's a lot of little adjustments getting layered on top of each other.
+Intuitive walkthrough example
+So I'm going to start things off here with a complete disregard for the notation,
+and just step through the effects each training example has on the weights and biases.
+Because the cost function involves averaging a certain cost per example over all
+the tens of thousands of training examples, the way we adjust the weights and
+biases for a single gradient descent step also depends on every single example.
+Or rather, in principle it should, but for computational efficiency we'll do a little
+trick later to keep you from needing to hit every single example for every step.
+In other cases, right now, all we're going to do is focus
+our attention on one single example, this image of a 2.
+What effect should this one training example have
+on how the weights and biases get adjusted?
+Let's say we're at a point where the network is not well trained yet,
+so the activations in the output are going to look pretty random,
+maybe something like 0.5, 0.8, 0.2, on and on.
+We can't directly change those activations, we
+only have influence on the weights and biases.
+But it's helpful to keep track of which adjustments
+we wish should take place to that output layer.
+And since we want it to classify the image as a 2,
+we want that third value to get nudged up while all the others get nudged down.
+Moreover, the sizes of these nudges should be proportional
+to how far away each current value is from its target value.
+For example, the increase to that number 2 neuron's activation
+is in a sense more important than the decrease to the number 8 neuron,
+which is already pretty close to where it should be.
+So zooming in further, let's focus just on this one neuron,
+the one whose activation we wish to increase.
+Remember, that activation is defined as a certain weighted sum of all the
+activations in the previous layer, plus a bias,
+which is all then plugged into something like the sigmoid squishification function,
+or a ReLU.
+So there are three different avenues that can team
+up together to help increase that activation.
+You can increase the bias, you can increase the weights,
+and you can change the activations from the previous layer.
+Focusing on how the weights should be adjusted,
+notice how the weights actually have differing levels of influence.
+The connections with the brightest neurons from the preceding layer have the
+biggest effect since those weights are multiplied by larger activation values.
+So if you were to increase one of those weights,
+it actually has a stronger influence on the ultimate cost function than increasing
+the weights of connections with dimmer neurons,
+at least as far as this one training example is concerned.
+Remember, when we talk about gradient descent,
+we don't just care about whether each component should get nudged up or down,
+we care about which ones give you the most bang for your buck.
+This, by the way, is at least somewhat reminiscent of a theory in
+neuroscience for how biological networks of neurons learn, Hebbian theory,
+often summed up in the phrase, neurons that fire together wire together.
+Here, the biggest increases to weights, the biggest strengthening of connections,
+happens between neurons which are the most active,
+and the ones which we wish to become more active.
+In a sense, the neurons that are firing while seeing a 2 get
+more strongly linked to those firing when thinking about a 2.
+To be clear, I'm not in a position to make statements one way or another about
+whether artificial networks of neurons behave anything like biological brains,
+and this fires together wire together idea comes with a couple meaningful asterisks,
+but taken as a very loose analogy, I find it interesting to note.
+Anyway, the third way we can help increase this neuron's activation
+is by changing all the activations in the previous layer.
+Namely, if everything connected to that digit 2 neuron with a positive
+weight got brighter, and if everything connected with a negative weight got dimmer,
+then that digit 2 neuron would become more active.
+And similar to the weight changes, you're going to get the most bang for your buck
+by seeking changes that are proportional to the size of the corresponding weights.
+Now of course, we cannot directly influence those activations,
+we only have control over the weights and biases.
+But just as with the last layer, it's helpful to
+keep a note of what those desired changes are.
+But keep in mind, zooming out one step here, this
+is only what that digit 2 output neuron wants.
+Remember, we also want all the other neurons in the last layer to become less active,
+and each of those other output neurons has its own thoughts about
+what should happen to that second to last layer.
+So, the desire of this digit 2 neuron is added together with the desires
+of all the other output neurons for what should happen to this second to last layer,
+again in proportion to the corresponding weights,
+and in proportion to how much each of those neurons needs to change.
+This right here is where the idea of propagating backwards comes in.
+By adding together all these desired effects, you basically get a
+list of nudges that you want to happen to this second to last layer.
+And once you have those, you can recursively apply the same process to the
+relevant weights and biases that determine those values,
+repeating the same process I just walked through and moving backwards
+through the network.
+And zooming out a bit further, remember that this is all just how a single
+training example wishes to nudge each one of those weights and biases.
+If we only listened to what that 2 wanted, the network would
+ultimately be incentivized just to classify all images as a 2.
+So what you do is go through this same backprop routine for every other training example,
+recording how each of them would like to change the weights and biases,
+and average together those desired changes.
+This collection here of the averaged nudges to each weight and bias is,
+loosely speaking, the negative gradient of the cost function referenced
+in the last video, or at least something proportional to it.
+I say loosely speaking only because I have yet to get quantitatively precise
+about those nudges, but if you understood every change I just referenced,
+why some are proportionally bigger than others,
+and how they all need to be added together, you understand the mechanics for
+what backpropagation is actually doing.
+Stochastic gradient descent
+By the way, in practice, it takes computers an extremely long time to add
+up the influence of every training example every gradient descent step.
+So here's what's commonly done instead.
+You randomly shuffle your training data and then divide it into a whole
+bunch of mini-batches, let's say each one having 100 training examples.
+Then you compute a step according to the mini-batch.
+It's not going to be the actual gradient of the cost function,
+which depends on all of the training data, not this tiny subset,
+so it's not the most efficient step downhill,
+but each mini-batch does give you a pretty good approximation, and more importantly,
+it gives you a significant computational speedup.
+If you were to plot the trajectory of your network under the relevant cost surface,
+it would be a little more like a drunk man stumbling aimlessly down a hill but taking
+quick steps, rather than a carefully calculating man determining the exact downhill
+direction of each step before taking a very slow and careful step in that direction.
+This technique is referred to as stochastic gradient descent.
+There's a lot going on here, so let's just sum it up for ourselves, shall we?
+Backpropagation is the algorithm for determining how a single training
+example would like to nudge the weights and biases,
+not just in terms of whether they should go up or down,
+but in terms of what relative proportions to those changes cause the
+most rapid decrease to the cost.
+A true gradient descent step would involve doing this for all your tens of
+thousands of training examples and averaging the desired changes you get.
+But that's computationally slow, so instead you randomly subdivide the
+data into mini-batches and compute each step with respect to a mini-batch.
+Repeatedly going through all of the mini-batches and making these adjustments,
+you will converge towards a local minimum of the cost function,
+which is to say your network will end up doing a really good job on the training
+examples.
+So with all of that said, every line of code that would go into implementing backprop
+actually corresponds with something you have now seen, at least in informal terms.
+But sometimes knowing what the math does is only half the battle,
+and just representing the damn thing is where it gets all muddled and confusing.
+So for those of you who do want to go deeper, the next video goes through the same
+ideas that were just presented here, but in terms of the underlying calculus,
+which should hopefully make it a little more familiar as you see the topic in other
+resources.
+Before that, one thing worth emphasizing is that for this algorithm to work,
+and this goes for all sorts of machine learning beyond just neural networks,
+you need a lot of training data.
+In our case, one thing that makes handwritten digits such a nice example is that there
+exists the MNIST database, with so many examples that have been labeled by humans.
+So a common challenge that those of you working in machine learning will be familiar with
+is just getting the labeled training data you actually need,
+whether that's having people label tens of thousands of images,
+or whatever other data type you might be dealing with.
+
+[Submit subtitle corrections at criblate.com]
+The hard assumption here is that you've watched part 3,
+giving an intuitive walkthrough of the backpropagation algorithm.
+Here we get a little more formal and dive into the relevant calculus.
+It's normal for this to be at least a little confusing,
+so the mantra to regularly pause and ponder certainly applies as much here
+as anywhere else.
+Our main goal is to show how people in machine learning commonly think about
+the chain rule from calculus in the context of networks,
+which has a different feel from how most introductory calculus courses
+approach the subject.
+For those of you uncomfortable with the relevant calculus,
+I do have a whole series on the topic.
+The Chain Rule in networks
+Let's start off with an extremely simple network,
+one where each layer has a single neuron in it.
+This network is determined by three weights and three biases,
+and our goal is to understand how sensitive the cost function is to these variables.
+That way, we know which adjustments to those terms will
+cause the most efficient decrease to the cost function.
+And we're just going to focus on the connection between the last two neurons.
+Let's label the activation of that last neuron with a superscript L,
+indicating which layer it's in, so the activation of the previous neuron is a^(L-1).
+These are not exponents, they're just a way of indexing what we're talking about,
+since I want to save subscripts for different indices later on.
+Let's say that the value we want this last activation to be for
+a given training example is y, for example, y might be 0 or 1.
+So the cost of this network for a single training example is a^(L - y) squared.
+We'll denote the cost of that one training example as C0.
+As a reminder, this last activation is determined by a weight,
+which I'm going to call w(L), times the previous neuron's activation plus some bias,
+which I'll call b(L).
+And then you pump that through some special nonlinear function like the sigmoid or ReLU.
+It's actually going to make things easier for us if we give a special name to
+this weighted sum, like z, with the same superscript as the relevant activations.
+This is a lot of terms, and a way you might conceptualize it is that the weight,
+previous action and the bias all together are used to compute z,
+which in turn lets us compute a, which finally, along with a constant y,
+lets us compute the cost.
+And of course a(L-1) is influenced by its own weight and bias and such...
+but we're not going to focus on that right now.
+All of these are just numbers, right?
+And it can be nice to think of each one as having its own little number line.
+Our first goal is to understand how sensitive the
+cost function is to small changes in our weight w(L).
+Or phrased differently, what is the derivative of C with respect to w(L)?
+When you see this del w term, think of it as meaning some tiny nudge to W,
+like a change by 0.01, and think of this del C term as meaning
+whatever the resulting nudge to the cost is.
+What we want is their ratio.
+Conceptually, this tiny nudge to w(L) causes some nudge to z(L),
+which in turn causes some nudge to a(L), which directly influences the cost.
+So we break things up by first looking at the ratio of a tiny change to z(L) to
+this tiny change w(L), that is, the derivative of z(L) with respect to w(L).
+Likewise, you then consider the ratio of the change to a(L) to
+the tiny change in z(L) that caused it, as well as the ratio
+between the final nudge to C and this intermediate nudge to a(L).
+This right here is the chain rule, where multiplying together these
+three ratios gives us the sensitivity of C to small changes in w(L).
+Computing relevant derivatives
+So on screen right now, there's a lot of symbols,
+and take a moment to make sure it's clear what they all are,
+because now we're going to compute the relevant derivatives.
+The derivative of C with respect to a(L) works out to be 2(a(L)-y).
+Notice this means its size is proportional to the difference between the network's
+output and the thing we want it to be, so if that output was very different,
+even slight changes stand to have a big impact on the final cost function.
+The derivative of a(L) with respect to z(L) is just the derivative
+of our sigmoid function, or whatever nonlinearity you choose to use.
+And the derivative of z(L) with respect to w(L)... In this case comes out to be a(L-1).
+What do the derivatives mean?
+Now I don't know about you, but I think it's easy to get stuck head down in the
+formulas without taking a moment to sit back and remind yourself of what they all mean.
+In the case of this last derivative, the amount that the small nudge to the
+weight influenced the last layer depends on how strong the previous neuron is.
+Remember, this is where the neurons-that-fire-together-wire-together idea comes in.
+And all of this is the derivative with respect to w(L)
+only of the cost for a specific single training example.
+Since the full cost function involves averaging together all
+those costs across many different training examples,
+its derivative requires averaging this expression over all training examples.
+And of course, that is just one component of the gradient vector,
+which itself is built up from the partial derivatives of the
+cost function with respect to all those weights and biases.
+Sensitivity to weights/biases
+But even though that's just one of the many partial derivatives we need,
+it's more than 50% of the work.
+The sensitivity to the bias, for example, is almost identical.
+We just need to change out this del z del w term for a del z del b.
+And if you look at the relevant formula, that derivative comes out to be 1.
+Also, and this is where the idea of propagating backwards comes in,
+you can see how sensitive this cost function is to the activation of the previous layer.
+Namely, this initial derivative in the chain rule expression,
+the sensitivity of z to the previous activation, comes out to be the weight w(L).
+And again, even though we're not going to be able to directly influence
+that previous layer activation, it's helpful to keep track of,
+because now we can just keep iterating this same chain rule idea backwards
+to see how sensitive the cost function is to previous weights and previous biases.
+Layers with additional neurons
+And you might think this is an overly simple example, since all layers have one neuron,
+and things are going to get exponentially more complicated for a real network.
+But honestly, not that much changes when we give the layers multiple neurons,
+really it's just a few more indices to keep track of.
+Rather than the activation of a given layer simply being a(L),
+it's also going to have a subscript indicating which neuron of that layer it is.
+Let's use the letter k to index the layer L-1, and j to index the layer L.
+For the cost, again we look at what the desired output is,
+but this time we add up the squares of the differences between these last layer
+activations and the desired output.
+That is, you take a sum over a(L)j minus yj squared.
+Since there's a lot more weights, each one has to have a couple more
+indices to keep track of where it is, so let's call the weight of
+the edge connecting this kth neuron to the jth neuron, w(L)_jk.
+Those indices might feel a little backwards at first,
+but it lines up with how you'd index the weight matrix I talked about in
+the part 1 video.
+Just as before, it's still nice to give a name to the relevant weighted sum,
+like z, so that the activation of the last layer is just your special function,
+like the sigmoid, applied to z.
+You can see what I mean, where all of these are essentially the same equations we had
+before in the one-neuron-per-layer case, it's just that it looks a little more
+complicated.
+And indeed, the chain-ruled derivative expression describing how
+sensitive the cost is to a specific weight looks essentially the same.
+I'll leave it to you to pause and think about each of those terms if you want.
+What does change here, though, is the derivative of the cost
+with respect to one of the activations in the layer L-1.
+In this case, the difference is that the neuron influences
+the cost function through multiple different paths.
+That is, on the one hand, it influences a(L)0, which plays a role in the cost function,
+but it also has an influence on a(L)1, which also plays a role in the cost function,
+and you have to add those up.
+And that, well, that's pretty much it.
+Once you know how sensitive the cost function is to the
+activations in this second-to-last layer, you can just repeat
+the process for all the weights and biases feeding into that layer.
+Recap
+So pat yourself on the back!
+If all of this makes sense, you have now looked deep into the heart of backpropagation,
+the workhorse behind how neural networks learn.
+These chain rule expressions give you the derivatives that determine each component in
+the gradient that helps minimize the cost of the network by repeatedly stepping downhill.
+If you sit back and think about all that, this is a lot of layers of complexity to
+wrap your mind around, so don't worry if it takes time for your mind to digest it all.
+
+Imagine you happen across a short movie script that
+describes a scene between a person and their AI assistant.
+The script has what the person asks the AI, but the AI's response has been torn off.
+Suppose you also have this powerful magical machine that can take
+any text and provide a sensible prediction of what word comes next.
+You could then finish the script by feeding in what you have to the machine,
+seeing what it would predict to start the AI's answer,
+and then repeating this over and over with a growing script completing the dialogue.
+When you interact with a chatbot, this is exactly what's happening.
+A large language model is a sophisticated mathematical function
+that predicts what word comes next for any piece of text.
+Instead of predicting one word with certainty, though,
+what it does is assign a probability to all possible next words.
+To build a chatbot, you lay out some text that describes an interaction between a user
+and a hypothetical AI assistant, add on whatever the user types in as the first part of
+the interaction, and then have the model repeatedly predict the next word that such a
+hypothetical AI assistant would say in response, and that's what's presented to the user.
+In doing this, the output tends to look a lot more natural if
+you allow it to select less likely words along the way at random.
+So what this means is even though the model itself is deterministic,
+a given prompt typically gives a different answer each time it's run.
+Models learn how to make these predictions by processing an enormous amount of text,
+typically pulled from the internet.
+For a standard human to read the amount of text that was used to train GPT-3,
+for example, if they read non-stop 24-7, it would take over 2600 years.
+Larger models since then train on much, much more.
+You can think of training a little bit like tuning the dials on a big machine.
+The way that a language model behaves is entirely determined by these
+many different continuous values, usually called parameters or weights.
+Changing those parameters will change the probabilities
+that the model gives for the next word on a given input.
+What puts the large in large language model is how
+they can have hundreds of billions of these parameters.
+No human ever deliberately sets those parameters.
+Instead, they begin at random, meaning the model just outputs gibberish,
+but they're repeatedly refined based on many example pieces of text.
+One of these training examples could be just a handful of words,
+or it could be thousands, but in either case, the way this works is to
+pass in all but the last word from that example into the model and
+compare the prediction that it makes with the true last word from the example.
+An algorithm called backpropagation is used to tweak all of the parameters
+in such a way that it makes the model a little more likely to choose
+the true last word and a little less likely to choose all the others.
+When you do this for many, many trillions of examples,
+not only does the model start to give more accurate predictions on the training data,
+but it also starts to make more reasonable predictions on text that it's never
+seen before.
+Given the huge number of parameters and the enormous amount of training data,
+the scale of computation involved in training a large language model is mind-boggling.
+To illustrate, imagine that you could perform one
+billion additions and multiplications every single second.
+How long do you think it would take for you to do all of the
+operations involved in training the largest language models?
+Do you think it would take a year?
+Maybe something like 10,000 years?
+The answer is actually much more than that.
+It's well over 100 million years.
+This is only part of the story, though.
+This whole process is called pre-training.
+The goal of auto-completing a random passage of text from the
+internet is very different from the goal of being a good AI assistant.
+To address this, chatbots undergo another type of training,
+just as important, called reinforcement learning with human feedback.
+Workers flag unhelpful or problematic predictions,
+and their corrections further change the model's parameters,
+making them more likely to give predictions that users prefer.
+Looking back at the pre-training, though, this staggering amount of
+computation is only made possible by using special computer chips that
+are optimized for running many operations in parallel, known as GPUs.
+However, not all language models can be easily parallelized.
+Prior to 2017, most language models would process text one word at a time,
+but then a team of researchers at Google introduced a new model known as the transformer.
+Transformers don't read text from the start to the finish,
+they soak it all in at once, in parallel.
+The very first step inside a transformer, and most other language models for that matter,
+is to associate each word with a long list of numbers.
+The reason for this is that the training process only works with continuous values,
+so you have to somehow encode language using numbers,
+and each of these lists of numbers may somehow encode the meaning of the
+corresponding word.
+What makes transformers unique is their reliance
+on a special operation known as attention.
+This operation gives all of these lists of numbers a chance to talk to one another
+and refine the meanings they encode based on the context around, all done in parallel.
+For example, the numbers encoding the word bank might be changed based on the
+context surrounding it to somehow encode the more specific notion of a riverbank.
+Transformers typically also include a second type of operation known
+as a feed-forward neural network, and this gives the model extra
+capacity to store more patterns about language learned during training.
+All of this data repeatedly flows through many different iterations of
+these two fundamental operations, and as it does so,
+the hope is that each list of numbers is enriched to encode whatever
+information might be needed to make an accurate prediction of what word
+follows in the passage.
+At the end, one final function is performed on the last vector in this sequence,
+which now has had a chance to be influenced by all the other context from the input text,
+as well as everything the model learned during training,
+to produce a prediction of the next word.
+Again, the model's prediction looks like a probability for every possible next word.
+Although researchers design the framework for how each of these steps work,
+it's important to understand that the specific behavior is an emergent phenomenon
+based on how those hundreds of billions of parameters are tuned during training.
+This makes it incredibly challenging to determine
+why the model makes the exact predictions that it does.
+What you can see is that when you use large language model predictions to autocomplete
+a prompt, the words that it generates are uncannily fluent, fascinating, and even useful.
+If you're a new viewer and you're curious about more details on how
+transformers and attention work, boy do I have some material for you.
+One option is to jump into a series I made about deep learning,
+where we visualize and motivate the details of attention and all the other steps
+in a transformer.
+Also, on my second channel I just posted a talk I gave a couple
+months ago about this topic for the company TNG in Munich.
+Sometimes I actually prefer the content I make as a casual talk rather than a produced
+video, but I leave it up to you which one of these feels like the better follow-on.
+
+
+he initials GPT stand for Generative Pretrained Transformer.
+So that first word is straightforward enough, these are bots that generate new text.
+Pretrained refers to how the model went through a process of learning
+from a massive amount of data, and the prefix insinuates that there's
+more room to fine-tune it on specific tasks with additional training.
+But the last word, that's the real key piece.
+A transformer is a specific kind of neural network, a machine learning model,
+and it's the core invention underlying the current boom in AI.
+What I want to do with this video and the following chapters is go through a
+visually-driven explanation for what actually happens inside a transformer.
+We're going to follow the data that flows through it and go step by step.
+There are many different kinds of models that you can build using transformers.
+Some models take in audio and produce a transcript.
+This sentence comes from a model going the other way around,
+producing synthetic speech just from text.
+All those tools that took the world by storm in 2022 like DALL-E and Midjourney
+that take in a text description and produce an image are based on transformers.
+Even if I can't quite get it to understand what a pi creature is supposed to be,
+I'm still blown away that this kind of thing is even remotely possible.
+And the original transformer introduced in 2017 by Google was invented for
+the specific use case of translating text from one language into another.
+But the variant that you and I will focus on, which is the type that
+underlies tools like ChatGPT, will be a model that's trained to take in a piece of text,
+maybe even with some surrounding images or sound accompanying it,
+and produce a prediction for what comes next in the passage.
+That prediction takes the form of a probability distribution
+over many different chunks of text that might follow.
+At first glance, you might think that predicting the next word
+feels like a very different goal from generating new text.
+But once you have a prediction model like this,
+a simple thing you could try to make it generate, a longer piece of text,
+is to give it an initial snippet to work with,
+have it take a random sample from the distribution it just generated,
+append that sample to the text, and then run the whole process again to make
+a new prediction based on all the new text, including what it just added.
+I don't know about you, but it really doesn't feel like this should actually work.
+In this animation, for example, I'm running GPT-2 on my laptop and having it repeatedly
+predict and sample the next chunk of text to generate a story based on the seed text.
+The story just doesn't actually really make that much sense.
+But if I swap it out for API calls to GPT-3 instead, which is the same basic model,
+just much bigger, suddenly almost magically we do get a sensible story,
+one that even seems to infer that a pi creature would live in a land of math and
+computation.
+This process here of repeated prediction and sampling is essentially
+what's happening when you interact with ChatGPT,
+or any of these other large language models, and you see them producing
+one word at a time.
+In fact, one feature that I would very much enjoy is the ability to
+see the underlying distribution for each new word that it chooses.
+Inside a transformer
+Let's kick things off with a very high level preview
+of how data flows through a transformer.
+We will spend much more time motivating and interpreting and expanding
+on the details of each step, but in broad strokes,
+when one of these chatbots generates a given word, here's what's going on under the hood.
+First, the input is broken up into a bunch of little pieces.
+These pieces are called tokens, and in the case of text these tend to be
+words or little pieces of words or other common character combinations.
+If images or sound are involved, then tokens could be little
+patches of that image or little chunks of that sound.
+Each one of these tokens is then associated with a vector, meaning some list of numbers,
+which is meant to somehow encode the meaning of that piece.
+If you think of these vectors as giving coordinates in some very high dimensional space,
+words with similar meanings tend to land on vectors that are
+close to each other in that space.
+This sequence of vectors then passes through an operation that's
+known as an attention block, and this allows the vectors to talk to
+each other and pass information back and forth to update their values.
+For example, the meaning of the word model in the phrase "a machine learning
+model" is different from its meaning in the phrase "a fashion model".
+The attention block is what's responsible for figuring out which
+words in context are relevant to updating the meanings of which other words,
+and how exactly those meanings should be updated.
+And again, whenever I use the word meaning, this is
+somehow entirely encoded in the entries of those vectors.
+After that, these vectors pass through a different kind of operation,
+and depending on the source that you're reading this will be referred
+to as a multi-layer perceptron or maybe a feed-forward layer.
+And here the vectors don't talk to each other,
+they all go through the same operation in parallel.
+And while this block is a little bit harder to interpret,
+later on we'll talk about how the step is a little bit like asking a long list
+of questions about each vector, and then updating them based on the answers
+to those questions.
+All of the operations in both of these blocks look like a
+giant pile of matrix multiplications, and our primary job is
+going to be to understand how to read the underlying matrices.
+I'm glossing over some details about some normalization steps that happen in between,
+but this is after all a high-level preview.
+After that, the process essentially repeats, you go back and forth
+between attention blocks and multi-layer perceptron blocks,
+until at the very end the hope is that all of the essential meaning
+of the passage has somehow been baked into the very last vector in the sequence.
+We then perform a certain operation on that last vector that produces a probability
+distribution over all possible tokens, all possible little chunks of text that might
+come next.
+And like I said, once you have a tool that predicts what comes next
+given a snippet of text, you can feed it a little bit of seed text and
+have it repeatedly play this game of predicting what comes next,
+sampling from the distribution, appending it, and then repeating over and over.
+Some of you in the know may remember how long before ChatGPT came into the scene,
+this is what early demos of GPT-3 looked like,
+you would have it autocomplete stories and essays based on an initial snippet.
+To make a tool like this into a chatbot, the easiest starting point is to have a
+little bit of text that establishes the setting of a user interacting with a
+helpful AI assistant, what you would call the system prompt,
+and then you would use the user's initial question or prompt as the first bit of
+dialogue, and then you have it start predicting what such a helpful AI assistant
+would say in response.
+There is more to say about an added step of training that's required
+to make this work well, but at a high level this is the idea.
+In this chapter, you and I are going to expand on the details of what happens at the very
+Chapter layout
+beginning of the network, at the very end of the network,
+and I also want to spend a lot of time reviewing some important bits of background
+knowledge, things that would have been second nature to any machine learning engineer by
+the time transformers came around.
+If you're comfortable with that background knowledge and a little impatient,
+you could probably feel free to skip to the next chapter,
+which is going to focus on the attention blocks,
+generally considered the heart of the transformer.
+After that, I want to talk more about these multi-layer perceptron blocks,
+how training works, and a number of other details that will have been skipped up to
+that point.
+For broader context, these videos are additions to a mini-series about deep learning,
+and it's okay if you haven't watched the previous ones,
+I think you can do it out of order, but before diving into transformers specifically,
+The premise of Deep Learning
+I do think it's worth making sure that we're on the same page about the basic premise
+and structure of deep learning.
+At the risk of stating the obvious, this is one approach to machine learning,
+which describes any model where you're using data to somehow determine how a model
+behaves.
+What I mean by that is, let's say you want a function that takes in
+an image and it produces a label describing it,
+or our example of predicting the next word given a passage of text,
+or any other task that seems to require some element of intuition
+and pattern recognition.
+We almost take this for granted these days, but the idea with machine learning is that
+rather than trying to explicitly define a procedure for how to do that task in code,
+which is what people would have done in the earliest days of AI,
+instead you set up a very flexible structure with tunable parameters,
+like a bunch of knobs and dials, and then, somehow,
+you use many examples of what the output should look like for a given input to tweak
+and tune the values of those parameters to mimic this behavior.
+For example, maybe the simplest form of machine learning is linear regression,
+where your inputs and outputs are each single numbers,
+something like the square footage of a house and its price,
+and what you want is to find a line of best fit through this data, you know,
+to predict future house prices.
+That line is described by two continuous parameters,
+say the slope and the y-intercept, and the goal of linear
+regression is to determine those parameters to closely match the data.
+Needless to say, deep learning models get much more complicated.
+GPT-3, for example, has not two, but 175 billion parameters.
+But here's the thing, it's not a given that you can create some giant
+model with a huge number of parameters without it either grossly
+overfitting the training data or being completely intractable to train.
+Deep learning describes a class of models that in the
+last couple decades have proven to scale remarkably well.
+What unifies them is that they all use the same training algorithm,
+it's called backpropagation, we talked about it in previous chapters,
+and the context that I want you to have as we go in is that in order for this
+training algorithm to work well at scale, these models have to follow a certain
+specific format.
+And if you know this format going in, it helps to explain many of the choices for how a
+transformer processes language, which otherwise run the risk of feeling kinda arbitrary.
+First, whatever kind of model you're making, the
+input has to be formatted as an array of real numbers.
+This could simply mean a list of numbers, it could be a two-dimensional array,
+or very often you deal with higher dimensional arrays,
+where the general term used is tensor.
+You often think of that input data as being progressively transformed into many
+distinct layers, where again, each layer is always structured as some kind of
+array of real numbers, until you get to a final layer which you consider the output.
+For example, the final layer in our text processing model is a list of numbers
+representing the probability distribution for all possible next tokens.
+In deep learning, these model parameters are almost always referred to as weights,
+and this is because a key feature of these models is that the only way these
+parameters interact with the data being processed is through weighted sums.
+You also sprinkle some non-linear functions throughout,
+but they won't depend on parameters.
+Typically, though, instead of seeing the weighted sums all naked
+and written out explicitly like this, you'll instead find them
+packaged together as various components in a matrix vector product.
+It amounts to saying the same thing, if you think back to how matrix vector
+multiplication works, each component in the output looks like a weighted sum.
+It's just often conceptually cleaner for you and me to think
+about matrices that are filled with tunable parameters that
+transform vectors that are drawn from the data being processed.
+For example, those 175 billion weights in GPT-3 are
+organized into just under 28,000 distinct matrices.
+Those matrices in turn fall into eight different categories,
+and what you and I are going to do is step through each one of those categories to
+understand what that type does.
+As we go through, I think it's kind of fun to reference the specific
+numbers from GPT-3 to count up exactly where those 175 billion come from.
+Even if nowadays there are bigger and better models,
+this one has a certain charm as the first large-language
+model to really capture the world's attention outside of ML communities.
+Also, practically speaking, companies tend to keep much tighter
+lips around the specific numbers for more modern networks.
+I just want to set the scene going in, that as you peek under the
+hood to see what happens inside a tool like ChatGPT,
+almost all of the actual computation looks like matrix vector multiplication.
+There's a little bit of a risk getting lost in the sea of billions of numbers,
+but you should draw a very sharp distinction in your mind between
+the weights of the model, which I'll always color in blue or red,
+and the data being processed, which I'll always color in gray.
+The weights are the actual brains, they are the things learned during training,
+and they determine how it behaves.
+The data being processed simply encodes whatever specific input is
+fed into the model for a given run, like an example snippet of text.
+Word embeddings
+With all of that as foundation, let's dig into the first step of this text processing
+example, which is to break up the input into little chunks and turn those chunks into
+vectors.
+I mentioned how those chunks are called tokens,
+which might be pieces of words or punctuation,
+but every now and then in this chapter and especially in the next one,
+I'd like to just pretend that it's broken more cleanly into words.
+Because we humans think in words, this will just make it much
+easier to reference little examples and clarify each step.
+The model has a predefined vocabulary, some list of all possible words,
+say 50,000 of them, and the first matrix that we'll encounter,
+known as the embedding matrix, has a single column for each one of these words.
+These columns are what determines what vector each word turns into in that first step.
+We label it W_E, and like all the matrices we see,
+its values begin random, but they're going to be learned based on data.
+Turning words into vectors was common practice in machine learning long before
+transformers, but it's a little weird if you've never seen it before,
+and it sets the foundation for everything that follows,
+so let's take a moment to get familiar with it.
+We often call this embedding a word, which invites you to think of these
+vectors very geometrically as points in some high dimensional space.
+Visualizing a list of three numbers as coordinates for points in 3D space would
+be no problem, but word embeddings tend to be much much higher dimensional.
+In GPT-3 they have 12,288 dimensions, and as you'll see,
+it matters to work in a space that has a lot of distinct directions.
+In the same way that you could take a two-dimensional slice through a 3D space
+and project all the points onto that slice, for the sake of animating word
+embeddings that a simple model is giving me, I'm going to do an analogous
+thing by choosing a three-dimensional slice through this very high dimensional space,
+and projecting the word vectors down onto that and displaying the results.
+The big idea here is that as a model tweaks and tunes its weights to determine
+how exactly words get embedded as vectors during training,
+it tends to settle on a set of embeddings where directions in the space have a
+kind of semantic meaning.
+For the simple word-to-vector model I'm running here,
+if I run a search for all the words whose embeddings are closest to that of tower,
+you'll notice how they all seem to give very similar tower-ish vibes.
+And if you want to pull up some Python and play along at home,
+this is the specific model that I'm using to make the animations.
+It's not a transformer, but it's enough to illustrate the
+idea that directions in the space can carry semantic meaning.
+A very classic example of this is how if you take the difference between
+the vectors for woman and man, something you would visualize as a
+little vector in the space connecting the tip of one to the tip of the other,
+it's very similar to the difference between king and queen.
+So let's say you didn't know the word for a female monarch,
+you could find it by taking king, adding this woman minus man direction,
+and searching for the embedding closest to that point.
+At least, kind of.
+Despite this being a classic example for the model I'm playing with,
+the true embedding of queen is actually a little farther off than this would suggest,
+presumably because the way queen is used in training data is not merely a feminine
+version of king.
+When I played around, family relations seemed to illustrate the idea much better.
+The point is, it looks like during training the model found it advantageous to
+choose embeddings such that one direction in this space encodes gender information.
+Another example is that if you take the embedding of Italy,
+and you subtract the embedding of Germany, and add that to the embedding of Hitler,
+you get something very close to the embedding of Mussolini.
+It's as if the model learned to associate some directions with Italian-ness,
+and others with WWII axis leaders.
+Maybe my favorite example in this vein is how in some models,
+if you take the difference between Germany and Japan, and add it to sushi,
+you end up very close to bratwurst.
+Also in playing this game of finding nearest neighbors,
+I was very pleased to see how close cat was to both beast and monster.
+One bit of mathematical intuition that's helpful to have in mind,
+especially for the next chapter, is how the dot product of two
+vectors can be thought of as a way to measure how well they align.
+Computationally, dot products involve multiplying all the
+corresponding components and then adding the results, which is good,
+since so much of our computation has to look like weighted sums.
+Geometrically, the dot product is positive when vectors point in similar directions,
+it's zero if they're perpendicular, and it's negative whenever
+they point in opposite directions.
+For example, let's say you were playing with this model,
+and you hypothesize that the embedding of cats minus cat might represent a sort of
+plurality direction in this space.
+To test this, I'm going to take this vector and compute its dot
+product against the embeddings of certain singular nouns,
+and compare it to the dot products with the corresponding plural nouns.
+If you play around with this, you'll notice that the plural ones
+do indeed seem to consistently give higher values than the singular ones,
+indicating that they align more with this direction.
+It's also fun how if you take this dot product with the embeddings of the words one,
+two, three, and so on, they give increasing values,
+so it's as if we can quantitatively measure how plural the model finds a given word.
+Again, the specifics for how words get embedded is learned using data.
+This embedding matrix, whose columns tell us what happens to each word,
+is the first pile of weights in our model.
+Using the GPT-3 numbers, the vocabulary size specifically is 50,257,
+and again, technically this consists not of words per se, but of tokens.
+The embedding dimension is 12,288, and multiplying those
+tells us this consists of about 617 million weights.
+Let's go ahead and add this to a running tally,
+remembering that by the end we should count up to 175 billion.
+Embeddings beyond words
+In the case of transformers, you really want to think of the vectors
+in this embedding space as not merely representing individual words.
+For one thing, they also encode information about the position of that word,
+which we'll talk about later, but more importantly,
+you should think of them as having the capacity to soak in context.
+A vector that started its life as the embedding of the word king, for example,
+might progressively get tugged and pulled by various blocks in this network,
+so that by the end it points in a much more specific and nuanced direction that
+somehow encodes that it was a king who lived in Scotland,
+and who had achieved his post after murdering the previous king,
+and who's being described in Shakespearean language.
+Think about your own understanding of a given word.
+The meaning of that word is clearly informed by the surroundings,
+and sometimes this includes context from a long distance away,
+so in putting together a model that has the ability to predict what word comes next,
+the goal is to somehow empower it to incorporate context efficiently.
+To be clear, in that very first step, when you create the array of
+vectors based on the input text, each one of those is simply plucked
+out of the embedding matrix, so initially each one can only encode
+the meaning of a single word without any input from its surroundings.
+But you should think of the primary goal of this network that it flows through
+as being to enable each one of those vectors to soak up a meaning that's much
+more rich and specific than what mere individual words could represent.
+The network can only process a fixed number of vectors at a time,
+known as its context size.
+For GPT-3 it was trained with a context size of 2048,
+so the data flowing through the network always looks like this array of 2048 columns,
+each of which has 12,000 dimensions.
+This context size limits how much text the transformer can
+incorporate when it's making a prediction of the next word.
+This is why long conversations with certain chatbots,
+like the early versions of ChatGPT, often gave the feeling of
+the bot kind of losing the thread of conversation as you continued too long.
+Unembedding
+We'll go into the details of attention in due time,
+but skipping ahead I want to talk for a minute about what happens at the very end.
+Remember, the desired output is a probability
+distribution over all tokens that might come next.
+For example, if the very last word is Professor,
+and the context includes words like Harry Potter,
+and immediately preceding we see least favorite teacher,
+and also if you give me some leeway by letting me pretend that tokens simply
+look like full words, then a well-trained network that had built up knowledge
+of Harry Potter would presumably assign a high number to the word Snape.
+This involves two different steps.
+The first one is to use another matrix that maps the very last vector in that
+context to a list of 50,000 values, one for each token in the vocabulary.
+Then there's a function that normalizes this into a probability distribution,
+it's called softmax and we'll talk more about it in just a second,
+but before that it might seem a little bit weird to only use this last embedding
+to make a prediction, when after all in that last step there are thousands of
+other vectors in the layer just sitting there with their own context-rich meanings.
+This has to do with the fact that in the training process it turns out to be
+much more efficient if you use each one of those vectors in the final layer
+to simultaneously make a prediction for what would come immediately after it.
+There's a lot more to be said about training later on,
+but I just want to call that out right now.
+This matrix is called the Unembedding matrix and we give it the label WU.
+Again, like all the weight matrices we see, its entries begin at random,
+but they are learned during the training process.
+Keeping score on our total parameter count, this Unembedding
+matrix has one row for each word in the vocabulary,
+and each row has the same number of elements as the embedding dimension.
+It's very similar to the embedding matrix, just with the order swapped,
+so it adds another 617 million parameters to the network,
+meaning our count so far is a little over a billion,
+a small but not wholly insignificant fraction of the 175 billion
+we'll end up with in total.
+Softmax with temperature
+As the very last mini-lesson for this chapter,
+I want to talk more about this softmax function,
+since it makes another appearance for us once we dive into the attention blocks.
+The idea is that if you want a sequence of numbers to act as a probability distribution,
+say a distribution over all possible next words,
+then each value has to be between 0 and 1, and you also need all of them to add up to 1.
+However, if you're playing the deep learning game where everything you do looks like
+matrix-vector multiplication, the outputs you get by default don't abide by this at all.
+The values are often negative, or much bigger than 1,
+and they almost certainly don't add up to 1.
+Softmax is the standard way to turn an arbitrary list of numbers
+into a valid distribution in such a way that the largest values end up closest to 1,
+and the smaller values end up very close to 0.
+That's all you really need to know.
+But if you're curious, the way it works is to first raise e to the power
+of each of the numbers, which means you now have a list of positive values,
+and then you can take the sum of all those positive values and divide each
+term by that sum, which normalizes it into a list that adds up to 1.
+You'll notice that if one of the numbers in the input is meaningfully bigger than the
+rest, then in the output the corresponding term dominates the distribution,
+so if you were sampling from it you'd almost certainly just be picking the maximizing
+input.
+But it's softer than just picking the max in the sense that when other values
+are similarly large, they also get meaningful weight in the distribution,
+and everything changes continuously as you continuously vary the inputs.
+In some situations, like when ChatGPT is using this distribution to create a next word,
+there's room for a little bit of extra fun by adding a little extra spice into this
+function, with a constant T thrown into the denominator of those exponents.
+We call it the temperature, since it vaguely resembles the role of temperature in
+certain thermodynamics equations, and the effect is that when T is larger,
+you give more weight to the lower values, meaning the distribution is a little bit
+more uniform, and if T is smaller, then the bigger values will dominate more
+aggressively, where in the extreme, setting T equal to zero means all of the weight
+goes to maximum value.
+For example, I'll have GPT-3 generate a story with the seed text,
+"once upon a time there was A", but I'll use different temperatures in each case.
+Temperature zero means that it always goes with the most predictable word,
+and what you get ends up being a trite derivative of Goldilocks.
+A higher temperature gives it a chance to choose less likely words,
+but it comes with a risk.
+In this case, the story starts out more originally,
+about a young web artist from South Korea, but it quickly degenerates into nonsense.
+Technically speaking, the API doesn't actually let you pick a temperature bigger than 2.
+There's no mathematical reason for this, it's just an arbitrary constraint imposed
+to keep their tool from being seen generating things that are too nonsensical.
+So if you're curious, the way this animation is actually working is I'm taking the
+20 most probable next tokens that GPT-3 generates,
+which seems to be the maximum they'll give me,
+and then I tweak the probabilities based on an exponent of 1/5.
+As another bit of jargon, in the same way that you might call the components of
+the output of this function probabilities, people often refer to the inputs as logits,
+or some people say logits, some people say logits, I'm gonna say logits.
+So for instance, when you feed in some text, you have all these word embeddings
+flow through the network, and you do this final multiplication with the
+unembedding matrix, machine learning people would refer to the components in that raw,
+unnormalized output as the logits for the next word prediction.
+Up next
+A lot of the goal with this chapter was to lay the foundations for
+understanding the attention mechanism, Karate Kid wax-on-wax-off style.
+You see, if you have a strong intuition for word embeddings, for softmax,
+for how dot products measure similarity, and also the underlying premise that
+most of the calculations have to look like matrix multiplication with matrices
+full of tunable parameters, then understanding the attention mechanism,
+this cornerstone piece in the whole modern boom in AI, should be relatively smooth.
+For that, come join me in the next chapter.
+As I'm publishing this, a draft of that next chapter
+is available for review by Patreon supporters.
+A final version should be up in public in a week or two,
+it usually depends on how much I end up changing based on that review.
+In the meantime, if you want to dive into attention,
+and if you want to help the channel out a little bit, it's there waiting.
+
+In the last chapter, you and I started to step
+through the internal workings of a transformer.
+This is one of the key pieces of technology inside large language models,
+and a lot of other tools in the modern wave of AI.
+It first hit the scene in a now-famous 2017 paper called Attention is All You Need,
+and in this chapter you and I will dig into what this attention mechanism is,
+visualizing how it processes data.
+As a quick recap, here's the important context I want you to have in mind.
+The goal of the model that you and I are studying is to
+take in a piece of text and predict what word comes next.
+The input text is broken up into little pieces that we call tokens,
+and these are very often words or pieces of words,
+but just to make the examples in this video easier for you and me to think about,
+let's simplify by pretending that tokens are always just words.
+The first step in a transformer is to associate each token
+with a high-dimensional vector, what we call its embedding.
+The most important idea I want you to have in mind is how directions in this
+high-dimensional space of all possible embeddings can correspond with semantic meaning.
+In the last chapter we saw an example for how direction can correspond to gender,
+in the sense that adding a certain step in this space can take you from the
+embedding of a masculine noun to the embedding of the corresponding feminine noun.
+That's just one example you could imagine how many other directions in this
+high-dimensional space could correspond to numerous other aspects of a word's meaning.
+The aim of a transformer is to progressively adjust these embeddings
+so that they don't merely encode an individual word,
+but instead they bake in some much, much richer contextual meaning.
+Motivating examples
+I should say up front that a lot of people find the attention mechanism,
+this key piece in a transformer, very confusing,
+so don't worry if it takes some time for things to sink in.
+I think that before we dive into the computational details and all
+the matrix multiplications, it's worth thinking about a couple
+examples for the kind of behavior that we want attention to enable.
+Consider the phrases American shrew mole, one mole of carbon dioxide,
+and take a biopsy of the mole.
+You and I know that the word mole has different meanings in each one of these,
+based on the context.
+But after the first step of a transformer, the one that breaks up the text
+and associates each token with a vector, the vector that's associated with
+mole would be the same in all of these cases,
+because this initial token embedding is effectively a lookup table with no
+reference to the context.
+It's only in the next step of the transformer that the surrounding
+embeddings have the chance to pass information into this one.
+The picture you might have in mind is that there are multiple distinct directions in
+this embedding space encoding the multiple distinct meanings of the word mole,
+and that a well-trained attention block calculates what you need to add to the generic
+embedding to move it to one of these specific directions, as a function of the context.
+To take another example, consider the embedding of the word tower.
+This is presumably some very generic, non-specific direction in the space,
+associated with lots of other large, tall nouns.
+If this word was immediately preceded by Eiffel,
+you could imagine wanting the mechanism to update this vector so that
+it points in a direction that more specifically encodes the Eiffel tower,
+maybe correlated with vectors associated with Paris and France and things made of steel.
+If it was also preceded by the word miniature,
+then the vector should be updated even further,
+so that it no longer correlates with large, tall things.
+More generally than just refining the meaning of a word,
+the attention block allows the model to move information encoded in
+one embedding to that of another, potentially ones that are quite far away,
+and potentially with information that's much richer than just a single word.
+What we saw in the last chapter was how after all of the vectors flow through the
+network, including many different attention blocks,
+the computation you perform to produce a prediction of the next token is entirely a
+function of the last vector in the sequence.
+Imagine, for example, that the text you input is most of an entire mystery novel,
+all the way up to a point near the end, which reads, therefore the murderer was.
+If the model is going to accurately predict the next word,
+that final vector in the sequence, which began its life simply embedding the word was,
+will have to have been updated by all of the attention blocks to represent much,
+much more than any individual word, somehow encoding all of the information
+from the full context window that's relevant to predicting the next word.
+The attention pattern
+To step through the computations, though, let's take a much simpler example.
+Imagine that the input includes the phrase, a
+fluffy blue creature roamed the verdant forest.
+And for the moment, suppose that the only type of update that we care about
+is having the adjectives adjust the meanings of their corresponding nouns.
+What I'm about to describe is what we would call a single head of attention,
+and later we will see how the attention block consists of many different heads run in
+parallel.
+Again, the initial embedding for each word is some high dimensional vector
+that only encodes the meaning of that particular word with no context.
+Actually, that's not quite true.
+They also encode the position of the word.
+There's a lot more to say about the specific way that positions are encoded,
+but right now, all you need to know is that the entries of this vector are
+enough to tell you both what the word is and where it exists in the context.
+Let's go ahead and denote these embeddings with the letter e.
+The goal is to have a series of computations produce a new refined
+set of embeddings where, for example, those corresponding to the
+nouns have ingested the meaning from their corresponding adjectives.
+And playing the deep learning game, we want most of the computations
+involved to look like matrix-vector products,
+where the matrices are full of tuneable weights,
+things that the model will learn based on data.
+To be clear, I'm making up this example of adjectives updating nouns just to
+illustrate the type of behavior that you could imagine an attention head doing.
+As with so much deep learning, the true behavior is much harder to parse because it's
+based on tweaking and tuning a huge number of parameters to minimize some cost function.
+It's just that as we step through all of different matrices filled with parameters
+that are involved in this process, I think it's really helpful to have an imagined
+example of something that it could be doing to help keep it all more concrete.
+For the first step of this process, you might imagine each noun, like creature,
+asking the question, hey, are there any adjectives sitting in front of me?
+And for the words fluffy and blue, to each be able to answer,
+yeah, I'm an adjective and I'm in that position.
+That question is somehow encoded as yet another vector,
+another list of numbers, which we call the query for this word.
+This query vector though has a much smaller dimension than the embedding vector, say 128.
+Computing this query looks like taking a certain matrix,
+which I'll label wq, and multiplying it by the embedding.
+Compressing things a bit, let's write that query vector as q,
+and then anytime you see me put a matrix next to an arrow like this one,
+it's meant to represent that multiplying this matrix by the vector at the arrow's start
+gives you the vector at the arrow's end.
+In this case, you multiply this matrix by all of the embeddings in the context,
+producing one query vector for each token.
+The entries of this matrix are parameters of the model,
+which means the true behavior is learned from data, and in practice,
+what this matrix does in a particular attention head is challenging to parse.
+But for our sake, imagining an example that we might hope that it would learn,
+we'll suppose that this query matrix maps the embeddings of nouns to
+certain directions in this smaller query space that somehow encodes
+the notion of looking for adjectives in preceding positions.
+As to what it does to other embeddings, who knows?
+Maybe it simultaneously tries to accomplish some other goal with those.
+Right now, we're laser focused on the nouns.
+At the same time, associated with this is a second matrix called the key matrix,
+which you also multiply by every one of the embeddings.
+This produces a second sequence of vectors that we call the keys.
+Conceptually, you want to think of the keys as potentially answering the queries.
+This key matrix is also full of tuneable parameters, and just like the query matrix,
+it maps the embedding vectors to that same smaller dimensional space.
+You think of the keys as matching the queries whenever they closely align with each other.
+In our example, you would imagine that the key matrix maps the adjectives like fluffy and
+blue to vectors that are closely aligned with the query produced by the word creature.
+To measure how well each key matches each query,
+you compute a dot product between each possible key-query pair.
+I like to visualize a grid full of a bunch of dots,
+where the bigger dots correspond to the larger dot products,
+the places where the keys and queries align.
+For our adjective noun example, that would look a little more like this,
+where if the keys produced by fluffy and blue really do align closely with the query
+produced by creature, then the dot products in these two spots would be some large
+positive numbers.
+In the lingo, machine learning people would say that this means the
+embeddings of fluffy and blue attend to the embedding of creature.
+By contrast to the dot product between the key for some other
+word like the and the query for creature would be some small
+or negative value that reflects that are unrelated to each other.
+So we have this grid of values that can be any real number from
+negative infinity to infinity, giving us a score for how relevant
+each word is to updating the meaning of every other word.
+The way we're about to use these scores is to take a certain
+weighted sum along each column, weighted by the relevance.
+So instead of having values range from negative infinity to infinity,
+what we want is for the numbers in these columns to be between 0 and 1,
+and for each column to add up to 1, as if they were a probability distribution.
+If you're coming in from the last chapter, you know what we need to do then.
+We compute a softmax along each one of these columns to normalize the values.
+In our picture, after you apply softmax to all of the columns,
+we'll fill in the grid with these normalized values.
+At this point you're safe to think about each column as giving weights according
+to how relevant the word on the left is to the corresponding value at the top.
+We call this grid an attention pattern.
+Now if you look at the original transformer paper,
+there's a really compact way that they write this all down.
+Here the variables q and k represent the full arrays of query
+and key vectors respectively, those little vectors you get by
+multiplying the embeddings by the query and the key matrices.
+This expression up in the numerator is a really compact way to represent
+the grid of all possible dot products between pairs of keys and queries.
+A small technical detail that I didn't mention is that for numerical stability,
+it happens to be helpful to divide all of these values by the
+square root of the dimension in that key query space.
+Then this softmax that's wrapped around the full expression
+is meant to be understood to apply column by column.
+As to that v term, we'll talk about it in just a second.
+Before that, there's one other technical detail that so far I've skipped.
+Masking
+During the training process, when you run this model on a given text example,
+and all of the weights are slightly adjusted and tuned to either reward or punish it
+based on how high a probability it assigns to the true next word in the passage,
+it turns out to make the whole training process a lot more efficient if you
+simultaneously have it predict every possible next token following each initial
+subsequence of tokens in this passage.
+For example, with the phrase that we've been focusing on,
+it might also be predicting what words follow creature and what words follow the.
+This is really nice, because it means what would otherwise
+be a single training example effectively acts as many.
+For the purposes of our attention pattern, it means that you never
+want to allow later words to influence earlier words,
+since otherwise they could kind of give away the answer for what comes next.
+What this means is that we want all of these spots here,
+the ones representing later tokens influencing earlier ones,
+to somehow be forced to be zero.
+The simplest thing you might think to do is to set them equal to zero,
+but if you did that the columns wouldn't add up to one anymore,
+they wouldn't be normalized.
+So instead, a common way to do this is that before applying softmax,
+you set all of those entries to be negative infinity.
+If you do that, then after applying softmax, all of those get turned into zero,
+but the columns stay normalized.
+This process is called masking.
+There are versions of attention where you don't apply it, but in our GPT example,
+even though this is more relevant during the training phase than it would be,
+say, running it as a chatbot or something like that,
+you do always apply this masking to prevent later tokens from influencing earlier ones.
+Context size
+Another fact that's worth reflecting on about this attention
+pattern is how its size is equal to the square of the context size.
+So this is why context size can be a really huge bottleneck for large language models,
+and scaling it up is non-trivial.
+As you imagine, motivated by a desire for bigger and bigger context windows,
+recent years have seen some variations to the attention mechanism aimed at making
+context more scalable, but right here, you and I are staying focused on the basics.
+Values
+Okay, great, computing this pattern lets the model
+deduce which words are relevant to which other words.
+Now you need to actually update the embeddings,
+allowing words to pass information to whichever other words they're relevant to.
+For example, you want the embedding of Fluffy to somehow cause a change
+to Creature that moves it to a different part of this 12,000-dimensional
+embedding space that more specifically encodes a Fluffy creature.
+What I'm going to do here is first show you the most straightforward
+way that you could do this, though there's a slight way that
+this gets modified in the context of multi-headed attention.
+This most straightforward way would be to use a third matrix,
+what we call the value matrix, which you multiply by the embedding of that first word,
+for example Fluffy.
+The result of this is what you would call a value vector,
+and this is something that you add to the embedding of the second word,
+in this case something you add to the embedding of Creature.
+So this value vector lives in the same very high-dimensional space as the embeddings.
+When you multiply this value matrix by the embedding of a word,
+you might think of it as saying, if this word is relevant to adjusting the meaning of
+something else, what exactly should be added to the embedding of that something else
+in order to reflect this?
+Looking back in our diagram, let's set aside all of the keys and the queries,
+since after you compute the attention pattern you're done with those,
+then you're going to take this value matrix and multiply it by every
+one of those embeddings to produce a sequence of value vectors.
+You might think of these value vectors as being
+kind of associated with the corresponding keys.
+For each column in this diagram, you multiply each of the
+value vectors by the corresponding weight in that column.
+For example here, under the embedding of Creature,
+you would be adding large proportions of the value vectors for Fluffy and Blue,
+while all of the other value vectors get zeroed out, or at least nearly zeroed out.
+And then finally, the way to actually update the embedding associated with this column,
+previously encoding some context-free meaning of Creature,
+you add together all of these rescaled values in the column,
+producing a change that you want to add, that I'll label delta-e,
+and then you add that to the original embedding.
+Hopefully what results is a more refined vector encoding the more
+contextually rich meaning, like that of a fluffy blue creature.
+And of course you don't just do this to one embedding,
+you apply the same weighted sum across all of the columns in this picture,
+producing a sequence of changes, adding all of those changes to the corresponding
+embeddings, produces a full sequence of more refined embeddings popping out
+of the attention block.
+Counting parameters
+Zooming out, this whole process is what you would describe as a single head of attention.
+As I've described things so far, this process is parameterized by three distinct
+matrices, all filled with tunable parameters, the key, the query, and the value.
+I want to take a moment to continue what we started in the last chapter,
+with the scorekeeping where we count up the total number of model parameters using the
+numbers from GPT-3.
+These key and query matrices each have 12,288 columns, matching the embedding dimension,
+and 128 rows, matching the dimension of that smaller key query space.
+This gives us an additional 1.5 million or so parameters for each one.
+If you look at that value matrix by contrast, the way I've described things so
+far would suggest that it's a square matrix that has 12,288 columns and 12,288 rows,
+since both its inputs and outputs live in this very large embedding space.
+If true, that would mean about 150 million added parameters.
+And to be clear, you could do that.
+You could devote orders of magnitude more parameters
+to the value map than to the key and query.
+But in practice, it is much more efficient if instead you make
+it so that the number of parameters devoted to this value map
+is the same as the number devoted to the key and the query.
+This is especially relevant in the setting of
+running multiple attention heads in parallel.
+The way this looks is that the value map is factored as a product of two smaller matrices.
+Conceptually, I would still encourage you to think about the overall linear map,
+one with inputs and outputs, both in this larger embedding space,
+for example taking the embedding of blue to this blueness direction that you would
+add to nouns.
+The first matrix on the right here has a smaller number of rows,
+typically the same size as the key-query space
+What this means is you can think of it as mapping the
+large embedding vectors down to a much smaller space.
+This is not the conventional naming, but I'm going to call this the value down matrix.
+The second matrix maps from this smaller space back up to the embedding space,
+producing the vectors that you use to make the actual updates.
+I'm going to call this one the value up matrix, which again is not conventional.
+The way that you would see this written in most papers looks a little different.
+I'll talk about it in a minute.
+In my opinion, it tends to make things a little more conceptually confusing.
+To throw in linear algebra jargon here, what we're basically doing is
+constraining the overall value map to be a low rank transformation.
+Turning back to the parameter count, all four of these matrices have the same size,
+and adding them all up we get about 6.3 million parameters for one attention head.
+Cross-attention
+As a quick side note, to be a little more accurate,
+everything described so far is what people would call a self-attention head,
+to distinguish it from a variation that comes up in other models that's
+called cross-attention.
+This isn't relevant to our GPT example, but if you're curious,
+cross-attention involves models that process two distinct types of data,
+like text in one language and text in another language that's part of an
+ongoing generation of a translation, or maybe audio input of speech and an
+ongoing transcription.
+A cross-attention head looks almost identical.
+The only difference is that the key and query maps act on different data sets.
+In a model doing translation, for example, the keys might come from one language,
+while the queries come from another, and the attention pattern could describe
+which words from one language correspond to which words in another.
+And in this setting there would typically be no masking,
+since there's not really any notion of later tokens affecting earlier ones.
+Staying focused on self-attention though, if you understood everything so far,
+Multiple heads
+and if you were to stop here, you would come away with the essence of what attention
+really is.
+All that's really left to us is to lay out the sense
+in which you do this many many different times.
+In our central example we focused on adjectives updating nouns,
+but of course there are lots of different ways that context can influence the
+meaning of a word.
+If the words they crashed the preceded the word car,
+it has implications for the shape and structure of that car.
+And a lot of associations might be less grammatical.
+If the word wizard is anywhere in the same passage as Harry,
+it suggests that this might be referring to Harry Potter,
+whereas if instead the words Queen, Sussex, and William were in that passage,
+then perhaps the embedding of Harry should instead be updated to refer to the prince.
+For every different type of contextual updating that you might imagine,
+the parameters of these key and query matrices would be different to
+capture the different attention patterns, and the parameters of our
+value map would be different based on what should be added to the embeddings.
+And again, in practice the true behavior of these maps is much more
+difficult to interpret, where the weights are set to do whatever the
+model needs them to do to best accomplish its goal of predicting the next token.
+As I said before, everything we described is a single head of attention,
+and a full attention block inside a transformer consists of what's
+called multi-headed attention, where you run a lot of these operations in parallel,
+each with its own distinct key query and value maps.
+GPT-3 for example uses 96 attention heads inside each block.
+Considering that each one is already a bit confusing,
+it's certainly a lot to hold in your head.
+Just to spell it all out very explicitly, this means you have 96 distinct
+key and query matrices producing 96 distinct attention patterns.
+Then each head has its own distinct value matrices
+used to produce 96 sequences of value vectors.
+These are all added together using the corresponding attention patterns as weights.
+What this means is that for each position in the context, each token,
+every one of these heads produces a proposed change to be added to the embedding in
+that position.
+So what you do is you sum together all of those proposed changes, one for each head,
+and you add the result to the original embedding of that position.
+This entire sum here would be one slice of what's outputted from this multi-headed
+attention block, a single one of those refined embeddings that pops out the other end
+of it.
+Again, this is a lot to think about, so don't
+worry at all if it takes some time to sink in.
+The overall idea is that by running many distinct heads in parallel,
+you're giving the model the capacity to learn many distinct ways that context
+changes meaning.
+Pulling up our running tally for parameter count with 96 heads,
+each including its own variation of these four matrices,
+each block of multi-headed attention ends up with around 600 million parameters.
+The output matrix
+There's one added slightly annoying thing that I should really
+mention for any of you who go on to read more about transformers.
+You remember how I said that the value map is factored out into these two
+distinct matrices, which I labeled as the value down and the value up matrices.
+The way that I framed things would suggest that you see this pair of matrices
+inside each attention head, and you could absolutely implement it this way.
+That would be a valid design.
+But the way that you see this written in papers and the way
+that it's implemented in practice looks a little different.
+All of these value up matrices for each head appear stapled together in one giant matrix
+that we call the output matrix, associated with the entire multi-headed attention block.
+And when you see people refer to the value matrix for a given attention head,
+they're typically only referring to this first step,
+the one that I was labeling as the value down projection into the smaller space.
+For the curious among you, I've left an on-screen note about it.
+It's one of those details that runs the risk of distracting
+from the main conceptual points, but I do want to call it out
+just so that you know if you read about this in other sources.
+Going deeper
+Setting aside all the technical nuances, in the preview from the last chapter we saw how
+data flowing through a transformer doesn't just flow through a single attention block.
+For one thing, it also goes through these other operations called multi-layer perceptrons.
+We'll talk more about those in the next chapter.
+And then it repeatedly goes through many many copies of both of these operations.
+What this means is that after a given word imbibes some of its context,
+there are many more chances for this more nuanced embedding
+to be influenced by its more nuanced surroundings.
+The further down the network you go, with each embedding taking in more and more
+meaning from all the other embeddings, which themselves are getting more and more
+nuanced, the hope is that there's the capacity to encode higher level and more
+abstract ideas about a given input beyond just descriptors and grammatical structure.
+Things like sentiment and tone and whether it's a poem and what underlying
+scientific truths are relevant to the piece and things like that.
+Turning back one more time to our scorekeeping, GPT-3 includes 96 distinct layers,
+so the total number of key query and value parameters is multiplied by another 96,
+which brings the total sum to just under 58 billion distinct parameters
+devoted to all of the attention heads.
+That is a lot to be sure, but it's only about a third
+of the 175 billion that are in the network in total.
+So even though attention gets all of the attention,
+the majority of parameters come from the blocks sitting in between these steps.
+In the next chapter, you and I will talk more about those
+other blocks and also a lot more about the training process.
+Ending
+A big part of the story for the success of the attention mechanism is not so much any
+specific kind of behaviour that it enables, but the fact that it's extremely
+parallelizable, meaning that you can run a huge number of computations in a short time
+using GPUs.
+Given that one of the big lessons about deep learning in the last decade or two has
+been that scale alone seems to give huge qualitative improvements in model performance,
+there's a huge advantage to parallelizable architectures that let you do this.
+If you want to learn more about this stuff, I've left lots of links in the description.
+In particular, anything produced by Andrej Karpathy or Chris Ola tend to be pure gold.
+In this video, I wanted to just jump into attention in its current form,
+but if you're curious about more of the history for how we got here
+and how you might reinvent this idea for yourself,
+my friend Vivek just put up a couple videos giving a lot more of that motivation.
+Also, Britt Cruz from the channel The Art of the Problem has a
+really nice video about the history of large language models.
+Thank you.
+
+If you feed a large language model the phrase, Michael Jordan plays the sport of blank,
+and you have it predict what comes next, and it correctly predicts basketball,
+this would suggest that somewhere, inside its hundreds of billions of parameters,
+it's baked in knowledge about a specific person and his specific sport.
+And I think in general, anyone who's played around with one of these
+models has the clear sense that it's memorized tons and tons of facts.
+So a reasonable question you could ask is, how exactly does that work?
+And where do those facts live?
+Last December, a few researchers from Google DeepMind posted about work on this question,
+and they were using this specific example of matching athletes to their sports.
+And although a full mechanistic understanding of how facts are stored remains unsolved,
+they had some interesting partial results, including the very general high-level
+conclusion that the facts seem to live inside a specific part of these networks,
+known fancifully as the multi-layer perceptrons, or MLPs for short.
+In the last couple of chapters, you and I have been digging into
+the details behind transformers, the architecture underlying large language models,
+and also underlying a lot of other modern AI.
+In the most recent chapter, we were focusing on a piece called Attention.
+And the next step for you and me is to dig into the details of what happens inside
+these multi-layer perceptrons, which make up the other big portion of the network.
+The computation here is actually relatively simple,
+especially when you compare it to attention.
+It boils down essentially to a pair of matrix
+multiplications with a simple something in between.
+However, interpreting what these computations are doing is exceedingly challenging.
+Our main goal here is to step through the computations and make them memorable,
+but I'd like to do it in the context of showing a specific example of how
+one of these blocks could, at least in principle, store a concrete fact.
+Specifically, it'll be storing the fact that Michael Jordan plays basketball.
+I should mention the layout here is inspired by a conversation
+I had with one of those DeepMind researchers, Neil Nanda.
+For the most part, I will assume that you've either watched the last two chapters,
+or otherwise you have a basic sense for what a transformer is,
+but refreshers never hurt, so here's the quick reminder of the overall flow.
+Quick refresher on transformers
+You and I have been studying a model that's trained
+to take in a piece of text and predict what comes next.
+That input text is first broken into a bunch of tokens,
+which means little chunks that are typically words or little pieces of words,
+and each token is associated with a high-dimensional vector,
+which is to say a long list of numbers.
+This sequence of vectors then repeatedly passes through two kinds of operation,
+attention, which allows the vectors to pass information between one another,
+and then the multilayer perceptrons, the thing that we're gonna dig into today,
+and also there's a certain normalization step in between.
+After the sequence of vectors has flowed through many,
+many different iterations of both of these blocks, by the end,
+the hope is that each vector has soaked up enough information, both from the context,
+all of the other words in the input, and also from the general knowledge that
+was baked into the model weights through training,
+that it can be used to make a prediction of what token comes next.
+One of the key ideas that I want you to have in your mind is that all of
+these vectors live in a very, very high-dimensional space,
+and when you think about that space, different directions can encode different
+kinds of meaning.
+So a very classic example that I like to refer back to is how if you look
+at the embedding of woman and subtract the embedding of man,
+and you take that little step and you add it to another masculine noun,
+something like uncle, you land somewhere very,
+very close to the corresponding feminine noun.
+In this sense, this particular direction encodes gender information.
+The idea is that many other distinct directions in this super high-dimensional
+space could correspond to other features that the model might want to represent.
+In a transformer, these vectors don't merely encode the meaning of a single word, though.
+As they flow through the network, they imbibe a much richer meaning based
+on all the context around them, and also based on the model's knowledge.
+Ultimately, each one needs to encode something far,
+far beyond the meaning of a single word, since it needs to be sufficient to
+predict what will come next.
+We've already seen how attention blocks let you incorporate context,
+but a majority of the model parameters actually live inside the MLP blocks,
+and one thought for what they might be doing is that they offer extra capacity
+to store facts.
+Like I said, the lesson here is gonna center on the concrete toy example
+Assumptions for our toy example
+of how exactly it could store the fact that Michael Jordan plays basketball.
+Now, this toy example is gonna require that you and I make
+a couple of assumptions about that high-dimensional space.
+First, we'll suppose that one of the directions represents the idea of a first name
+Michael, and then another nearly perpendicular direction represents the idea of the
+last name Jordan, and then yet a third direction will represent the idea of basketball.
+So specifically, what I mean by this is if you look in the network and
+you pluck out one of the vectors being processed,
+if its dot product with this first name Michael direction is one,
+that's what it would mean for the vector to be encoding the idea of a
+person with that first name.
+Otherwise, that dot product would be zero or negative,
+meaning the vector doesn't really align with that direction.
+And for simplicity, let's completely ignore the very reasonable
+question of what it might mean if that dot product was bigger than one.
+Similarly, its dot product with these other directions would
+tell you whether it represents the last name Jordan or basketball.
+So let's say a vector is meant to represent the full name, Michael Jordan,
+then its dot product with both of these directions would have to be one.
+Since the text Michael Jordan spans two different tokens,
+this would also mean we have to assume that an earlier attention block has successfully
+passed information to the second of these two vectors so as to ensure that it can
+encode both names.
+Inside a multilayer perceptron
+With all of those as the assumptions, let's now dive into the meat of the lesson.
+What happens inside a multilayer perceptron?
+You might think of this sequence of vectors flowing into the block, and remember,
+each vector was originally associated with one of the tokens from the input text.
+What's gonna happen is that each individual vector from that sequence
+goes through a short series of operations, we'll unpack them in just a moment,
+and at the end, we'll get another vector with the same dimension.
+That other vector is gonna get added to the original one that flowed in,
+and that sum is the result flowing out.
+This sequence of operations is something you apply to every vector in the sequence,
+associated with every token in the input, and it all happens in parallel.
+In particular, the vectors don't talk to each other in this step,
+they're all kind of doing their own thing.
+And for you and me, that actually makes it a lot simpler,
+because it means if we understand what happens to just one of the
+vectors through this block, we effectively understand what happens to all of them.
+When I say this block is gonna encode the fact that Michael Jordan plays basketball,
+what I mean is that if a vector flows in that encodes first name Michael and last
+name Jordan, then this sequence of computations will produce something that includes
+that direction basketball, which is what will add on to the vector in that position.
+The first step of this process looks like multiplying that vector by a very big matrix.
+No surprises there, this is deep learning.
+And this matrix, like all of the other ones we've seen,
+is filled with model parameters that are learned from data,
+which you might think of as a bunch of knobs and dials that get tweaked and
+tuned to determine what the model behavior is.
+Now, one nice way to think about matrix multiplication is to imagine each row of
+that matrix as being its own vector, and taking a bunch of dot products between
+those rows and the vector being processed, which I'll label as E for embedding.
+For example, suppose that very first row happened to equal
+this first name Michael direction that we're presuming exists.
+That would mean that the first component in this output, this dot product right here,
+would be one if that vector encodes the first name Michael,
+and zero or negative otherwise.
+Even more fun, take a moment to think about what it would mean if that
+first row was this first name Michael plus last name Jordan direction.
+And for simplicity, let me go ahead and write that down as M plus J.
+Then, taking a dot product with this embedding E,
+things distribute really nicely, so it looks like M dot E plus J dot E.
+And notice how that means the ultimate value would be two if the vector encodes the
+full name Michael Jordan, and otherwise it would be one or something smaller than one.
+And that's just one row in this matrix.
+You might think of all of the other rows as in parallel asking some other kinds of
+questions, probing at some other sorts of features of the vector being processed.
+Very often this step also involves adding another vector to the output,
+which is full of model parameters learned from data.
+This other vector is known as the bias.
+For our example, I want you to imagine that the value of this
+bias in that very first component is negative one,
+meaning our final output looks like that relevant dot product, but minus one.
+You might very reasonably ask why I would want you to assume that the
+model has learned this, and in a moment you'll see why it's very clean
+and nice if we have a value here which is positive if and only if a vector
+encodes the full name Michael Jordan, and otherwise it's zero or negative.
+The total number of rows in this matrix, which is something
+like the number of questions being asked, in the case of GPT-3,
+whose numbers we've been following, is just under 50,000.
+In fact, it's exactly four times the number of dimensions in this embedding space.
+That's a design choice.
+You could make it more, you could make it less,
+but having a clean multiple tends to be friendly for hardware.
+Since this matrix full of weights maps us into a higher dimensional space,
+I'm gonna give it the shorthand W up.
+I'll continue labeling the vector we're processing as E,
+and let's label this bias vector as B up and put that all back down in the diagram.
+At this point, a problem is that this operation is purely linear,
+but language is a very non-linear process.
+If the entry that we're measuring is high for Michael plus Jordan,
+it would also necessarily be somewhat triggered by Michael plus Phelps
+and also Alexis plus Jordan, despite those being unrelated conceptually.
+What you really want is a simple yes or no for the full name.
+So the next step is to pass this large intermediate
+vector through a very simple non-linear function.
+A common choice is one that takes all of the negative values and
+maps them to zero and leaves all of the positive values unchanged.
+And continuing with the deep learning tradition of overly fancy names,
+this very simple function is often called the rectified linear unit, or ReLU for short.
+Here's what the graph looks like.
+So taking our imagined example where this first entry of the intermediate vector is one,
+if and only if the full name is Michael Jordan and zero or negative otherwise,
+after you pass it through the ReLU, you end up with a very clean value where
+all of the zero and negative values just get clipped to zero.
+So this output would be one for the full name Michael Jordan and zero otherwise.
+In other words, it very directly mimics the behavior of an AND gate.
+Often models will use a slightly modified function that's called the GELU,
+which has the same basic shape, it's just a bit smoother.
+But for our purposes, it's a little bit cleaner if we only think about the ReLU.
+Also, when you hear people refer to the neurons of a transformer,
+they're talking about these values right here.
+Whenever you see that common neural network picture with a layer of dots and a
+bunch of lines connecting to the previous layer, which we had earlier in this series,
+that's typically meant to convey this combination of a linear step,
+a matrix multiplication, followed by some simple term-wise nonlinear function like a ReLU.
+You would say that this neuron is active whenever this value
+is positive and that it's inactive if that value is zero.
+The next step looks very similar to the first one.
+You multiply by a very large matrix and you add on a certain bias term.
+In this case, the number of dimensions in the output is back down to the size of
+that embedding space, so I'm gonna go ahead and call this the down projection matrix.
+And this time, instead of thinking of things row by row,
+it's actually nicer to think of it column by column.
+You see, another way that you can hold matrix multiplication in your head is to
+imagine taking each column of the matrix and multiplying it by the corresponding
+term in the vector that it's processing and adding together all of those rescaled columns.
+The reason it's nicer to think about this way is because here the columns have the same
+dimension as the embedding space, so we can think of them as directions in that space.
+For instance, we will imagine that the model has learned to make that
+first column into this basketball direction that we suppose exists.
+What that would mean is that when the relevant neuron in that first position is active,
+we'll be adding this column to the final result.
+But if that neuron was inactive, if that number was zero, then this would have no effect.
+And it doesn't just have to be basketball.
+The model could also bake into this column and many other features that
+it wants to associate with something that has the full name Michael Jordan.
+And at the same time, all of the other columns in this matrix are telling you
+what will be added to the final result if the corresponding neuron is active.
+And if you have a bias in this case, it's something that you're
+just adding every single time, regardless of the neuron values.
+You might wonder what's that doing.
+As with all parameter-filled objects here, it's kind of hard to say exactly.
+Maybe there's some bookkeeping that the network needs to do,
+but you can feel free to ignore it for now.
+Making our notation a little more compact again,
+I'll call this big matrix W down and similarly call that bias vector B down and
+put that back into our diagram.
+Like I previewed earlier, what you do with this final result is add it to the vector
+that flowed into the block at that position and that gets you this final result.
+So for example, if the vector flowing in encoded both first name Michael and last name
+Jordan, then because this sequence of operations will trigger that AND gate,
+it will add on the basketball direction, so what pops out will encode all of those
+together.
+And remember, this is a process happening to every one of those vectors in parallel.
+In particular, taking the GPT-3 numbers, it means that this block doesn't just
+have 50,000 neurons in it, it has 50,000 times the number of tokens in the input.
+So that is the entire operation, two matrix products,
+each with a bias added and a simple clipping function in between.
+Any of you who watched the earlier videos of the series will recognize this
+structure as the most basic kind of neural network that we studied there.
+In that example, it was trained to recognize handwritten digits.
+Over here, in the context of a transformer for a large language model,
+this is one piece in a larger architecture and any attempt to interpret
+what exactly it's doing is heavily intertwined with the idea of encoding
+information into vectors of a high-dimensional embedding space.
+That is the core lesson, but I do wanna step back and reflect on two different things,
+the first of which is a kind of bookkeeping, and the second of which
+involves a very thought-provoking fact about higher dimensions that
+I actually didn't know until I dug into transformers.
+Counting parameters
+In the last two chapters, you and I started counting up the total number of parameters
+in GPT-3 and seeing exactly where they live, so let's quickly finish up the game here.
+I already mentioned how this up projection matrix has just under 50,000 rows and
+that each row matches the size of the embedding space, which for GPT-3 is 12,288.
+Multiplying those together, it gives us 604 million parameters just for that matrix,
+and the down projection has the same number of parameters just with a transposed shape.
+So together, they give about 1.2 billion parameters.
+The bias vector also accounts for a couple more parameters,
+but it's a trivial proportion of the total, so I'm not even gonna show it.
+In GPT-3, this sequence of embedding vectors flows through not one,
+but 96 distinct MLPs, so the total number of parameters devoted
+to all of these blocks adds up to about 116 billion.
+This is around 2 thirds of the total parameters in the network,
+and when you add it to everything that we had before, for the attention blocks,
+the embedding, and the unembedding, you do indeed get that grand total of 175
+billion as advertised.
+It's probably worth mentioning there's another set of parameters associated
+with those normalization steps that this explanation has skipped over,
+but like the bias vector, they account for a very trivial proportion of the total.
+Superposition
+As to that second point of reflection, you might be wondering if
+this central toy example we've been spending so much time on
+reflects how facts are actually stored in real large language models.
+It is true that the rows of that first matrix can be thought of as
+directions in this embedding space, and that means the activation of each
+neuron tells you how much a given vector aligns with some specific direction.
+It's also true that the columns of that second matrix tell
+you what will be added to the result if that neuron is active.
+Both of those are just mathematical facts.
+However, the evidence does suggest that individual neurons very rarely
+represent a single clean feature like Michael Jordan,
+and there may actually be a very good reason this is the case,
+related to an idea floating around interpretability researchers these
+days known as superposition.
+This is a hypothesis that might help to explain both why the models are
+especially hard to interpret and also why they scale surprisingly well.
+The basic idea is that if you have an n-dimensional space and you wanna
+represent a bunch of different features using directions that are all
+perpendicular to one another in that space, you know,
+that way if you add a component in one direction,
+it doesn't influence any of the other directions,
+then the maximum number of vectors you can fit is only n, the number of dimensions.
+To a mathematician, actually, this is the definition of dimension.
+But where it gets interesting is if you relax that
+constraint a little bit and you tolerate some noise.
+Say you allow those features to be represented by vectors that aren't exactly
+perpendicular, they're just nearly perpendicular, maybe between 89 and 91 degrees apart.
+If we were in two or three dimensions, this makes no difference.
+That gives you hardly any extra wiggle room to fit more vectors in,
+which makes it all the more counterintuitive that for higher dimensions,
+the answer changes dramatically.
+I can give you a really quick and dirty illustration of this using some
+scrappy Python that's going to create a list of 100-dimensional vectors,
+each one initialized randomly, and this list is going to contain 10,000 distinct vectors,
+so 100 times as many vectors as there are dimensions.
+This plot right here shows the distribution of angles between pairs of these vectors.
+So because they started at random, those angles could be anything from 0 to 180 degrees,
+but you'll notice that already, even just for random vectors,
+there's this heavy bias for things to be closer to 90 degrees.
+Then what I'm going to do is run a certain optimization process that iteratively nudges
+all of these vectors so that they try to become more perpendicular to one another.
+After repeating this many different times, here's
+what the distribution of angles looks like.
+We have to actually zoom in on it here because all of the possible angles
+between pairs of vectors sit inside this narrow range between 89 and 91 degrees.
+In general, a consequence of something known as the Johnson-Lindenstrauss
+lemma is that the number of vectors you can cram into a space that are nearly
+perpendicular like this grows exponentially with the number of dimensions.
+This is very significant for large language models,
+which might benefit from associating independent ideas with nearly
+perpendicular directions.
+It means that it's possible for it to store many,
+many more ideas than there are dimensions in the space that it's allotted.
+This might partially explain why model performance seems to scale so well with size.
+A space that has 10 times as many dimensions can store way,
+way more than 10 times as many independent ideas.
+And this is relevant not just to that embedding space where the vectors
+flowing through the model live, but also to that vector full of neurons
+in the middle of that multilayer perceptron that we just studied.
+That is to say, at the sizes of GPT-3, it might not just be probing at 50,000 features,
+but if it instead leveraged this enormous added capacity by using
+nearly perpendicular directions of the space, it could be probing at many,
+many more features of the vector being processed.
+But if it was doing that, what it means is that individual
+features aren't gonna be visible as a single neuron lighting up.
+It would have to look like some specific combination of neurons instead, a superposition.
+For any of you curious to learn more, a key relevant search term here is sparse
+autoencoder, which is a tool that some of the interpretability people use to try to
+extract what the true features are, even if they're very superimposed on all these
+neurons.
+I'll link to a couple really great anthropic posts all about this.
+Up next
+At this point, we haven't touched every detail of a transformer,
+but you and I have hit the most important points.
+The main thing that I wanna cover in a next chapter is the training process.
+On the one hand, the short answer for how training works is that it's all
+backpropagation, and we covered backpropagation in a separate context with earlier
+chapters in the series.
+But there is more to discuss, like the specific cost function used for language models,
+the idea of fine-tuning using reinforcement learning with human feedback,
+and the notion of scaling laws.
+Quick note for the active followers among you,
+there are a number of non-machine learning-related videos that I'm excited to
+sink my teeth into before I make that next chapter, so it might be a while,
+but I do promise it'll come in due time.
+Thank you.
+Over the last few years, AI systems have become astonishingly good at turning text props into videos.
+At the core of how these models operate is a deep connection to physics. This generation of image and video models works using a process known as diffusion,
+which is remarkably equivalent to the Brownian motion we see as particles diffuse, but with time run backwards, and in high-dimensional space.
+As we'll see, this connection to physics is much more than a curiosity. We get real algorithms out of the physics that we can use to generate images and videos.
+And this perspective will also give us some really nice intuitions for how these models work in practice.
+But before we dive into this connection, let's get hands-on with a real diffusion model.
+While the best models are closed source, there are some compelling open source models.
+This video of an astronaut was generated by an open source model called WAN 2.1. We can add to our prompt and have our astronaut hold a flag,
+hold a laptop, or hold a meeting. If we cut down our prompt to just an astronaut, we get this.
+And if we cut down our prompt to nothing, we interestingly still get this video of a woman.
+If we dig into our WAN model's source code, we'll find that the video generation process begins with this call to a random number generator.
+Creating a video where the pixel intensity values are chosen randomly. Here's what it looks like.
+From here, this pure noise video is passed into a transformer. This is the same type of AI model used by large language models, like ChatGPT.
+But instead of outputting text, this transformer outputs another video that now looks like this.
+Still mostly noise, but with some hints of structure. This new video is added to our pure noise video,
+and then passed back into the model again, producing a third video that looks like this.
+This process is repeated again and again. Here's what the video looks like after 5 iterations, 10, 20, 30, 40, and finally 50.
+Step by step, our transformer shapes pure noise into incredibly realistic video.
+But what exactly is the connection to Brownian motion here? And how is our model able to use text input so expressively
+to shape noise into what our prompt describes? In this video, we'll impact diffusion models in 3 parts.
+First we'll look at a 2021 OpenAI paper and model called CLIP. As we'll see, CLIP is really two models, a language model and a vision model,
+that are trained using a clever learning objective that allows them to learn this really powerful shared space between words and pictures.
+Experimenting with this space will help us get a feel for the high dimensional spaces that diffusion models operate in.
+But learning a shared representation is not enough to generate images. From here we'll look at the diffusion process itself.
+At a high level, diffusion models are trained to remove noise from images or videos.
+However, if you dig into the landmark papers in the field, you'll find that this naive understanding of diffusion really doesn't hold
+up in practice. In this section we'll dig into the connection between diffusion models and diffusion processes in physics.
+This connection will help us understand how these models really work in practice and give us some powerful theory for dramatically speeding up image and video generation.
+Finally, we'll bring these worlds together and see how approaches like CLIP are combined with diffusion models to condition and guide
+the generation process towards the videos we ask for in our prompts.
+CLIP
+2020 was a landmark year for language modeling. New results in neural scaling laws and OpenAI's
+GPT-3 showed that bigger really was better. Massive models trained on massive datasets had
+capabilities that simply didn't exist in smaller models. It didn't take long for researchers to apply similar ideas to images.
+In February 2021, a team at OpenAI released a new model architecture called CLIP, trained on a dataset of 400 million image and caption pairs scraped from the internet.
+CLIP is composed of two models, one that processes text and one that processes images.
+The output of each of these models is a vector of length 512, and the central idea is that the vectors for a given image and its captions
+should be similar. To achieve this, the OpenAI team developed a clever training approach.
+Given a batch of image-caption pairs, for example our batch could contain a picture of a cat, a dog, and me, with the captions a photo of a cat,
+a photo of a dog, and a photo of a man, we then pass our three images into our image model, and our three captions into our text model.
+We now have three image vectors and three text vectors, and we would like the vectors for the matching image-caption pairs to be similar.
+The clever idea from here is to make use of the similarity not just between the corresponding images and captions,
+but between all image-caption pairs in the batch when training our models. If we arrange our image vectors as the columns of a matrix,
+and our text vectors as the rows, the pairs of vectors along the diagonal of our matrix correspond to matching images and captions.
+And all the pairs off-diagonal are non-matching images and captions. The CLIP training objective seeks to maximize the similarity between
+corresponding image-caption pairs, while simultaneously minimizing the similarity between non-corresponding image-caption pairs.
+The C in CLIP stands for contrastive, because the model learns to contrast matching and non-matching image-caption pairs.
+The CLIP algorithm measures similarity between vectors using a metric called cosine similarity.
+Geometrically, we can think of each of these vectors as pointing in some direction in high-dimensional space.
+Cosine similarity measures the cosine of the angle between our vectors in this space.
+So if our text and image vector point in the same direction, the angle between our vectors will be zero, resulting in a maximum value for our cosine
+similarity score of 1. So the image and text models that make up CLIP are trained to maximize the
+alignment of related images and captions in this shared high-dimensional space, while minimizing the alignment between unrelated images and captions.
+The learned geometry of this shared vector space, known as a latent or embedding space, has some really interesting properties.
+If I take two pictures of myself, one not wearing a hat and one wearing a hat, and pass both of these into our CLIP image model,
+Shared Embedding Space
+we get two vectors in our embedding space. Now if I take the vector corresponding to me wearing a hat,
+and subtract the vector of me not wearing a hat, we get a new vector in our embedding space.
+Now what text might this new vector correspond to? Mathematically we took the difference of me wearing a hat and me not wearing a hat.
+We can search for corresponding text by passing a bunch of different words into our text encoder, and for each computing the cosine similarity
+between our newly computed difference vector and the text vector. Testing a set of a few hundred common words, the top ranked match with
+a similarity of 0.165 is the word hat, followed by cap and helmet.
+This is a remarkable result. The learned geometry of CLIP's embedding space allows us to operate
+mathematically on the pure ideas or concepts in our images and text, translating the differences in the content of our images,
+like if there's a hat or not, into a literal distance between vectors in our embedding space.
+The OpenAI team showed that CLIP could produce very impressive image classification results by simply passing an image into our image encoder,
+and then comparing the resulting vector to a set of possible captions, one for each label that could be assigned to the image,
+and classifying the image with whatever label resulted in the highest cosine similarity.
+So techniques like CLIP give us a powerful shared representation of image and text, a kind of vector space of pure ideas.
+However, our CLIP models only go one direction. We can only map image and text to our shared embedding space.
+We have no way of generating images and text from our embedding vectors.
+2020 turned out not only to be a transformative year for language modeling. A few weeks after the GPT-3 paper came out, a team at Berkeley published a
+Diffusion Models & DDPM
+paper called Denoising Diffusion Probabilistic Models, now known as DDPM.
+The paper showed for the first time that it was possible to generate very high quality images using a diffusion process,
+where pure noise is transformed step by step into realistic images.
+The core idea behind diffusion models is pretty straightforward. We take a set of training images and add noise to each
+image step by step until the image is completely destroyed. From here we train a neural network to reverse this process.
+When I first learned about diffusion models, I assumed that the models would be trained to remove noise a single step at a time.
+Our model would be trained to predict the image in step 1 given the noisier image in step 2, trained to predict the image in step 2 given the noisier image in step 3, and so on.
+When it came time to generate an image, we would pass pure noise into our model, take its output and pass it back into its input again and again,
+and after enough steps we would have a nice image. Now, it turns out that this naive approach to
+building a diffusion model really does not work well. Virtually no modern models work like this.
+These are the training and image generation algorithms from the Berkeley team's paper. The notation is a bit dense, but there's some key details we can pull out
+that will help us understand what it takes to make these models really work. The first thing that surprised me is that the team added random noise
+to images not just during training, but also during image generation. Algorithm 2 tells us that when generating new images, at each step,
+after our neural network predicts a less noisy image, we need to add random noise to this image before passing it back into our model.
+This added noise turns out to matter a lot in practice. If we take a popular diffusion model like stable diffusion 2 and use the Berkeley team's
+image generation approach, known as DDPM sampling, we can get some really nice images.
+Here's the image we get when prompting the model with this prompt, asking for a tree in the desert.
+Now, if we remove the line of code that adds noise at each step of the generation process, we end up with a tiny sad blurry tree.
+How is it that adding random noise while generating images leads to better quality, sharper images?
+The second thing that surprised me when I encountered the Berkeley team's approach was that the team wasn't training models to reverse a single step in the noise addition
+process. Instead, the team takes an initial clean image, which they call X0, and adds scaled random noise to the image, which they call epsilon.
+And from here, they train the model to predict the total noise that was added to the original image.
+So the team is effectively asking the model to skip all the intermediate steps and make a prediction about the original image.
+Intuitively, this learning task seems much more difficult to me than just learning to make a noisy image slightly less noisy.
+The Berkeley team's paper and approach was a landmark result that put diffusion on the map.
+Why does adding random noise while generating images and training the model like this work so well?
+The DDPM paper draws on some fairly complex theory to arrive at these algorithms.
+I'll include a link to a great tutorial in the description if you want to dig deeper into the theory.
+Happily, it turns out that there's a different but mathematically equivalent way of understanding what diffusion models are really learning that we can
+Learning Vector Fields
+use to get a visual and intuitive sense for why the DDPM algorithms work so well. The key will be thinking of diffusion models as learning a time-varying vector field.
+This perspective also leads to a more general approach called flow-based models, which have become very popular recently.
+To see how diffusion models learn this time-varying vector field, let's temporarily simplify our learning problem.
+One way to think about an image is as a point in high-dimensional space, where the intensity value of each pixel controls the position of the point in each
+dimension. If we reduce the size of our images to only two pixels, we can visualize the distribution of our images by plotting the pixel intensity
+value of our first pixel on the x-axis of scatterplot and the pixel intensity of our second pixel on the y-axis.
+So an image with a black first pixel and a white second pixel would show up at x equals zero and y equals one on our scatterplot.
+And an all-white image would be at one, one, and so on. Now, real images have a very specific structure in this high-dimensional space.
+Let's create some structure for our points in our lower two-dimensional space for our diffusion model to learn.
+The exact structure we choose doesn't matter too much at this point. Let's start with a spiral shape like this.
+The core idea of diffusion models, adding more and more noise to an image and then training a neural network to reverse this process,
+looks really interesting from the perspective of our 2D toy data. When we add random noise to an image, we're effectively
+changing each pixel's value by a random amount. In our toy 2D dataset, where the coordinates of a point correspond
+to that image's pixel intensity values, adding random noise is equivalent to taking a step in a randomly chosen direction.
+As we add more and more noise to our image, our point goes on a random walk. This process is equivalent to the Brownian motion that drives diffusion
+processes in physics and is where diffusion models get their name. From here, it's pretty wild to think about what we're asking our diffusion model to do.
+Our model will see many different random walks from various starting points in our dataset, and we're effectively asking our model to reverse the clock,
+removing noise from our images by letting it play these diffusion processes backwards, starting our points from random locations and recovering the original structure of
+our dataset. How can our model learn to reverse these random walks?
+If we consider the specific point at the end of this 100-step random walk, in our naive diffusion modeling approach, where we ask our model to denoise images a
+single step at a time, this is equivalent to giving our model the coordinates of the final 100th point in our walk, and asking our model to predict the coordinates of our
+point at the 99th step. Although the direction of our 100th step is chosen randomly,
+there will be some signal in aggregate for our model to learn from here. Given enough training points, we expect many diffusion paths to go through
+this neighborhood, and on average our points will be diffusing away from our starting spiral, so our model can learn to point back towards our spiral.
+We can now see why the Berkeley team's training objective works so well. Instead of training the model to remove noise from images one step at a time,
+this would correspond to predicting the coordinates of the 99th step given the 100th, the team instead trained the model to predict the total noise added across the entire
+walk. On our plot, this is the vector pointing from our 100th step back to the original starting point of the walk.
+It turns out that we can prove that learning to predict the noise added in the final step of our walk is mathematically equivalent to learning
+to predict the total noise added, divided by the number of steps taken. This means that when our model learns to reverse a single step,
+although our training data is noisy, we expect our model to ultimately learn to point back towards x0.
+By instead training our model to directly predict the vector pointing back towards x0, we're significantly reducing the variance of our training examples,
+allowing our model to learn much more efficiently, without actually changing our underlying learning objective.
+So for each point in our space, our model learns the direction pointing back towards the original data distribution.
+This is also known as a score function, and the intuition here is that the score function points us towards more likely, less noisy data.
+Now, in practice, these learned directions depend heavily on how much noise we add to our original data.
+After 100 steps, most of our points are far from their starting points, so our model learns to move these points back in the general direction of our spiral.
+However, if we train our model on examples after only one diffusion step, we end up with a much more nuanced vector field,
+pointing to the fine structure of our spiral. There turns out to be a clever solution to this problem.
+Instead of just passing in the coordinates of our point into our model, which we'll write here as a function f, we can also pass in a time
+variable that corresponds to the number of steps taken in our random walk. If we set t equal to 1 at our 100th step, then t would equal 0.99 at our 99th step,
+and so on. Conditioning our models on time like this turns out to be essential in practice,
+allowing our model to learn coarse vector fields for large values of t, and very refined structures as t approaches 0.
+After training, we can watch the time evolution of our model. We see this really interesting behavior as t approaches 0.4.
+Our learned vector field suddenly transitions, from pointing towards the center of the spiral to pointing towards the spiral itself.
+It feels like a phase change. We're now in a great position to resolve the final mystery of the DDPM paper.
+How is it that adding random noise at each step while generating images leads to better quality, sharper images?
+Let's follow the path of a single point guided by the DDPM image generation algorithm.
+On our 2D dataset, generating an image is equivalent to starting at a random location and working our way back to our spiral.
+Starting at a randomly chosen location of x equals minus 1.6 and y equals 1.8, our model's vector field points us back towards our spiral.
+Following the DDPM algorithm, we take a small step in the direction returned by our model, and add scaled random noise, which effectively moves our point in a random
+direction. We'll color the steps driven by our diffusion model in blue, and our random steps in gray.
+Note that the scale of the random step may seem large, but following our DDPM algorithm, the size of our random steps will come down as we progress.
+Repeating this process for 64 steps, our particle jumps around quite a bit due to both our learned vector field changing and our random noise steps,
+but ultimately lands nicely on our spiral. Repeating this process for a point cloud of 256 points,
+our reverse diffusion process starts out looking like absolute chaos, but does converge nicely, with most points landing on our spiral.
+Now, what happens if we remove the noise addition steps? Running our reverse diffusion process again without the random noise step,
+all of our points quickly move to the center of our spiral, and then make their way towards a single inside edge of the spiral.
+This result can help us make sense of why we saw a sad blurry tree earlier when we removed this random noise step.
+Instead of capturing our full spiral distribution, as we did when we included a noise step, all of our generated points end up close to
+the center or average of our spiral. In the space of images, averages look blurry.
+Conceptually, we can imagine different parts of our spiral corresponding to different images of trees in the desert.
+And when we remove the random noise steps from our generation process, our generated images end up in the center or average of these images,
+which looks like a blurry mess. Now, note that the analogy between our toy dataset and
+high dimensional image dataset breaks down a bit here. If all the points on our spiral correspond to realistic images,
+since our generated points do still end up landing on our 2D spiral, we would expect these generated points to still look like real images,
+but likely with less diversity than we would want. However, in the high dimensional space of images,
+it appears that our image generation process doesn't quite make it to the manifold of realistic images, resulting in a blurry non-realistic image.
+This prediction of the average is not a coincidence. It turns out that we can show mathematically that our model
+learns to point to the mean or average of our dataset, conditioned on our input point and the time in our diffusion process.
+One way to arrive at this result is to show that given the noise we add in our forward process is Gaussian, for sufficiently small step sizes our reverse process will also
+follow a Gaussian distribution, where our model actually learns the mean of this distribution.
+Since our model just predicts the mean of our normal distribution, to actually sample from this distribution, we need to add zero mean
+Gaussian noise to our model's predicted value, which is precisely what the DDPM image generation process does when we
+add random noise after each step. We can see this mean learning behavior most clearly early in our reverse diffusion
+process, when t is close to 1 and our training points are far from our spiral. Our model's learned vector field points towards the center or average of our dataset.
+So adding random noise during image generation falls nicely out of theory, and in practice prevents all our points from landing near the center or average of
+our dataset. The DDPM paper put diffusion models on the map as a viable method of generating images,
+but the diffusion approach did not immediately see widespread adoption. A key issue with the DDPM approach at the time was the high compute demands of
+the large number of steps required to generate high quality images, since each step required a complete pass through a potentially very large neural network.
+A few months later, a pair of papers from teams at Stanford and Google showed that it's remarkably possible to generate high quality images without actually adding random
+DDIM
+noise during the generation process, significantly reducing the number of steps required.
+The DDPM image generation process we've been looking at can be expressed using a special type of differential equation known as a stochastic differential equation.
+This first term represents the motion of our point driven by our model's vector field, and the second term represents the random motions of our point.
+Adding these terms together, we get the overall motion of our point at each step, dx.
+From here, we can consider how the distribution of all of our points evolves over time, where the motion of each point is governed by this stochastic differential equation.
+This problem has been well studied in physics. Using a key result from statistical mechanics known as the Fokker-Planck equation,
+the Google Brain team showed that there's another differential equation, this time an ordinary differential equation with no random component,
+that results in the same exact final distribution of points as our stochastic differential equation.
+This result gives us a new algorithm for generating images using our model's learned vector fields that does not require taking random steps along the way.
+Exactly how our ordinary differential equation maps to an image generation algorithm is a bit technical.
+I'll leave a link to a tutorial in the description. The key result here though, is that we end up with something that looks very
+similar to our DDPM image generation process, but without the random noise addition at each step,
+and with a new scaling for the sizes of steps that we take. This approach is generally known as DDIM.
+The scaling of our step sizes, and especially how these step sizes vary throughout a reverse diffusion process, matters a lot in practice.
+When we just removed the random noise steps from our DDPM generation algorithm earlier, all of our points ended up near the mean of our data,
+and we saw blurry results for our generated images. Switching to our DDIM approach, we now have smaller scaling for our step
+sizes that allow our trajectories to better follow the contour lines of our vector field, and land nicely on the correct spiral distribution.
+And applying our DDIM algorithm to our tree in the desert example, we're now able to generate nice results.
+Comparing to our original DDPM algorithm that required random steps, DDIM remarkably does not require any changes to model training,
+but is able to generate high quality images in significantly fewer steps, completely deterministically.
+Note that the theory does not tell us that our individual images or points on our spiral will be the same, but instead that our final
+distribution of points or images will be the same, regardless of whether we use our stochastic DDPM algorithm or our
+deterministic DDIM algorithm. The WAN model we saw earlier uses a generalization of DDIM called flow matching.
+By early 2021, it was clear that diffusion models were capable of generating high quality images, and thanks to image generation methods like DDIM,
+it was possible to generate these images without using enormous amounts of compute.
+However, our ability to steer the diffusion process using text prompts was still very limited.
+Earlier, we saw how CLIP was able to learn a powerful shared representation of images and text by concurrently training image and text encoder models.
+Dall E 2
+However, these models only go one way, converting text or images into embedding vectors.
+These two problems potentially fit together in a really interesting way. Diffusion models are able to potentially reverse the CLIP image encoder,
+generating high quality images, and the output vector of the CLIP text encoder could be used to guide our diffusion models toward the images or videos that we want.
+So the high level idea here is that we could pass in a prompt into the CLIP text encoder to generate an embedding vector, and use this embedding vector to steer
+the diffusion process towards the image or video of what our prompt describes.
+A team at OpenAI did exactly this in 2022. Using image and caption pairs to train a diffusion model to invert the CLIP image encoder.
+Their approach yielded an incredible level of prompt adherence, capturing an unprecedented level of detail from the input text.
+The team called their method unCLIP, but their model is better known by its commercial name, DALI2.
+But how do we actually use the embedding vectors for models like CLIP to steer the diffusion process?
+Conditioning
+One option is to simply pass our text vector as another input into our diffusion model, and train as we normally would to remove noise.
+If we train our diffusion model using image and caption pairs, as the OpenAI team did, the idea here is that the model will learn to
+use the text information to more accurately remove noise from images, since it now has more context about the image that it's learning to denoise.
+This technique is called conditioning. We used a similar approach earlier, when we conditioned our toy diffusion
+model on the number of time steps elapsed in the diffusion process, allowing the model to learn coarse structure for large values of t,
+and finer structures as our training samples get closer to our original spiral.
+Interestingly, there turns out to be a variety of ways we can pass in the text vector into our diffusion model.
+Some approaches use a mechanism called cross-attention to couple image and text information.
+Other approaches simply add or append the embedded text vector to our diffusion model's input, and some approaches pass in text information in multiple ways at once.
+Now it turns out that conditioning alone is not enough to achieve the level of prompt adherence that we see in models like DALI2.
+If we take the stable diffusion tree in the desert example we've been experimenting with, and only condition our model with our text inputs,
+the model no longer gives us everything we ask for. We get a shadow in a desert, but no tree.
+Note that stable diffusion was developed by a team at Heidelberg University around the same time as DALI2, and works in a similar way, but is open source.
+It turns out that there's one more powerful idea that we need to effectively steer our diffusion models.
+We can see this idea in action by returning to our toy dataset one last time. If our overall spiral corresponds to realistic images,
+then different sections of our spiral may correspond to different types of images. Let's say this inner part is images of people, this middle part is images of dogs,
+and this outer part is different images of cats. Now let's train the same diffusion model we trained earlier,
+but in addition to passing in our starting coordinates and the time of our diffusion process, we'll also pass in the points class.
+Person, cat, or dog. This extra signal should allow our model to steer points to the right sections of our spiral, based on each points class.
+Running our generation process, after assigning person, dog, or cat labels to each point, we see that we're able to recover the overall structure of our dataset,
+but the fit is not great, and we see some confusion here between people and dog images.
+Part of the problem here is that we're asking our model to simultaneously learn to point to our overall spiral of realistic images, and toward specific classes on our spiral.
+If we consider this cat point for example, it starts off heading towards the center of our spiral, and as our class conditioned vector
+field shifts to point towards a cat region of our spiral, our point moves towards this part of the spiral, but it doesn't quite make it.
+The modeling task of generally matching our overall spiral has overpowered our model's ability to move our point in the direction of a specific class.
+Now, is there a way to decouple and maybe even control these two factors? Remarkably, it turns out that we can.
+The trick is to leverage the differences between the unconditional model that is not trained on a specific class, and a model that is conditioned on specific classes.
+Guidance
+We could do this by training two separate models, but in practice it's more efficient to just leave out the class information for a
+subset of our training examples. We now have the option of effectively passing in no class or text
+information into our model, and getting back a vector field that points towards our data in general, not towards any specific class.
+We can visualize these two vector fields together. Here the gray vectors show our diffusion model points when we don't pass in any class
+information, and these yellow vectors show when our model is conditioned on the cat class.
+For large values of our diffusion time variable when our training data is far from our spiral, our two vector fields basically point
+in the same direction, roughly towards the average of our spiral. But as time approaches zero, our vector fields diverge,
+with our cat conditioned vector field pointing more towards the outer cat portion of our spiral.
+Now that we have these two separate directions, we can use their differences to push our points more in the direction
+of the class we want. Specifically, we take our yellow class conditioned
+vector and subtract our gray unconditioned vector. This gives us a new vector pointing from the tip of our
+unconditioned vector to the tip of our conditioned vector. The idea from here is that this direction should point more in the direction of our
+cat examples, now that we've removed the direction generally pointing towards our data.
+We can now amplify this direction by multiplying by a scaling factor, alpha, and replace our original conditioned yellow vector with a vector pointing in this new
+direction. Let's follow the trajectory of the same cat point we saw earlier that didn't quite make it onto our spiral.
+We'll roll back our diffusion time variable and start a new green point from the same starting location.
+If we use our new green vectors to guide the diffusion process instead of our original yellow vectors, the difference between our gray arrows that point towards the center
+of our spiral and yellow vectors that start pointing us back towards our cat part of the spiral are amplified, now guiding our point to land nicely on our spiral.
+This approach is called classifier-free guidance. Using our new green vectors to guide a set of cat points,
+we see a nice tight fit to our spiral for this class. Switching to our dog class, our unconditional gray vector field stays the same,
+but our dog conditioned model outputs, shown in magenta, now point us more towards the dog part of our spiral.
+And adding guidance amplifies this learned direction. Using our guided vectors and running our generation process,
+we see a nice fit for our dog points. Finally, we get a third vector field for our people examples
+that again results in nice convergence to our spiral. Classifier-free guidance works remarkably well and has become an
+essential part of many modern image and video generation models. Earlier, we saw that if we only conditioned our stable diffusion model,
+our image would have a desert and a shadow, but no tree that we asked for in the prompt.
+If we add classifier-free guidance to this model, once we reach a guidance scale alpha of around 2,
+we start to actually see a tiny tree in our images. And the size and detail of our tree improve as we increase our scaling factor, alpha.
+The fact that this works so well is remarkable to me. As we use guidance to point our stable diffusion model's vector field more in the
+direction of our prompt, our tree literally grows in size and detail in our images.
+Our WAN video generation model takes this guidance approach one step further. Instead of subtracting the output of an unconditioned model with no text input,
+Negative Prompts
+the WAN team uses what's known as a negative prompt, where they specifically write out all the features they don't want in their video,
+and then subtract the resulting vector from the model's conditioned output and amplify the result, steering the diffusion process away from these unwanted features.
+Their standard negative prompt is fascinating, including features like extra fingers and walking backwards,
+and interestingly is actually passed into their text encoder in Chinese. Here's a video generated using the same astronaut on a horse prompt we used earlier,
+but without the negative prompt. It's really interesting to see how the parts of the scene get cartoonish and no longer fit together.
+Since the publication of the DDPM paper in the summer of 2020, the field has progressed at a blistering pace,
+Outro
+leading to the incredible text-to-video models that we see today.
+Of all the interesting details that make these models tick, the most astounding thing to me is that the pieces fit together at all.
+The fact that we can take a trained text encoder from clip or elsewhere and use its output to actually steer the diffusion process,
+which itself is highly complex, seems almost too good to be true.
+And on top of that, many of these core ideas can be built from relatively simple geometric intuitions that somehow hold in
+the incredibly high dimensional spaces these models operate in. The resulting models feel like a fundamentally new class of machine.
+To create incredibly lifelike and beautiful images and video, you no longer need a camera, you don't need to know how to draw or how to paint,
+or how to use animation software. All you need is language.
+So this, as you can no doubt tell, was a guest video. It comes from Stephen Welsh, who runs the channel WelshLabs.
+About guest videos
+If somehow you watch this channel and you're not already familiar with WelshLabs, you should absolutely go and just watch everything that he's made.
+A while back he made this completely iconic series about imaginary numbers. He actually has since turned it into a book, and consistent with everything he makes,
+it's just super high quality, lots of exercises, good stuff like that. More recently he's been doing a lot of machine learning content,
+so cannot recommend his stuff highly enough. Now the context on why I'm doing guest videos at all is that very
+recently my wife and I had our first baby, which I'm very excited about. And I'm not sure what most solo YouTubers do for paternity leave,
+but the way I decided to go about it was to reach out to a few creators whose work I really enjoy, and who I'm quite sure you're going to enjoy, and essentially ask, hey,
+what do you feel about me pointing some of the Patreon funds that come towards this channel towards you during this time that I'm away,
+and kind of commission pieces to fill the airtime while I'm away. The pieces are actually going to be really great.
+I've enjoyed giving some editorial oversight as they're coming in. You know, we've got statistical mechanics, we've got machine learning,
+even some modern art. It's going to be a good time. The next guest video is going to be about a combination of modern art and group theory.
+It's actually very fun. And like all the other videos on this channel, if you're a Patreon supporter, you can get early views of these ones and provide some feedback before they go live.
+Until then, I hope you thoroughly enjoy binge-watching WelshLabs, and again, consider buying the things that he makes.
+There is just as much thought and care put into those as there is into the videos.
+Bye!

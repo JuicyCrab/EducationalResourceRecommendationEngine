@@ -1,0 +1,1090 @@
+This module introduces linear regression concepts.
+Learning objectives:
+Explain a loss function and how it works.
+Define and describe how gradient descent finds the optimal model
+        parameters.
+Describe how to tune hyperparameters to efficiently train a linear model.
+Prerequisites:
+This module assumes you are familiar with the concepts covered in the
+     following module:
+Introduction to Machine Learning
+Linear regression is a
+statistical technique used to find the relationship between variables. In an ML
+context, linear regression finds the relationship between
+features and a
+label.
+For example, suppose we want to predict a car's fuel efficiency in miles per
+gallon based on how heavy the car is, and we have the following dataset:
+Pounds in 1000s (feature)
+Miles per gallon
+        (label)
+3.5 18 3.69 15 3.44 18 3.43 16 4.34 15 4.42 14 2.37 24
+If we plotted these points, we'd get the following graph:
+ 
+Figure 1. Car heaviness (in pounds) versus miles per gallon rating. As a
+car gets heavier, its miles per gallon rating generally decreases.
+We could create our own model by drawing a best fit line through the points:
+ 
+Figure 2. A best fit line drawn through the data from the previous figure.
+Linear regression equation
+In algebraic terms, the model would be defined as $ y = mx + b $, where
+
+$ y $ is miles per gallon—the value we want to predict.
+$ m $ is the slope of the line.
+$ x $ is pounds—our input value.
+$ b $ is the y-intercept.
+
+In ML, we write the equation for a linear regression model as follows:
+ $$ y' = b + w_1x_1 $$ 
+where:
+
+$ y' $ is the predicted label—the output.
+$ b $ is the bias
+of the model. Bias is the same concept as the y-intercept in the algebraic
+equation for a line. In ML, bias is sometimes referred to as $ w_0 $. Bias
+is a parameter of the model and
+is calculated during training.
+$ w_1 $ is the weight of the
+feature. Weight is the same concept as the slope $ m $ in the algebraic
+equation for a line. Weight is a
+parameter of the model and is
+calculated during training.
+$ x_1 $ is a feature—the
+input.
+
+During training, the model calculates the weight and bias that produce the best
+model.
+ 
+Figure 3. Mathematical representation of a linear model.
+In our example, we'd calculate the weight and bias from the line we drew. The
+bias is 34 (where the line intersects the y-axis), and the weight is –4.6 (the
+slope of the line). The model would be defined as $ y' = 34 + (-4.6)(x_1) $, and
+we could use it to make predictions. For instance, using this model, a 
+4,000-pound car would have a predicted fuel efficiency of 15.6 miles per
+gallon.
+ 
+Figure 4. Using the model, a 4,000-pound car has a predicted
+fuel efficiency of 15.6 miles per gallon.
+Models with multiple features
+Although the example in this section uses only one feature—the heaviness
+of the car—a more sophisticated model might rely on multiple features,
+each having a separate weight ($ w_1 $, $ w_2 $, etc.). For example, a model
+that relies on five features would be written as follows:
+$ y' = b + w_1x_1 + w_2x_2 + w_3x_3 + w_4x_4 + w_5x_5 $
+For example, a model that predicts gas mileage could additionally use features
+such as the following:
+
+Engine displacement
+Acceleration
+Number of cylinders
+Horsepower
+
+This model would be written as follows:
+ 
+Figure 5. A model with five features to predict a car's miles per gallon
+rating.
+By graphing a couple of these additional features, we can see that they also
+have a linear relationship to the label, miles per gallon:
+ 
+Figure 6. A car's displacement in cubic centimeters and its miles per gallon
+rating. As a car's engine gets bigger, its miles per gallon rating generally
+decreases.
+ 
+Figure 7. A car's acceleration and its miles per gallon rating. As a car's
+acceleration takes longer, the miles per gallon rating generally increases.
+Exercise: Check your understanding
+
+What parts of the linear regression equation are updated during training?
+The bias and weights
+During training, the model updates the bias and
+weights.
+    
+The prediction
+Predictions are not updated during training.
+    
+The feature values
+Feature values are part of the dataset, so they're not updated
+during training.
+    
+Key terms:
+
+Bias
+Feature
+Label
+Linear regression
+Parameter
+Weight
+
+Loss is a numerical value indicating the difference between a model's predictions and the actual values.
+The goal of model training is to minimize loss, bringing it as close to zero as possible.
+Two common methods for calculating loss are Mean Absolute Error (MAE) and Mean Squared Error (MSE), which differ in their sensitivity to outliers.
+Choosing between MAE and MSE depends on the dataset and how you want the model to handle outliers, with MSE penalizing them more heavily.
+Loss is a numerical metric that describes
+how wrong a model's predictions
+are. Loss measures the distance between the model's predictions and the actual
+labels. The goal of training a model is to minimize the loss, reducing it to its
+lowest possible value.
+In the following image, you can visualize loss as arrows drawn from the data
+points to the model. The arrows show how far the model's predictions are from
+the actual values.
+ 
+Figure 8. Loss is measured from the actual value to the predicted value.
+Distance of loss
+In statistics and machine learning, loss measures the difference between the
+predicted and actual values. Loss focuses on the distance between the values,
+not the direction. For example, if a model predicts 2, but the actual value is
+5, we don't care that the loss is negative (2 – 5= –3). Instead, we care that
+the distance between the values is 3. Thus, all methods for calculating loss
+remove the sign.
+The two most common methods to remove the sign are the following:
+
+Take the absolute value of the difference between the actual value and the
+prediction.
+Square the difference between the actual value and the prediction.
+
+Types of loss
+In linear regression, there are five main types of loss, which are outlined in
+the following table.
+
+Loss type
+Definition
+Equation
+
+
+L1 loss
+
+
+
+        The sum of the absolute values of the difference
+        between the predicted values and the actual values.
+      
+$ ∑ | actual\ value - predicted\ value | $
+
+
+
+
+Mean absolute error (MAE)
+
+
+
+        The average of L1 losses across a set of N examples.
+      
+$ \frac{1}{N} ∑ | actual\ value - predicted\ value | $
+
+
+L2 loss
+
+        The sum of the squared difference
+        between the predicted values and the actual values.
+      
+ $ ∑(actual\ value - predicted\ value)^2 $
+
+
+Mean squared error (MSE)
+
+        The average of L2 losses across a set of N examples.
+      
+$ \frac{1}{N} ∑ (actual\ value - predicted\ value)^2 $ 
+
+
+Root mean squared error (RMSE)
+
+        The square root of the mean squared error (MSE).
+      
+$ \sqrt{\frac{1}{N} ∑ (actual\ value - predicted\ value)^2} $ 
+
+
+
+The functional difference between L1 loss and L2 loss
+(or between MAE/RMSE and MSE) is squaring. When the difference between the
+prediction and label is large, squaring makes the loss even larger. When the
+difference is small (less than 1), squaring makes the loss even smaller.
+Loss metrics like MAE and RMSE may be preferable to L2 loss or MSE in
+some use cases because they tend to be more human-interpretable, as they measure
+error using the same scale as the model's predicted value.
+Note: MAE and RMSE can differ quite widely. MAE represents the average
+prediction error, whereas RMSE represents the "spread" of the errors, and is
+more skewed by larger errors.
+When processing multiple examples at once, we recommend averaging the losses
+across all the examples, whether using MAE, MSE, or RMSE.
+Calculating loss example
+In the previous section, we created the following
+model to predict fuel efficiency based on
+car heaviness:
+
+Model: $ y' = 34 + (-4.6)(x_1) $
+
+Weight: $ –4.6 $
+Bias: $ 34 $
+
+
+If the model predicts that a 2,370-pound car gets 23.1 miles per gallon, but it
+actually gets 24 miles per gallon, we would calculate the L2 loss
+as follows:
+Note: The formula uses 2.37 because the graphs are scaled to 1000s of pounds.
+
+
+Value
+Equation
+Result
+
+Prediction
+$\small{bias + (weight * feature\ value)}$
+$\small{34 + (-4.6*2.37)}$
+
+$\small{23.1}$
+
+
+Actual value
+$ \small{ label } $ 
+$ \small{ 24 } $ 
+
+
+L2 loss
+$ \small{ (actual\ value - predicted\ value)^2 } $
+$\small{ (24 - 23.1)^2 }$
+
+$\small{0.81}$
+
+
+In this example, the L2 loss for that single data point is 0.81.
+Choosing a loss
+Deciding whether to use MAE or MSE can depend on the dataset and the way you
+want to handle certain predictions. Most feature values in a dataset typically
+fall within a distinct range. For example, cars are normally between 2000 and
+5000 pounds and get between 8 to 50 miles per gallon. An 8,000-pound car,
+or a car that gets 100 miles per gallon, is outside the typical range and would
+be considered an outlier.
+An outlier can also refer to how far off a model's predictions are from the real
+values. For instance, 3,000 pounds is within the typical car-weight range, and
+40 miles per gallon is within the typical fuel-efficiency range. However, a
+3,000-pound car that gets 40 miles per gallon would be an outlier in terms of
+the model's prediction because the model would predict that a 3,000-pound car
+would get around 20 miles per gallon.
+When choosing the best loss function, consider how you want the model to treat
+outliers. For instance, MSE moves the model more toward the outliers, while MAE
+doesn't. L2 loss incurs a much higher penalty for an outlier than
+L1 loss. For example, the following images show a model trained
+using MAE and a model trained using MSE. The red line represents a fully
+trained model that will be used to make predictions. The outliers are closer to
+the model trained with MSE than to the model trained with MAE.
+ 
+Figure 9. MSE loss moves the model closer to the outliers.
+ 
+Figure 10. MAE loss keeps the model farther from the outliers.
+Note the relationship between the model and the data:
+
+MSE. The model is closer to the outliers but further away from most of
+the other data points.
+MAE. The model is further away from the outliers but closer to most of
+the other data points.
+
+
+Click the icon for more guidelines on choosing a loss
+  metric
+
+Choose MSE:
+
+If you want to heavily penalize large errors.
+If you believe the outliers are important and indicative of true data
+          variance that the model should account for.
+
+Note: The mathematical properties of
+    MSE often make optimization smoother. Root Mean Squared Error (RMSE) is
+    often used to get the error back into the same units as the label.
+Choose MAE:
+
+If your dataset has significant outliers that you don't want to overly
+          influence the model. MAE is more robust.
+If you prefer a loss function that is more directly interpretable as
+          the average error magnitude.
+
+In practice, your metric choice can also depend on the specific business
+       problem and what kind of errors are more costly.
+
+
+Check Your Understanding
+Consider the following two plots of a linear model fit to a dataset:
+      Which of the two linear models shown in the preceding plots
+      has the higher Mean Squared Error (MSE) when evaluated
+      on the plotted data points?
+    
+
+ The model on the left.
+ The six examples on the line incur a total loss of 0. The four
+             examples not on the line are not very far off the line, so even
+             squaring their offset still yields a low value: $MSE = \frac{0^2 + 1^2 + 0^2 + 1^2 + 0^2 + 1^2 + 0^2 + 1^2 + 0^2 +
+            0^2} {10} = 0.4$
+      
+
+
+ The model on the right. 
+ The eight examples on the line incur a total loss of 0. However,
+            although only two points lay off the line, both of those
+            points are twice as far off the line as the outlier points
+            in the left figure.  Squared loss amplifies those differences,
+            so an offset of two incurs a loss four times as great as an offset
+            of one: $MSE = \frac{0^2 + 0^2 + 0^2 + 2^2 + 0^2 + 0^2 + 0^2 + 2^2 + 0^2 +
+            0^2} {10} = 0.8$
+        
+
+Key terms:
+
+Mean absolute error (MAE)
+Mean squared error (MSE)
+L1
+L2
+Loss
+Outlier
+Prediction
+
+The graph below plots 20 examples from a fuel-efficiency dataset, with the
+feature (car heaviness in thousands of pounds) plotted on the x-axis and the
+label (miles per gallon) plotted on the y-axis.
+Your task: Adjust the Weight and Bias sliders above the graph to
+find the linear model that minimizes MSE loss on the data.
+Questions to consider:
+
+What is the lowest MSE you can achieve?
+What weight and bias values produced this loss?
+
+
+
+
+
+
+
+    Click the plus icon to see the solution
+  
+
+The optimal linear model for this data has an MSE of 3.37, with a
+       weight of –0.12 and a bias of 16.96, as shown in the following image.
+
+
+
+Gradient descent is an iterative optimization algorithm used to find the best weights and bias for a linear regression model by minimizing the loss function.
+
+
+The process involves repeatedly calculating the loss, determining the direction to adjust weights and bias to reduce loss, and updating the parameters accordingly.
+
+
+A model is considered to have converged when further iterations do not significantly reduce the loss, indicating it has found the weights and bias that produce the lowest possible loss.
+
+
+Loss curves visually represent the model's progress during training, showing how the loss decreases over iterations and helping to identify convergence.
+
+
+Linear models have convex loss functions, ensuring that gradient descent will always find the global minimum, resulting in the best possible model for the given data.
+
+
+
+
+
+
+
+
+
+
+
+Gradient descent is a
+mathematical technique that iteratively finds the weights and bias that produce
+the model with the lowest loss. Gradient descent finds the best weight and bias
+by repeating the following process for a number of user-defined iterations.
+The model begins training with randomized weights and biases near zero,
+and then repeats the following steps:
+
+Calculate the loss with the current weight and bias.
+Determine the direction to move the weights and bias that reduce loss.
+Move the weight and bias values a small amount in the direction that reduces
+loss.
+Return to step one and repeat the process until the model can't reduce the
+loss any further.
+
+The diagram below outlines the iterative steps gradient descent performs to find
+the weights and bias that produce the model with the lowest loss.
+ 
+Figure 11. Gradient descent is an iterative process that finds the weights
+and bias that produce the model with the lowest loss.
+
+
+      Click the plus icon to learn more about the math behind gradient descent.
+    
+
+
+      At a concrete level, we can walk through the gradient descent steps
+      using the following small fuel-efficiency dataset with seven examples,
+      and 
+Mean Squared Error (MSE) as the loss metric:
+    
+
+
+
+Pounds in 1000s (feature)
+Miles per gallon (label)
+
+
+
+
+3.5
+18
+
+
+3.69
+15
+
+
+3.44
+18
+
+
+3.43
+16
+
+
+4.34
+15
+
+
+4.42
+14
+
+
+2.37
+24
+
+
+
+
+
+          The model starts training by setting the weight and bias to zero:
+        
+
+              $$ \small{Weight:\ 0} $$
+
+              $$ \small{Bias:\ 0} $$
+
+              $$ \small{y = 0 + 0(x_1)} $$
+            
+
+          Calculate MSE loss with the current model parameters:
+        
+
+              $$ \small{Loss = \frac{(18-0)^2 + (15-0)^2 + (18-0)^2 + (16-0)^2 + (15-0)^2 + (14-0)^2 + (24-0)^2}{7}} $$
+
+              $$ \small{Loss= 303.71} $$
+            
+
+        Calculate the slope of the tangent to the loss function at each weight
+        and the bias:
+        
+
+                $$ \small{Weight\ slope: -119.7} $$
+
+                $$ \small{Bias\ slope: -34.3} $$
+            
+
+
+
+                  Click the plus icon to learn about calculating slope.
+                
+
+                    To get the slope for the lines tangent to the weight and
+                    bias, we take the derivative of the loss function with
+                    respect to the weight and the bias, and then solve the
+                    equations.
+                  
+
+                    We'll write the equation for making a prediction as:
+                    $ f_{w,b}(x) = (w*x)+b $.
+                  
+We'll write the actual value as: $ y $.
+
+                    We'll calculate MSE using:
+                    $ \frac{1}{M} \sum_{i=1}^{M} (f_{w,b}(x_{(i)}) - y_{(i)})^2 $
+                    where $i$ represents the $ith$ training example and $M$ represents
+                    the number of examples.
+                  
+Weight derivative
+
+                    The derivative of the loss function with respect to the weight is written as:
+                    $ \frac{\partial }{\partial w} \frac{1}{M} \sum_{i=1}^{M} (f_{w,b}(x_{(i)}) - y_{(i)})^2 $
+
+
+                    and evaluates to:
+                    $ \frac{1}{M} \sum_{i=1}^{M} (f_{w,b}(x_{(i)}) - y_{(i)}) * 2x_{(i)} $
+                  
+
+                    First we sum each predicted value minus the actual value
+                    and then multiply it by two times the feature value.
+                    Then we divide the sum by the number of examples.
+                    The result is the slope of the line tangent to the value 
+                    of the weight.
+                  
+
+                    If we solve this equation with a weight and bias equal to
+                    zero, we get -119.7 for the line's slope.
+                  
+Bias derivative
+
+                    The derivative of the loss function with respect to the
+                    bias is written as:
+                    $ \frac{\partial }{\partial b} \frac{1}{M} \sum_{i=1}^{M} (f_{w,b}(x_{(i)}) - y_{(i)})^2 $
+
+
+                    and evaluates to:
+                    $ \frac{1}{M} \sum_{i=1}^{M} (f_{w,b}(x_{(i)}) - y_{(i)}) * 2 $
+                  
+
+                    First we sum each predicted value minus the actual value
+                    and then multiply it by two. Then we divide the sum by the
+                    number of examples. The result is the slope of the line
+                    tangent to the value of the bias.
+                  
+
+                    If we solve this equation with a weight and bias equal to
+                    zero, we get -34.3 for the line's slope.
+                  
+
+
+
+          Move a small amount in the direction of the negative slope to get
+          the next weight and bias. For now, we'll arbitrarily define the
+          "small amount" as 0.01:
+        
+
+                $$ \small{New\ weight = old\ weight - (small\ amount * weight\ slope)} $$
+
+                $$ \small{New\ bias = old\ bias - (small\ amount * bias\ slope)} $$
+
+                $$ \small{New\ weight = 0 - (0.01)*(-119.7)} $$
+
+                $$ \small{New\ bias = 0 - (0.01)*(-34.3)} $$
+
+                $$ \small{New\ weight = 1.2} $$
+
+                $$ \small{New\ bias = 0.34} $$
+              
+
+
+     Use the new weight and bias to calculate the loss and repeat. Completing
+     the process for six iterations, we'd get the following weights, biases,
+     and losses:
+    
+
+
+
+Iteration
+Weight
+Bias
+Loss (MSE)
+
+
+
+
+1
+0
+0
+303.71
+
+
+2
+1.20
+0.34
+170.84
+
+
+3
+2.05
+0.59
+103.17
+
+
+4
+2.66
+0.78
+68.70
+
+
+5
+3.09
+0.91
+51.13
+
+
+6
+3.40
+1.01
+42.17
+
+
+
+
+     You can see that the loss gets lower with each updated weight and bias.
+     In this example, we stopped after six iterations. In practice, a model
+     trains until it
+     converges.
+     When a model converges, additional iterations don't reduce loss more
+     because gradient descent has found the weights and bias that nearly
+     minimize the loss.
+    
+
+      If the model continues to train past convergence, loss begins to
+      fluctuate in small amounts as the model continually updates the
+      parameters around their lowest values. This can make it hard to
+      verify that the model has actually converged. To confirm the model
+      has converged, you'll want to continue training until the loss has
+      stabilized.
+    
+
+
+Model convergence and loss curves
+When training a model, you'll often look at a loss
+curve to determine if the model has
+converged. The loss curve shows
+how the loss changes as the model trains. The following is what a typical loss
+curve looks like. Loss is on the y-axis and iterations are on the x-axis:
+ 
+Figure 12. Loss curve showing the model converging around the
+1,000th-iteration mark.
+You can see that loss dramatically decreases during the first few iterations,
+then gradually decreases before flattening out around the 1,000th-iteration
+mark. After 1,000 iterations, we can be mostly certain that the model has
+converged.
+In the following figures, we draw the model at three points during the training
+process: the beginning, the middle, and the end. Visualizing the model's state
+at snapshots during the training process solidifies the link between updating
+the weights and bias, reducing loss, and model convergence.
+In the figures, we use the derived weights and bias at a particular iteration to
+represent the model. In the graph with the data points and the model snapshot,
+blue loss lines from the model to the data points show the amount of loss. The
+longer the lines, the more loss there is.
+In the following figure, we can see that around the second iteration the model
+would not be good at making predictions because of the high amount of loss.
+ 
+Figure 13. Loss curve and snapshot of the model at the beginning of the
+training process.
+At around the 400th-iteration, we can see that gradient descent has found the
+weight and bias that produce a better model.
+ 
+Figure 14. Loss curve and snapshot of model about midway through training.
+And at around the 1,000th-iteration, we can see that the model has converged,
+producing a model with the lowest possible loss.
+ 
+Figure 15. Loss curve and snapshot of the model near the end of the training
+process.
+Exercise: Check your understanding
+
+
+
+      What's the role of gradient descent in linear regression?
+    
+
+
+        Gradient descent is an iterative process that finds the best
+        weights and bias that minimize the loss.
+      
+
+
+
+
+        Gradient descent helps to determine what type of loss to use when
+        training a model, for example, L1 or L2.
+      
+
+        Gradient descent is not involved in the selection of a loss
+        function for model training.
+      
+
+
+
+        Gradient descent removes outliers from the dataset to help the model
+        make better predictions.
+      
+
+        Gradient descent doesn't change the dataset.
+      
+
+
+
+Convergence and convex functions
+The loss functions for linear models always produce a
+convex surface. As a result of
+this property, when a linear regression model converges, we know the model has
+found the weights and bias that produce the lowest loss.
+If we graph the loss surface for a model with one feature, we can see its
+convex shape. The following is the loss surface for a hypothetical miles per
+gallon dataset. Weight is on the x-axis, bias is on the y-axis, and loss is on
+the z-axis:
+ 
+Figure 16. Loss surface that shows its convex shape.
+In this example, a weight of -5.44 and bias of 35.94 produce the lowest loss
+at 5.54:
+ 
+Figure 17. Loss surface showing the weight and bias values that produce
+the lowest loss.
+A linear model converges when it's found the minimum loss. If we graphed the
+weights and bias points during gradient descent, the points would look like a
+ball rolling down a hill, finally stopping at the point where there's no more
+downward slope.
+
+Note: The model almost never finds the exact weight and bias
+values that minimize loss, but instead finds values very close to them.
+
+ 
+Figure 18. Loss graph showing gradient descent points stopping at the lowest
+point on the graph.
+Notice that the black loss points create the exact shape of the loss curve: a
+steep decline before gradually sloping down until they've reached the lowest
+point on the loss surface.
+
+Note: This point represents the minimum loss for the model,
+which is typically greater than 0. A loss of 0 would mean that the model fits
+every data point exactly, which is usually a sign of overfitting (i.e., the
+model is too complex/powerful). Overfitting is discussed in more depth
+later in the
+course.
+
+Using the weight and bias values that produce the lowest loss—in this case
+a weight of -5.44 and a bias of 35.94—we can graph the model to see how
+well it fits the data:
+ 
+Figure 19. Model graphed using the weight and bias values that produce
+the lowest loss.
+This would be the best model for this dataset because no other weight and bias
+values produce a model with lower loss.
+Key terms:
+
+Convergence
+Convex function
+Gradient descent
+Iteration
+Loss curve
+
+
+Hyperparameters, such as learning rate, batch size, and epochs, are external configurations that influence the training process of a machine learning model.
+
+
+The learning rate determines the step size during model training, impacting the speed and stability of convergence.
+
+
+Batch size dictates the number of training examples processed before updating model parameters, influencing training speed and noise.
+
+
+Epochs represent the number of times the entire training dataset is used during training, affecting model performance and training time.
+
+
+Choosing appropriate hyperparameters is crucial for optimizing model training and achieving desired results.
+
+
+
+
+
+
+
+Hyperparameters are variables
+that control different aspects of training. Three common hyperparameters are:
+
+Learning rate
+Batch size
+Epochs
+
+In contrast, parameters are the
+variables, like the weights and bias, that are part of the model itself. In
+other words, hyperparameters are values that you control; parameters are values
+that the model calculates during training.
+Learning rate
+Learning rate is a
+floating point number you set that influences how quickly the
+model converges. If the learning rate is too low, the model can take a long time
+to converge. However, if the learning rate is too high, the model never
+converges, but instead bounces around the weights and bias that minimize the
+loss. The goal is to pick a learning rate that's not too high nor too low so
+that the model converges quickly.
+The learning rate determines the magnitude of the changes to make to the weights
+and bias during each step of the gradient descent process. The model multiplies
+the gradient by the learning rate to determine the model's parameters (weight
+and bias values) for the next iteration. In the third step of gradient
+descent, the "small amount" to move in the direction
+of negative slope refers to the learning rate.
+The difference between the old model parameters and the new model parameters is
+proportional to the slope of the loss function. For example, if the slope is
+large, the model takes a large step. If small, it takes a small step. For
+example, if the gradient's magnitude is 2.5 and the learning rate is 0.01, then
+the model will change the parameter by 0.025.
+The ideal learning rate helps the model to converge within a reasonable number
+of iterations. In Figure 20, the loss curve shows the model significantly
+improving during the first 20 iterations before beginning to converge:
+ 
+Figure 20. Loss graph showing a model trained with a learning rate that
+converges quickly.
+In contrast, a learning rate that's too small can take too many iterations to
+converge. In Figure 21, the loss curve shows the model making only minor
+improvements after each iteration:
+ 
+Figure 21. Loss graph showing a model trained with a small learning rate.
+A learning rate that's too large never converges because each iteration either
+causes the loss to bounce around or continually increase. In Figure 22, the loss
+curve shows the model decreasing and then increasing loss after each iteration,
+and in Figure 23 the loss increases at later iterations:
+ 
+Figure 22. Loss graph showing a model trained with a learning rate that's
+too big, where the loss curve fluctuates wildly, going up and down as the
+iterations increase.
+ 
+Figure 23. Loss graph showing a model trained with a learning rate that's
+too big, where the loss curve drastically increases in later iterations.
+Exercise: Check your understanding
+
+
+
+      What is the ideal learning rate?
+    
+
+
+        The ideal learning rate is problem-dependent.
+      
+
+        Each model and dataset will have its own ideal learning rate.
+      
+
+
+
+        0.01
+      
+
+
+
+
+        1.0
+      
+
+
+
+
+Batch size
+Batch size is a hyperparameter that
+refers to the number of examples
+the model processes before updating its weights
+and bias. You might think that the model should calculate the loss for every
+example in the dataset before updating the weights and bias. However, when a
+dataset contains hundreds of thousands or even millions of examples, using the
+full batch isn't practical.
+Two common techniques to get the right gradient on average without needing to
+look at every example in the dataset before updating the weights and bias are
+stochastic gradient descent and
+mini-batch stochastic gradient
+descent:
+
+Stochastic gradient descent (SGD): Stochastic gradient descent uses only
+a single example (a batch size of one) per iteration. Given enough
+iterations, SGD works but is very noisy. "Noise" refers to variations during
+training that cause the loss to increase rather than decrease during an
+iteration. The term "stochastic" indicates that the one example comprising
+each batch is chosen at random.
+Notice in the following image how loss slightly fluctuates as the model
+updates its weights and bias using SGD, which can lead to noise in the loss
+graph:
+ 
+Figure 24. Model trained with stochastic gradient descent (SGD) showing
+noise in the loss curve.
+Note that using stochastic gradient descent can produce noise throughout the
+entire loss curve, not just near convergence.
+Mini-batch stochastic gradient descent (mini-batch SGD): Mini-batch
+stochastic gradient descent is a compromise between full-batch and SGD. For
+$ N $ number of data points, the batch size can be any number greater than 1
+and less than $ N $. The model chooses the examples included in each batch
+at random, averages their gradients, and then updates the weights and bias
+once per iteration.
+Determining the number of examples for each batch depends on the dataset and
+the available compute resources. In general, small batch sizes behaves like
+SGD, and larger batch sizes behaves like full-batch gradient descent.
+ 
+Figure 25. Model trained with mini-batch SGD.
+
+When training a model, you might think that noise is an undesirable
+characteristic that should be eliminated. However, a certain amount of noise can
+be a good thing. In later modules, you'll learn how noise can help a model
+generalize better and find the
+optimal weights and bias in a neural
+network.
+Epochs
+During training, an epoch means that the
+model has processed every example in the training set once. For example, given
+a training set with 1,000 examples and a mini-batch size of 100 examples, it
+will take the model 10 iterations to
+complete one epoch.
+Training typically requires many epochs. That is, the system needs to process
+every example in the training set multiple times.
+The number of epochs is a hyperparameter you set before the model begins
+training. In many cases, you'll need to experiment with how many epochs it takes
+for the model to converge. In general, more epochs produces a better model, but
+also takes more time to train.
+ 
+Figure 26. Full batch versus mini batch.
+The following table describes how batch size and epochs relate to the number of
+times a model updates its parameters.
+
+
+
+Batch type
+When weights and bias updates occur
+
+
+
+
+Full batch
+
+        After the model looks at all the examples in the dataset. For instance,
+        if a dataset contains 1,000 examples and the model trains for 20 epochs,
+        the model updates the weights and bias 20 times, once per epoch.
+      
+
+
+Stochastic gradient descent
+
+        After the model looks at a single example from the dataset.
+        For instance, if a dataset contains 1,000 examples and trains for
+        20 epochs, the model updates the weights and bias 20,000 times.
+      
+
+
+Mini-batch stochastic gradient descent
+
+        After the model looks at the examples in each batch. For instance,
+        if a dataset contains 1,000 examples, and the batch size is 100, and
+        the model trains for 20 epochs, the model updates the weights and
+        bias 200 times.
+      
+
+
+
+Exercise: Check your understanding
+
+
+
+     1. What's the best batch size when using mini-batch SGD?
+    
+
+
+        It depends
+      
+
+        The ideal batch size depends on the dataset and the available
+        compute resources
+      
+
+
+
+        10 examples per batch
+      
+
+
+
+
+        100 examples per batch
+      
+
+
+
+
+
+
+
+      2. Which of the following statements is true?
+    
+
+
+        Larger batches are unsuitable for data with many outliers.
+      
+
+        This statement is false. By averaging more gradients together, larger
+        batch sizes can help reduce the negative effects of having outliers 
+        in the data.
+      
+
+
+
+        Doubling the learning rate can slow down training.
+      
+
+        This statement is true. Doubling the learning rate can result in a
+        learning rate that is too large, and therefore cause the weights
+        to "bounce around," increasing the amount of time needed to converge.
+        As always, the best hyperparameters depend on your dataset and
+        available compute resources.
+      
+
+
+
+Key terms:
+
+Batch size
+Epoch
+Generalize
+Hyperparameter
+Iteration
+Learning rate
+Mini-batch
+Mini-batch stochastic gradient descent
+Neural network
+Parameter
+Stochastic gradient descent
+
+In this exercise, you'll revisit the graph of fuel-efficiency data from
+the Parameters exercise. But this time, you'll
+use gradient descent to learn the optimal weight and bias values for a linear
+model that minimizes loss.
+Complete the three tasks below the graph.
+This interactive visualization can produce flashing
+visuals when set to a high Learning Rate, which may affect photosensitive
+individuals.
+
+
+
+
+Task #1: Adjust the Learning Rate slider below the graph to set a
+learning rate of 0.03. Click the Start button to run gradient descent.
+How long does the model training take to converge (reach a stable minimum
+loss value)? What is the MSE value at model convergence? What weight and bias
+values produce this value?
+
+
+    Click the plus icon to see our solution
+  
+
+When we set a learning rate of 0.03, the model converged in
+       approximately 30 seconds, achieving a MSE of 2.67 with weight and
+       bias values of –1.14 and 20.389, respectively. This indicates we've
+       picked a good learning rate value.
+
+
+Task #2: Click the Reset button below the graph to reset the Weight and
+Bias values in the graph. Adjust the Learning Rate slider to a value around
+1.10e–5. Click the Start button to run gradient descent.
+What do you notice about how long it takes the model training to converge
+this time?
+
+
+    Click the plus icon to see the solution
+  
+
+After several minutes, model training still hasn't converged. Small
+       updates to Weight and Bias values continue to result in slightly lower
+       loss values. This suggests that picking a higher learning rate would
+       enable gradient descent to find the optimal weight and bias values more
+       quickly.
+
+
+Task #3: Click the Reset button below the graph to reset the Weight
+and Bias values in the graph. Adjust the Learning Rate slider up to 1.
+Click the Start button to run gradient descent.
+What happens to the loss values as gradient descent runs? How long will model
+training take to converge this time?
+
+
+    Click the plus icon to see the solution
+  
+
+Loss values fluctuate wildly at high values (MSE over 300).
+       This indicates that the learning rate is too high, and model training
+       will never reach convergence.

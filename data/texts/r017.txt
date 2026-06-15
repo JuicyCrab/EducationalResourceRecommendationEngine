@@ -1,0 +1,3419 @@
+let’s just write a plain matrix multiplication and broadcasted addition
+to create a simple linear model. We also need an activation function, so
+we’ll write log_softmax and use it. Remember: although PyTorch
+provides lots of prewritten loss functions, activation functions, and
+so forth, you can easily write your own using plain python. PyTorch will
+even create fast accelerator or vectorized CPU code for your function
+automatically.
+def log_softmax(x):
+    return x - x.exp().sum(-1).log().unsqueeze(-1)
+
+def model(xb):
+    return log_softmax(xb @ weights + bias)
+
+
+In the above, the @ stands for the matrix multiplication operation. We will call
+our function on one batch of data (in this case, 64 images).  This is
+one forward pass.  Note that our predictions won’t be any better than
+random at this stage, since we start with random weights.
+bs = 64  # batch size
+
+xb = x_train[0:bs]  # a mini-batch from x
+preds = model(xb)  # predictions
+preds[0], preds.shape
+print(preds[0], preds.shape)
+
+
+tensor([-1.9929, -2.5129, -2.0987, -2.8747, -2.6592, -2.4582, -2.1658, -2.4619,
+        -1.7431, -2.6154], grad_fn=<SelectBackward0>) torch.Size([64, 10])
+
+
+As you see, the preds tensor contains not only the tensor values, but also a
+gradient function. We’ll use this later to do backprop.
+Let’s implement negative log-likelihood to use as the loss function
+(again, we can just use standard Python):
+def nll(input, target):
+    return -input[range(target.shape[0]), target].mean()
+
+loss_func = nll
+
+
+Let’s check our loss with our random model, so we can see if we improve
+after a backprop pass later.
+yb = y_train[0:bs]
+print(loss_func(preds, yb))
+
+
+tensor(2.3687, grad_fn=<NegBackward0>)
+
+
+Let’s also implement a function to calculate the accuracy of our model.
+For each prediction, if the index with the largest value matches the
+target value, then the prediction was correct.
+def accuracy(out, yb):
+    preds = torch.argmax(out, dim=1)
+    return (preds == yb).float().mean()
+
+
+Let’s check the accuracy of our random model, so we can see if our
+accuracy improves as our loss improves.
+print(accuracy(preds, yb))
+
+
+tensor(0.0625)
+
+
+We can now run a training loop.  For each iteration, we will:
+
+select a mini-batch of data (of size bs)
+use the model to make predictions
+calculate the loss
+loss.backward() updates the gradients of the model, in this case, weights
+and bias.
+
+We now use these gradients to update the weights and bias.  We do this
+within the torch.no_grad() context manager, because we do not want these
+actions to be recorded for our next calculation of the gradient.  You can read
+more about how PyTorch’s Autograd records operations
+here.
+We then set the
+gradients to zero, so that we are ready for the next loop.
+Otherwise, our gradients would record a running tally of all the operations
+that had happened (i.e. loss.backward() adds the gradients to whatever is
+already stored, rather than replacing them).
+
+Tip
+You can use the standard python debugger to step through PyTorch
+code, allowing you to check the various variable values at each step.
+Uncomment set_trace() below to try it out.
+
+from IPython.core.debugger import set_trace
+
+lr = 0.5  # learning rate
+epochs = 2  # how many epochs to train for
+
+for epoch in range(epochs):
+    for i in range((n - 1) // bs + 1):
+        #         set_trace()
+        start_i = i * bs
+        end_i = start_i + bs
+        xb = x_train[start_i:end_i]
+        yb = y_train[start_i:end_i]
+        pred = model(xb)
+        loss = loss_func(pred, yb)
+
+        loss.backward()
+        with torch.no_grad():
+            weights -= weights.grad * lr
+            bias -= bias.grad * lr
+            weights.grad.zero_()
+            bias.grad.zero_()
+
+
+That’s it: we’ve created and trained a minimal neural network (in this case, a
+logistic regression, since we have no hidden layers) entirely from scratch!
+Let’s check the loss and accuracy and compare those to what we got
+earlier. We expect that the loss will have decreased and accuracy to
+have increased, and they have.
+print(loss_func(model(xb), yb), accuracy(model(xb), yb))
+
+
+tensor(0.0809, grad_fn=<NegBackward0>) tensor(1.)
+
+
+
+
+Using torch.nn.functional#
+We will now refactor our code, so that it does the same thing as before, only
+we’ll start taking advantage of PyTorch’s nn classes to make it more concise
+and flexible. At each step from here, we should be making our code one or more
+of: shorter, more understandable, and/or more flexible.
+The first and easiest step is to make our code shorter by replacing our
+hand-written activation and loss functions with those from torch.nn.functional
+(which is generally imported into the namespace F by convention). This module
+contains all the functions in the torch.nn library (whereas other parts of the
+library contain classes). As well as a wide range of loss and activation
+functions, you’ll also find here some convenient functions for creating neural
+nets, such as pooling functions. (There are also functions for doing convolutions,
+linear layers, etc, but as we’ll see, these are usually better handled using
+other parts of the library.)
+If you’re using negative log likelihood loss and log softmax activation,
+then Pytorch provides a single function F.cross_entropy that combines
+the two. So we can even remove the activation function from our model.
+import torch.nn.functional as F
+
+loss_func = F.cross_entropy
+
+def model(xb):
+    return xb @ weights + bias
+
+
+Note that we no longer call log_softmax in the model function. Let’s
+confirm that our loss and accuracy are the same as before:
+print(loss_func(model(xb), yb), accuracy(model(xb), yb))
+
+
+tensor(0.0809, grad_fn=<NllLossBackward0>) tensor(1.)
+
+
+
+
+Refactor using nn.Module#
+Next up, we’ll use nn.Module and nn.Parameter, for a clearer and more
+concise training loop. We subclass nn.Module (which itself is a class and
+able to keep track of state).  In this case, we want to create a class that
+holds our weights, bias, and method for the forward step.  nn.Module has a
+number of attributes and methods (such as .parameters() and .zero_grad())
+which we will be using.
+
+Note
+nn.Module (uppercase M) is a PyTorch specific concept, and is a
+class we’ll be using a lot. nn.Module is not to be confused with the Python
+concept of a (lowercase m) module,
+which is a file of Python code that can be imported.
+
+from torch import nn
+
+class Mnist_Logistic(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.weights = nn.Parameter(torch.randn(784, 10) / math.sqrt(784))
+        self.bias = nn.Parameter(torch.zeros(10))
+
+    def forward(self, xb):
+        return xb @ self.weights + self.bias
+
+
+Since we’re now using an object instead of just using a function, we
+first have to instantiate our model:
+model = Mnist_Logistic()
+
+
+Now we can calculate the loss in the same way as before. Note that
+nn.Module objects are used as if they are functions (i.e they are
+callable), but behind the scenes Pytorch will call our forward
+method automatically.
+print(loss_func(model(xb), yb))
+
+
+tensor(2.3205, grad_fn=<NllLossBackward0>)
+
+
+Previously for our training loop we had to update the values for each parameter
+by name, and manually zero out the grads for each parameter separately, like this:
+with torch.no_grad():
+    weights -= weights.grad * lr
+    bias -= bias.grad * lr
+    weights.grad.zero_()
+    bias.grad.zero_()
+
+
+Now we can take advantage of model.parameters() and model.zero_grad() (which
+are both defined by PyTorch for nn.Module) to make those steps more concise
+and less prone to the error of forgetting some of our parameters, particularly
+if we had a more complicated model:
+with torch.no_grad():
+    for p in model.parameters(): p -= p.grad * lr
+    model.zero_grad()
+
+
+We’ll wrap our little training loop in a fit function so we can run it
+again later.
+def fit():
+    for epoch in range(epochs):
+        for i in range((n - 1) // bs + 1):
+            start_i = i * bs
+            end_i = start_i + bs
+            xb = x_train[start_i:end_i]
+            yb = y_train[start_i:end_i]
+            pred = model(xb)
+            loss = loss_func(pred, yb)
+
+            loss.backward()
+            with torch.no_grad():
+                for p in model.parameters():
+                    p -= p.grad * lr
+                model.zero_grad()
+
+fit()
+
+
+Let’s double-check that our loss has gone down:
+print(loss_func(model(xb), yb))
+
+
+tensor(0.0805, grad_fn=<NllLossBackward0>)
+
+
+
+
+Refactor using nn.Linear#
+We continue to refactor our code.  Instead of manually defining and
+initializing self.weights and self.bias, and calculating xb  @
+self.weights + self.bias, we will instead use the Pytorch class
+nn.Linear for a
+linear layer, which does all that for us. Pytorch has many types of
+predefined layers that can greatly simplify our code, and often makes it
+faster too.
+class Mnist_Logistic(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.lin = nn.Linear(784, 10)
+
+    def forward(self, xb):
+        return self.lin(xb)
+
+
+We instantiate our model and calculate the loss in the same way as before:
+model = Mnist_Logistic()
+print(loss_func(model(xb), yb))
+
+
+tensor(2.3309, grad_fn=<NllLossBackward0>)
+
+
+We are still able to use our same fit method as before.
+fit()
+
+print(loss_func(model(xb), yb))
+
+
+tensor(0.0814, grad_fn=<NllLossBackward0>)
+
+
+
+
+Refactor using torch.optim#
+Pytorch also has a package with various optimization algorithms, torch.optim.
+We can use the step method from our optimizer to take a forward step, instead
+of manually updating each parameter.
+This will let us replace our previous manually coded optimization step:
+with torch.no_grad():
+    for p in model.parameters(): p -= p.grad * lr
+    model.zero_grad()
+
+
+and instead use just:
+opt.step()
+opt.zero_grad()
+
+
+(optim.zero_grad() resets the gradient to 0 and we need to call it before
+computing the gradient for the next minibatch.)
+from torch import optim
+
+
+We’ll define a little function to create our model and optimizer so we
+can reuse it in the future.
+def get_model():
+    model = Mnist_Logistic()
+    return model, optim.SGD(model.parameters(), lr=lr)
+
+model, opt = get_model()
+print(loss_func(model(xb), yb))
+
+for epoch in range(epochs):
+    for i in range((n - 1) // bs + 1):
+        start_i = i * bs
+        end_i = start_i + bs
+        xb = x_train[start_i:end_i]
+        yb = y_train[start_i:end_i]
+        pred = model(xb)
+        loss = loss_func(pred, yb)
+
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+
+print(loss_func(model(xb), yb))
+
+
+tensor(2.4678, grad_fn=<NllLossBackward0>)
+tensor(0.0818, grad_fn=<NllLossBackward0>)
+
+
+
+
+Refactor using Dataset#
+PyTorch has an abstract Dataset class.  A Dataset can be anything that has
+a __len__ function (called by Python’s standard len function) and
+a __getitem__ function as a way of indexing into it.
+This tutorial
+walks through a nice example of creating a custom FacialLandmarkDataset class
+as a subclass of Dataset.
+PyTorch’s TensorDataset
+is a Dataset wrapping tensors. By defining a length and way of indexing,
+this also gives us a way to iterate, index, and slice along the first
+dimension of a tensor. This will make it easier to access both the
+independent and dependent variables in the same line as we train.
+from torch.utils.data import TensorDataset
+
+
+Both x_train and y_train can be combined in a single TensorDataset,
+which will be easier to iterate over and slice.
+train_ds = TensorDataset(x_train, y_train)
+
+
+Previously, we had to iterate through minibatches of x and y values separately:
+xb = x_train[start_i:end_i]
+yb = y_train[start_i:end_i]
+
+
+Now, we can do these two steps together:
+xb,yb = train_ds[i*bs : i*bs+bs]
+
+
+model, opt = get_model()
+
+for epoch in range(epochs):
+    for i in range((n - 1) // bs + 1):
+        xb, yb = train_ds[i * bs: i * bs + bs]
+        pred = model(xb)
+        loss = loss_func(pred, yb)
+
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+
+print(loss_func(model(xb), yb))
+
+
+tensor(0.0816, grad_fn=<NllLossBackward0>)
+
+
+
+
+Refactor using DataLoader#
+PyTorch’s DataLoader is responsible for managing batches. You can
+create a DataLoader from any Dataset. DataLoader makes it easier
+to iterate over batches. Rather than having to use train_ds[i*bs : i*bs+bs],
+the DataLoader gives us each minibatch automatically.
+from torch.utils.data import DataLoader
+
+train_ds = TensorDataset(x_train, y_train)
+train_dl = DataLoader(train_ds, batch_size=bs)
+
+
+Previously, our loop iterated over batches (xb, yb) like this:
+for i in range((n-1)//bs + 1):
+    xb,yb = train_ds[i*bs : i*bs+bs]
+    pred = model(xb)
+
+
+Now, our loop is much cleaner, as (xb, yb) are loaded automatically from the data loader:
+for xb,yb in train_dl:
+    pred = model(xb)
+
+
+model, opt = get_model()
+
+for epoch in range(epochs):
+    for xb, yb in train_dl:
+        pred = model(xb)
+        loss = loss_func(pred, yb)
+
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+
+print(loss_func(model(xb), yb))
+
+
+tensor(0.0815, grad_fn=<NllLossBackward0>)
+
+
+Thanks to PyTorch’s nn.Module, nn.Parameter, Dataset, and DataLoader,
+our training loop is now dramatically smaller and easier to understand. Let’s
+now try to add the basic features necessary to create effective models in practice.
+
+
+Add validation#
+In section 1, we were just trying to get a reasonable training loop set up for
+use on our training data.  In reality, you always should also have
+a validation set, in order
+to identify if you are overfitting.
+Shuffling the training data is
+important
+to prevent correlation between batches and overfitting. On the other hand, the
+validation loss will be identical whether we shuffle the validation set or not.
+Since shuffling takes extra time, it makes no sense to shuffle the validation data.
+We’ll use a batch size for the validation set that is twice as large as
+that for the training set. This is because the validation set does not
+need backpropagation and thus takes less memory (it doesn’t need to
+store the gradients). We take advantage of this to use a larger batch
+size and compute the loss more quickly.
+train_ds = TensorDataset(x_train, y_train)
+train_dl = DataLoader(train_ds, batch_size=bs, shuffle=True)
+
+valid_ds = TensorDataset(x_valid, y_valid)
+valid_dl = DataLoader(valid_ds, batch_size=bs * 2)
+
+
+We will calculate and print the validation loss at the end of each epoch.
+(Note that we always call model.train() before training, and model.eval()
+before inference, because these are used by layers such as nn.BatchNorm2d
+and nn.Dropout to ensure appropriate behavior for these different phases.)
+model, opt = get_model()
+
+for epoch in range(epochs):
+    model.train()
+    for xb, yb in train_dl:
+        pred = model(xb)
+        loss = loss_func(pred, yb)
+
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+
+    model.eval()
+    with torch.no_grad():
+        valid_loss = sum(loss_func(model(xb), yb) for xb, yb in valid_dl)
+
+    print(epoch, valid_loss / len(valid_dl))
+
+
+0 tensor(0.2972)
+1 tensor(0.3318)
+
+
+
+
+Create fit() and get_data()#
+We’ll now do a little refactoring of our own. Since we go through a similar
+process twice of calculating the loss for both the training set and the
+validation set, let’s make that into its own function, loss_batch, which
+computes the loss for one batch.
+We pass an optimizer in for the training set, and use it to perform
+backprop.  For the validation set, we don’t pass an optimizer, so the
+method doesn’t perform backprop.
+def loss_batch(model, loss_func, xb, yb, opt=None):
+    loss = loss_func(model(xb), yb)
+
+    if opt is not None:
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+
+    return loss.item(), len(xb)
+
+
+fit runs the necessary operations to train our model and compute the
+training and validation losses for each epoch.
+import numpy as np
+
+def fit(epochs, model, loss_func, opt, train_dl, valid_dl):
+    for epoch in range(epochs):
+        model.train()
+        for xb, yb in train_dl:
+            loss_batch(model, loss_func, xb, yb, opt)
+
+        model.eval()
+        with torch.no_grad():
+            losses, nums = zip(
+                *[loss_batch(model, loss_func, xb, yb) for xb, yb in valid_dl]
+            )
+        val_loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
+
+        print(epoch, val_loss)
+
+
+get_data returns dataloaders for the training and validation sets.
+def get_data(train_ds, valid_ds, bs):
+    return (
+        DataLoader(train_ds, batch_size=bs, shuffle=True),
+        DataLoader(valid_ds, batch_size=bs * 2),
+    )
+
+
+Now, our whole process of obtaining the data loaders and fitting the
+model can be run in 3 lines of code:
+train_dl, valid_dl = get_data(train_ds, valid_ds, bs)
+model, opt = get_model()
+fit(epochs, model, loss_func, opt, train_dl, valid_dl)
+
+
+0 0.3141544828772545
+1 0.32683478144407274
+
+
+You can use these basic 3 lines of code to train a wide variety of models.
+Let’s see if we can use them to train a convolutional neural network (CNN)!
+
+
+Switch to CNN#
+We are now going to build our neural network with three convolutional layers.
+Because none of the functions in the previous section assume anything about
+the model form, we’ll be able to use them to train a CNN without any modification.
+We will use PyTorch’s predefined
+Conv2d class
+as our convolutional layer. We define a CNN with 3 convolutional layers.
+Each convolution is followed by a ReLU.  At the end, we perform an
+average pooling.  (Note that view is PyTorch’s version of Numpy’s
+reshape)
+class Mnist_CNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1)
+        self.conv2 = nn.Conv2d(16, 16, kernel_size=3, stride=2, padding=1)
+        self.conv3 = nn.Conv2d(16, 10, kernel_size=3, stride=2, padding=1)
+
+    def forward(self, xb):
+        xb = xb.view(-1, 1, 28, 28)
+        xb = F.relu(self.conv1(xb))
+        xb = F.relu(self.conv2(xb))
+        xb = F.relu(self.conv3(xb))
+        xb = F.avg_pool2d(xb, 4)
+        return xb.view(-1, xb.size(1))
+
+lr = 0.1
+
+
+Momentum is a variation on
+stochastic gradient descent that takes previous updates into account as well
+and generally leads to faster training.
+model = Mnist_CNN()
+opt = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
+fit(epochs, model, loss_func, opt, train_dl, valid_dl)
+
+
+0 0.34722461595535276
+1 0.22637524440288545
+
+
+
+
+Using nn.Sequential#
+torch.nn has another handy class we can use to simplify our code:
+Sequential .
+A Sequential object runs each of the modules contained within it, in a
+sequential manner. This is a simpler way of writing our neural network.
+To take advantage of this, we need to be able to easily define a
+custom layer from a given function.  For instance, PyTorch doesn’t
+have a view layer, and we need to create one for our network. Lambda
+will create a layer that we can then use when defining a network with
+Sequential.
+class Lambda(nn.Module):
+    def __init__(self, func):
+        super().__init__()
+        self.func = func
+
+    def forward(self, x):
+        return self.func(x)
+
+
+def preprocess(x):
+    return x.view(-1, 1, 28, 28)
+
+
+The model created with Sequential is simple:
+model = nn.Sequential(
+    Lambda(preprocess),
+    nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1),
+    nn.ReLU(),
+    nn.Conv2d(16, 16, kernel_size=3, stride=2, padding=1),
+    nn.ReLU(),
+    nn.Conv2d(16, 10, kernel_size=3, stride=2, padding=1),
+    nn.ReLU(),
+    nn.AvgPool2d(4),
+    Lambda(lambda x: x.view(x.size(0), -1)),
+)
+
+opt = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
+fit(epochs, model, loss_func, opt, train_dl, valid_dl)
+
+
+0 0.3328994355916977
+1 0.2268757906973362
+
+
+
+
+Wrapping DataLoader#
+
+Our CNN is fairly concise, but it only works with MNIST, because:
+It assumes the input is a 28*28 long vector
+It assumes that the final CNN grid size is 4*4 (since that’s the average pooling kernel size we used)
+
+
+
+Let’s get rid of these two assumptions, so our model works with any 2d
+single channel image. First, we can remove the initial Lambda layer by
+moving the data preprocessing into a generator:
+def preprocess(x, y):
+    return x.view(-1, 1, 28, 28), y
+
+
+class WrappedDataLoader:
+    def __init__(self, dl, func):
+        self.dl = dl
+        self.func = func
+
+    def __len__(self):
+        return len(self.dl)
+
+    def __iter__(self):
+        for b in self.dl:
+            yield (self.func(*b))
+
+train_dl, valid_dl = get_data(train_ds, valid_ds, bs)
+train_dl = WrappedDataLoader(train_dl, preprocess)
+valid_dl = WrappedDataLoader(valid_dl, preprocess)
+
+
+Next, we can replace nn.AvgPool2d with nn.AdaptiveAvgPool2d, which
+allows us to define the size of the output tensor we want, rather than
+the input tensor we have. As a result, our model will work with any
+size input.
+model = nn.Sequential(
+    nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1),
+    nn.ReLU(),
+    nn.Conv2d(16, 16, kernel_size=3, stride=2, padding=1),
+    nn.ReLU(),
+    nn.Conv2d(16, 10, kernel_size=3, stride=2, padding=1),
+    nn.ReLU(),
+    nn.AdaptiveAvgPool2d(1),
+    Lambda(lambda x: x.view(x.size(0), -1)),
+)
+
+opt = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
+
+Let’s try it out:
+fit(epochs, model, loss_func, opt, train_dl, valid_dl)
+
+
+0 0.3788334014892578
+1 0.27145856935977936
+
+
+
+
+Using your Accelerator#
+If you’re lucky enough to have access to an accelerator such as CUDA (you can
+rent one for about $0.50/hour from most cloud providers) you can
+use it to speed up your code. First check that your accelerator is working in
+Pytorch:
+# If the current accelerator is available, we will use it. Otherwise, we use the CPU.
+device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
+print(f"Using {device} device")
+
+
+Using cuda device
+
+
+Let’s update preprocess to move batches to the accelerator:
+def preprocess(x, y):
+    return x.view(-1, 1, 28, 28).to(device), y.to(device)
+
+
+train_dl, valid_dl = get_data(train_ds, valid_ds, bs)
+train_dl = WrappedDataLoader(train_dl, preprocess)
+valid_dl = WrappedDataLoader(valid_dl, preprocess)
+
+
+Finally, we can move our model to the accelerator.
+model.to(device)
+opt = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
+
+You should find it runs faster now:
+fit(epochs, model, loss_func, opt, train_dl, valid_dl)
+
+
+0 0.2047908634364605
+1 0.19924311364889144
+
+
+
+
+Closing thoughts#
+We now have a general data pipeline and training loop which you can use for
+training many types of models using Pytorch. To see how simple training a model
+can now be, take a look at the mnist_sample notebook.
+Of course, there are many things you’ll want to add, such as data augmentation,
+hyperparameter tuning, monitoring training, transfer learning, and so forth.
+These features are available in the fastai library, which has been developed
+using the same design approach shown in this tutorial, providing a natural
+next step for practitioners looking to take their models further.
+We promised at the start of this tutorial we’d explain through example each of
+torch.nn, torch.optim, Dataset, and DataLoader. So let’s summarize
+what we’ve seen:
+
+
+torch.nn:
+
+Module: creates a callable which behaves like a function, but can also
+contain state(such as neural net layer weights). It knows what Parameter (s) it
+contains and can zero all their gradients, loop through them for weight updates, etc.
+Parameter: a wrapper for a tensor that tells a Module that it has weights
+that need updating during backprop. Only tensors with the requires_grad attribute set are updated
+functional: a module(usually imported into the F namespace by convention)
+which contains activation functions, loss functions, etc, as well as non-stateful
+versions of layers such as convolutional and linear layers.
+
+
+torch.optim: Contains optimizers such as SGD, which update the weights
+of Parameter during the backward step
+Dataset: An abstract interface of objects with a __len__ and a __getitem__,
+including classes provided with Pytorch such as TensorDataset
+DataLoader: Takes any Dataset and creates an iterator which returns batches of data.
+
+
+Total running time of the script: (0 minutes 24.963 seconds)
+
+
+Download Jupyter notebook: nn_tutorial.ipynb
+
+
+Download Python source code: nn_tutorial.py
+
+
+Download zipped: nn_tutorial.zip
+
+Understanding requires_grad, retain_grad, Leaf, and Non-leaf Tensors#
+Author: Justin Silver
+This tutorial explains the subtleties of requires_grad,
+retain_grad, leaf, and non-leaf tensors using a simple example.
+Before starting, make sure you understand tensors and how to manipulate
+them.
+A basic knowledge of how autograd
+works
+would also be useful.
+
+Setup#
+First, make sure PyTorch is
+installed and then import
+the necessary libraries.
+import torch
+import torch.nn.functional as F
+
+
+Next, we instantiate a simple network to focus on the gradients. This
+will be an affine layer, followed by a ReLU activation, and ending with
+a MSE loss between prediction and label tensors.
+
+\[\mathbf{y}_{\text{pred}} = \text{ReLU}(\mathbf{x} \mathbf{W} + \mathbf{b})\]
+
+\[L = \text{MSE}(\mathbf{y}_{\text{pred}}, \mathbf{y})\]
+Note that the requires_grad=True is necessary for the parameters
+(W and b) so that PyTorch tracks operations involving those
+tensors. We’ll discuss more about this in a future
+section.
+# tensor setup
+x = torch.ones(1, 3)                      # input with shape: (1, 3)
+W = torch.ones(3, 2, requires_grad=True)  # weights with shape: (3, 2)
+b = torch.ones(1, 2, requires_grad=True)  # bias with shape: (1, 2)
+y = torch.ones(1, 2)                      # output with shape: (1, 2)
+
+# forward pass
+z = (x @ W) + b                           # pre-activation with shape: (1, 2)
+y_pred = F.relu(z)                        # activation with shape: (1, 2)
+loss = F.mse_loss(y_pred, y)              # scalar loss
+
+
+
+
+Leaf vs. non-leaf tensors#
+After running the forward pass, PyTorch autograd has built up a dynamic
+computational
+graph
+which is shown below. This is a Directed Acyclic Graph
+(DAG) which
+keeps a record of input tensors (leaf nodes), all subsequent operations
+on those tensors, and the intermediate/output tensors (non-leaf nodes).
+The graph is used to compute gradients for each tensor starting from the
+graph roots (outputs) to the leaves (inputs) using the chain
+rule from calculus:
+
+\[\mathbf{y} = \mathbf{f}_k\bigl(\mathbf{f}_{k-1}(\dots \mathbf{f}_1(\mathbf{x}) \dots)\bigr)\]
+
+\[\frac{\partial \mathbf{y}}{\partial \mathbf{x}} =
+\frac{\partial \mathbf{f}_k}{\partial \mathbf{f}_{k-1}} \cdot
+\frac{\partial \mathbf{f}_{k-1}}{\partial \mathbf{f}_{k-2}} \cdot
+\cdots \cdot
+\frac{\partial \mathbf{f}_1}{\partial \mathbf{x}}\]
+
+        graph TD
+
+    x["x<br/>is_leaf=True<br/>requires_grad=False<br/>retains_grad=False<br/>grad=None"]
+    W["W<br/>is_leaf=True<br/>requires_grad=True<br/>retains_grad=False<br/>grad=None"]
+    b["b<br/>is_leaf=True<br/>requires_grad=True<br/>retains_grad=False<br/>grad=None"]
+    matmul["x @ W"]
+    z["z = x @ W + b<br/>is_leaf=False<br/>requires_grad=True<br/>retains_grad=False<br/>grad=None"]
+    relu["y_pred = relu(z)<br/>is_leaf=False<br/>requires_grad=True<br/>retains_grad=False<br/>grad=None"]
+    y["y<br/>is_leaf=True<br/>requires_grad=False<br/>retains_grad=False<br/>grad=None"]
+    loss["loss = mse(y_pred, y)<br/>is_leaf=False<br/>requires_grad=True<br/>retains_grad=False<br/>grad=None"]
+
+    x --> matmul
+    W --> matmul
+    matmul --> z
+    b --> z
+    z --> relu
+    relu --> loss
+    y --> loss
+    PyTorch considers a node to be a leaf if it is not the result of a
+tensor operation with at least one input having requires_grad=True
+(e.g. x, W, b, and y), and everything else to be
+non-leaf (e.g. z, y_pred, and loss). You can verify this
+programmatically by probing the is_leaf attribute of the tensors:
+# prints True because new tensors are leafs by convention
+print(f"{x.is_leaf=}")
+
+# prints False because tensor is the result of an operation with at
+# least one input having requires_grad=True
+print(f"{z.is_leaf=}")
+
+
+x.is_leaf=True
+z.is_leaf=False
+
+
+The distinction between leaf and non-leaf determines whether the
+tensor’s gradient will be stored in the grad property after the
+backward pass, and thus be usable for gradient
+descent. We’ll cover
+this some more in the following section.
+Let’s now investigate how PyTorch calculates and stores gradients for
+the tensors in its computational graph.
+
+
+requires_grad#
+To build the computational graph which can be used for gradient
+calculation, we need to pass in the requires_grad=True parameter to
+a tensor constructor. By default, the value is False, and thus
+PyTorch does not track gradients on any created tensors. To verify this,
+try not setting requires_grad, re-run the forward pass, and then run
+backpropagation. You will see:
+>>> loss.backward()
+RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+
+
+This error means that autograd can’t backpropagate to any leaf tensors
+because loss is not tracking gradients. If you need to change the
+property, you can call requires_grad_() on the tensor (notice the _
+suffix).
+We can sanity check which nodes require gradient calculation, just like
+we did above with the is_leaf attribute:
+print(f"{x.requires_grad=}") # prints False because requires_grad=False by default
+print(f"{W.requires_grad=}") # prints True because we set requires_grad=True in constructor
+print(f"{z.requires_grad=}") # prints True because tensor is a non-leaf node
+
+
+x.requires_grad=False
+W.requires_grad=True
+z.requires_grad=True
+
+
+It’s useful to remember that a non-leaf tensor has
+requires_grad=True by definition, since backpropagation would fail
+otherwise. If the tensor is a leaf, then it will only have
+requires_grad=True if it was specifically set by the user. Another
+way to phrase this is that if at least one of the inputs to a tensor
+requires the gradient, then it will require the gradient as well.
+There are two exceptions to this rule:
+
+Any nn.Module that has nn.Parameter will have
+requires_grad=True for its parameters (see
+here)
+Locally disabling gradient computation with context managers (see
+here)
+
+In summary, requires_grad tells autograd which tensors need to have
+their gradients calculated for backpropagation to work. This is
+different from which tensors have their grad field populated, which
+is the topic of the next section.
+
+
+retain_grad#
+To actually perform optimization (e.g. SGD, Adam, etc.), we need to run
+the backward pass so that we can extract the gradients.
+loss.backward()
+
+
+Calling backward() populates the grad field of all leaf tensors
+which had requires_grad=True. The grad is the gradient of the
+loss with respect to the tensor we are probing. Before running
+backward(), this attribute is set to None.
+print(f"{W.grad=}")
+print(f"{b.grad=}")
+
+
+W.grad=tensor([[3., 3.],
+        [3., 3.],
+        [3., 3.]])
+b.grad=tensor([[3., 3.]])
+
+
+You might be wondering about the other tensors in our network. Let’s
+check the remaining leaf nodes:
+# prints all None because requires_grad=False
+print(f"{x.grad=}")
+print(f"{y.grad=}")
+
+
+x.grad=None
+y.grad=None
+
+
+The gradients for these tensors haven’t been populated because we did
+not explicitly tell PyTorch to calculate their gradient
+(requires_grad=False).
+Let’s now look at an intermediate non-leaf node:
+print(f"{z.grad=}")
+
+
+/var/lib/workspace/beginner_source/understanding_leaf_vs_nonleaf_tutorial.py:230: UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being accessed. Its .grad attribute won't be populated during autograd.backward(). If you indeed want the .grad field to be populated for a non-leaf Tensor, use .retain_grad() on the non-leaf Tensor. If you access the non-leaf Tensor by mistake, make sure you access the leaf Tensor instead. See github.com/pytorch/pytorch/pull/30531 for more information. (Triggered internally at /pytorch/build/aten/src/ATen/core/TensorBody.h:494.)
+  print(f"{z.grad=}")
+z.grad=None
+
+
+PyTorch returns None for the gradient and also warns us that a
+non-leaf node’s grad attribute is being accessed. Although autograd
+has to calculate intermediate gradients for backpropagation to work, it
+assumes you don’t need to access the values afterwards. To change this
+behavior, we can use the retain_grad() function on a tensor. This
+tells the autograd engine to populate that tensor’s grad after
+calling backward().
+# we have to re-run the forward pass
+z = (x @ W) + b
+y_pred = F.relu(z)
+loss = F.mse_loss(y_pred, y)
+
+# tell PyTorch to store the gradients after backward()
+z.retain_grad()
+y_pred.retain_grad()
+loss.retain_grad()
+
+# have to zero out gradients otherwise they would accumulate
+W.grad = None
+b.grad = None
+
+# backpropagation
+loss.backward()
+
+# print gradients for all tensors that have requires_grad=True
+print(f"{W.grad=}")
+print(f"{b.grad=}")
+print(f"{z.grad=}")
+print(f"{y_pred.grad=}")
+print(f"{loss.grad=}")
+
+
+W.grad=tensor([[3., 3.],
+        [3., 3.],
+        [3., 3.]])
+b.grad=tensor([[3., 3.]])
+z.grad=tensor([[3., 3.]])
+y_pred.grad=tensor([[3., 3.]])
+loss.grad=tensor(1.)
+
+
+We get the same result for W.grad as before. Also note that because
+the loss is scalar, the gradient of the loss with respect to itself is
+simply 1.0.
+If we look at the state of the computational graph now, we see that the
+retains_grad attribute has changed for the intermediate tensors. By
+convention, this attribute will print False for any leaf node, even
+if it requires its gradient.
+
+        graph TD
+
+     x["x<br/>is_leaf=True<br/>requires_grad=False<br/>retains_grad=False<br/>grad=None"]
+     W["W<br/>is_leaf=True<br/>requires_grad=True<br/>retains_grad=False<br/>grad=torch.Tensor"]
+     b["b<br/>is_leaf=True<br/>requires_grad=True<br/>retains_grad=False<br/>grad=torch.Tensor"]
+     matmul["x @ W"]
+     z["z = x @ W + b<br/>is_leaf=False<br/>requires_grad=True<br/>retains_grad=True<br/>grad=torch.Tensor"]
+     relu["y_pred = relu(z)<br/>is_leaf=False<br/>requires_grad=True<br/>retains_grad=True<br/>grad=torch.Tensor"]
+     y["y<br/>is_leaf=True<br/>requires_grad=True<br/>retains_grad=False<br/>grad=None"]
+     loss["loss = mse(y_pred, y)<br/>is_leaf=False<br/>requires_grad=True<br/>retains_grad=True<br/>grad=torch.Tensor"]
+
+     x --> matmul
+     W --> matmul
+     matmul --> z
+     b --> z
+     z --> relu
+     relu --> loss
+     y --> loss
+    If you call retain_grad() on a leaf tensor, it results in a no-op
+since leaf tensors already retain their gradients by default (when
+requires_grad=True).
+If we call retain_grad() on a tensor that has requires_grad=False,
+PyTorch actually throws an error, since it can’t store the gradient if
+it is never calculated.
+>>> x.retain_grad()
+RuntimeError: can't retain_grad on Tensor that has requires_grad=False
+
+
+
+
+Summary table#
+Using retain_grad() and retains_grad only make sense for
+non-leaf nodes, since the grad attribute will already be populated
+for leaf tensors that have requires_grad=True. By default, these
+non-leaf nodes do not retain (store) their gradient after
+backpropagation. We can change that by rerunning the forward pass,
+telling PyTorch to store the gradients, and then performing
+backpropagation.
+The following table can be used as a reference which summarizes the
+above discussions. The following scenarios are the only ones that are
+valid for PyTorch tensors.
+
+
+is_leaf
+requires_grad
+retains_grad
+require_grad()
+retain_grad()
+
+
+
+True
+False
+False
+sets requires_grad to True or False
+throws error
+
+True
+True
+False
+sets requires_grad to True or False
+no-op (already retains)
+
+False
+True
+False
+no-op
+sets retains_grad to True
+
+False
+True
+True
+no-op
+no-op (already retains)
+
+
+
+
+
+
+Conclusion#
+In this tutorial, we covered when and how PyTorch computes gradients for
+leaf and non-leaf tensors. By using retain_grad, we can access the
+gradients of intermediate tensors within autograd’s computational graph.
+If you would like to learn more about how PyTorch’s autograd system
+works, please visit the references below. If you have
+any feedback for this tutorial (improvements, typo fixes, etc.) then
+please use the PyTorch Forums and/or
+the issue tracker to
+reach out.
+
+
+References#
+
+A Gentle Introduction to
+torch.autograd
+Automatic Differentiation with
+torch.autograd
+Autograd
+mechanics
+
+Total running time of the script: (0 minutes 0.344 seconds)
+
+
+Download Jupyter notebook: understanding_leaf_vs_nonleaf_tutorial.ipynb
+
+
+Download Python source code: understanding_leaf_vs_nonleaf_tutorial.py
+
+
+Download zipped: understanding_leaf_vs_nonleaf_tutorial.zip
+
+
+Before you begin, we recommend that you review the following:
+
+PyTorch Learn the Basics series
+How to install PyTorch
+
+
+
+
+
+
+
+
+NLP From Scratch - Part 1: Classifying Names with a Character-Level RNN
+Learn how to use an RNN to classify names into their language of origin.
+
+
+ Code
+
+https://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html
+
+
+
+
+
+
+NLP From Scratch - Part 2: Generating Names with a Character-Level RNN
+Expand the RNN we created in Part 1 to generate names from languages.
+
+
+ Code
+
+https://pytorch.org/tutorials/intermediate/char_rnn_generation_tutorial.html
+
+
+
+
+
+
+NLP From Scratch - Part 3: Translation with a Sequence to Sequence Network and Attention
+Create a sequence-to-sequence model that can translate your text from French
+to English.
+
+
+ Code
+
+https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html
+
+Visualizing Models, Data, and Training with TensorBoard#Created On: Aug 08, 2019 | Last Updated: Sep 10, 2025 | Last Verified: Nov 05, 2024
+In the 60 Minute Blitz,
+we show you how to load in data,
+feed it through a model we define as a subclass of nn.Module,
+train this model on training data, and test it on test data.
+To see what’s happening, we print out some statistics as the model
+is training to get a sense for whether training is progressing.
+However, we can do much better than that: PyTorch integrates with
+TensorBoard, a tool designed for visualizing the results of neural
+network training runs. This tutorial illustrates some of its
+functionality, using the
+Fashion-MNIST dataset
+which can be read into PyTorch using torchvision.datasets.
+In this tutorial, we’ll learn how to:
+
+
+Read in data and with appropriate transforms (nearly identical to the prior tutorial).
+Set up TensorBoard.
+Write to TensorBoard.
+Inspect a model architecture using TensorBoard.
+Use TensorBoard to create interactive versions of the visualizations we created in last tutorial, with less code
+
+
+Specifically, on point #5, we’ll see:
+
+
+A couple of ways to inspect our training data
+How to track our model’s performance as it trains
+How to assess our model’s performance once it is trained.
+
+
+We’ll begin with similar boilerplate code as in the CIFAR-10 tutorial:
+# imports
+import matplotlib.pyplot as plt
+import numpy as np
+
+import torch
+import torchvision
+import torchvision.transforms as transforms
+
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+# transforms
+transform = transforms.Compose(
+    [transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))])
+
+# datasets
+trainset = torchvision.datasets.FashionMNIST('./data',
+    download=True,
+    train=True,
+    transform=transform)
+testset = torchvision.datasets.FashionMNIST('./data',
+    download=True,
+    train=False,
+    transform=transform)
+
+# dataloaders
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True)
+
+testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False)
+
+# constant for classes
+classes = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+        'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
+
+# helper function to show an image
+# (used in the `plot_classes_preds` function below)
+def matplotlib_imshow(img, one_channel=False):
+    if one_channel:
+        img = img.mean(dim=0)
+    img = img / 2 + 0.5     # unnormalize
+    npimg = img.numpy()
+    if one_channel:
+        plt.imshow(npimg, cmap="Greys")
+    else:
+        plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
+
+We’ll define a similar model architecture from that tutorial, making only
+minor modifications to account for the fact that the images are now
+one channel instead of three and 28x28 instead of 32x32:
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 4 * 4, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 4 * 4)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+net = Net()
+
+
+We’ll define the same optimizer and criterion from before:
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+
+
+
+1. TensorBoard setup#
+Now we’ll set up TensorBoard, importing tensorboard from torch.utils and defining a
+SummaryWriter, our key object for writing information to TensorBoard.
+from torch.utils.tensorboard import SummaryWriter
+
+# default `log_dir` is "runs" - we'll be more specific here
+writer = SummaryWriter('runs/fashion_mnist_experiment_1')
+
+
+Note that this line alone creates a runs/fashion_mnist_experiment_1
+folder.
+
+
+2. Writing to TensorBoard#
+Now let’s write an image to our TensorBoard - specifically, a grid -
+using make_grid.
+# get some random training images
+dataiter = iter(trainloader)
+images, labels = next(dataiter)
+
+# create grid of images
+img_grid = torchvision.utils.make_grid(images)
+
+# show images
+matplotlib_imshow(img_grid, one_channel=True)
+
+# write to tensorboard
+writer.add_image('four_fashion_mnist_images', img_grid)
+
+
+Now running
+PYTHONWARNINGS="ignore:pkg_resources is deprecated as an API:UserWarning" tensorboard --logdir=runs
+
+
+from the command line and then navigating to http://localhost:6006
+should show the following.
+
+Now you know how to use TensorBoard! This example, however, could be
+done in a Jupyter Notebook - where TensorBoard really excels is in
+creating interactive visualizations. We’ll cover one of those next,
+and several more by the end of the tutorial.
+
+
+3. Inspect the model using TensorBoard#
+One of TensorBoard’s strengths is its ability to visualize complex model
+structures. Let’s visualize the model we built.
+writer.add_graph(net, images)
+writer.close()
+
+
+Now upon refreshing TensorBoard you should see a “Graphs” tab that
+looks like this:
+
+Go ahead and double click on “Net” to see it expand, seeing a
+detailed view of the individual operations that make up the model.
+TensorBoard has a very handy feature for visualizing high dimensional
+data such as image data in a lower dimensional space; we’ll cover this
+next.
+
+
+4. Adding a “Projector” to TensorBoard#
+We can visualize the lower dimensional representation of higher
+dimensional data via the add_embedding method
+# helper function
+def select_n_random(data, labels, n=100):
+    '''
+    Selects n random datapoints and their corresponding labels from a dataset
+    '''
+    assert len(data) == len(labels)
+
+    perm = torch.randperm(len(data))
+    return data[perm][:n], labels[perm][:n]
+
+# select random images and their target indices
+images, labels = select_n_random(trainset.data, trainset.targets)
+
+# get the class labels for each image
+class_labels = [classes[lab] for lab in labels]
+
+# log embeddings
+features = images.view(-1, 28 * 28)
+writer.add_embedding(features,
+                    metadata=class_labels,
+                    label_img=images.unsqueeze(1))
+writer.close()
+
+
+Now in the “Projector” tab of TensorBoard, you can see these 100
+images - each of which is 784 dimensional - projected down into three
+dimensional space. Furthermore, this is interactive: you can click
+and drag to rotate the three dimensional projection. Finally, a couple
+of tips to make the visualization easier to see: select “color: label”
+on the top left, as well as enabling “night mode”, which will make the
+images easier to see since their background is white:
+
+Now we’ve thoroughly inspected our data, let’s show how TensorBoard
+can make tracking model training and evaluation clearer, starting with
+training.
+
+
+5. Tracking model training with TensorBoard#
+In the previous example, we simply printed the model’s running loss
+every 2000 iterations. Now, we’ll instead log the running loss to
+TensorBoard, along with a view into the predictions the model is
+making via the plot_classes_preds function.
+# helper functions
+
+def images_to_probs(net, images):
+    '''
+    Generates predictions and corresponding probabilities from a trained
+    network and a list of images
+    '''
+    output = net(images)
+    # convert output probabilities to predicted class
+    _, preds_tensor = torch.max(output, 1)
+    preds = np.squeeze(preds_tensor.numpy())
+    return preds, [F.softmax(el, dim=0)[i].item() for i, el in zip(preds, output)]
+
+
+def plot_classes_preds(net, images, labels):
+    '''
+    Generates matplotlib Figure using a trained network, along with images
+    and labels from a batch, that shows the network's top prediction along
+    with its probability, alongside the actual label, coloring this
+    information based on whether the prediction was correct or not.
+    Uses the "images_to_probs" function.
+    '''
+    preds, probs = images_to_probs(net, images)
+    # plot the images in the batch, along with predicted and true labels
+    fig = plt.figure(figsize=(12, 48))
+    for idx in np.arange(4):
+        ax = fig.add_subplot(1, 4, idx+1, xticks=[], yticks=[])
+        matplotlib_imshow(images[idx], one_channel=True)
+        ax.set_title("{0}, {1:.1f}%\n(label: {2})".format(
+            classes[preds[idx]],
+            probs[idx] * 100.0,
+            classes[labels[idx]]),
+                    color=("green" if preds[idx]==labels[idx].item() else "red"))
+    return fig
+
+
+Finally, let’s train the model using the same model training code from
+the prior tutorial, but writing results to TensorBoard every 1000
+batches instead of printing to console; this is done using the
+add_scalar
+function.
+In addition, as we train, we’ll generate an image showing the model’s
+predictions vs. the actual results on the four images included in that
+batch.
+running_loss = 0.0
+for epoch in range(1):  # loop over the dataset multiple times
+
+    for i, data in enumerate(trainloader, 0):
+
+        # get the inputs; data is a list of [inputs, labels]
+        inputs, labels = data
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+        if i % 1000 == 999:    # every 1000 mini-batches...
+
+            # ...log the running loss
+            writer.add_scalar('training loss',
+                            running_loss / 1000,
+                            epoch * len(trainloader) + i)
+
+            # ...log a Matplotlib Figure showing the model's predictions on a
+            # random mini-batch
+            writer.add_figure('predictions vs. actuals',
+                            plot_classes_preds(net, inputs, labels),
+                            global_step=epoch * len(trainloader) + i)
+            running_loss = 0.0
+print('Finished Training')
+
+
+You can now look at the scalars tab to see the running loss plotted
+over the 15,000 iterations of training:
+
+In addition, we can look at the predictions the model made on
+arbitrary batches throughout learning. See the “Images” tab and scroll
+down under the “predictions vs. actuals” visualization to see this;
+this shows us that, for example, after just 3000 training iterations,
+the model was already able to distinguish between visually distinct
+classes such as shirts, sneakers, and coats, though it isn’t as
+confident as it becomes later on in training:
+
+In the prior tutorial, we looked at per-class accuracy once the model
+had been trained; here, we’ll use TensorBoard to plot precision-recall
+curves (good explanation
+here)
+for each class.
+
+
+6. Assessing trained models with TensorBoard#
+# 1. gets the probability predictions in a test_size x num_classes Tensor
+# 2. gets the preds in a test_size Tensor
+# takes ~10 seconds to run
+class_probs = []
+class_label = []
+with torch.no_grad():
+    for data in testloader:
+        images, labels = data
+        output = net(images)
+        class_probs_batch = [F.softmax(el, dim=0) for el in output]
+
+        class_probs.append(class_probs_batch)
+        class_label.append(labels)
+
+test_probs = torch.cat([torch.stack(batch) for batch in class_probs])
+test_label = torch.cat(class_label)
+
+# helper function
+def add_pr_curve_tensorboard(class_index, test_probs, test_label, global_step=0):
+    '''
+    Takes in a "class_index" from 0 to 9 and plots the corresponding
+    precision-recall curve
+    '''
+    tensorboard_truth = test_label == class_index
+    tensorboard_probs = test_probs[:, class_index]
+
+    writer.add_pr_curve(classes[class_index],
+                        tensorboard_truth,
+                        tensorboard_probs,
+                        global_step=global_step)
+    writer.close()
+
+# plot all the pr curves
+for i in range(len(classes)):
+    add_pr_curve_tensorboard(i, test_probs, test_label)
+
+
+You will now see a “PR Curves” tab that contains the precision-recall
+curves for each class. Go ahead and poke around; you’ll see that on
+some classes the model has nearly 100% “area under the curve”,
+whereas on others this area is lower:
+
+And that’s an intro to TensorBoard and PyTorch’s integration with it.
+Of course, you could do everything TensorBoard does in your Jupyter
+Notebook, but with TensorBoard, you gets visuals that are interactive
+by default.
+
+A guide on good usage of non_blocking and pin_memory() in PyTorch#Created On: Jul 31, 2024 | Last Updated: Apr 01, 2026 | Last Verified: Nov 05, 2024
+Author: Vincent Moens
+
+Introduction#
+Transferring data from the CPU to the GPU is fundamental in many PyTorch applications.
+It’s crucial for users to understand the most effective tools and options available for moving data between devices.
+This tutorial examines two key methods for device-to-device data transfer in PyTorch:
+pin_memory() and to() with the non_blocking=True option.
+
+What you will learn#
+Optimizing the transfer of tensors from the CPU to the GPU can be achieved through asynchronous transfers and memory
+pinning. However, there are important considerations:
+
+Using tensor.pin_memory().to(device, non_blocking=True) can be up to twice as slow as a straightforward tensor.to(device).
+Generally, tensor.to(device, non_blocking=True) is an effective choice for enhancing transfer speed.
+While cpu_tensor.to("cuda", non_blocking=True).mean() executes correctly, attempting
+cuda_tensor.to("cpu", non_blocking=True).mean() will result in erroneous outputs.
+
+
+
+Preamble#
+The performance reported in this tutorial are conditioned on the system used to build the tutorial.
+Although the conclusions are applicable across different systems, the specific observations may vary slightly
+depending on the hardware available, especially on older hardware.
+The primary objective of this tutorial is to offer a theoretical framework for understanding CPU to GPU data transfers.
+However, any design decisions should be tailored to individual cases and guided by benchmarked throughput measurements,
+as well as the specific requirements of the task at hand.
+import torch
+
+assert torch.cuda.is_available(), "A cuda device is required to run this tutorial"
+
+
+This tutorial requires tensordict to be installed. If you don’t have tensordict in your environment yet, install it
+by running the following command in a separate cell:
+# Install tensordict with the following command
+!pip3 install tensordict
+
+
+We start by outlining the theory surrounding these concepts, and then move to concrete test examples of the features.
+
+
+
+Background#
+
+
+
+Memory management basics#
+
+
+When one creates a CPU tensor in PyTorch, the content of this tensor needs to be placed
+in memory. The memory we talk about here is a rather complex concept worth looking at carefully.
+We distinguish two types of memory that are handled by the Memory Management Unit: the RAM (for simplicity)
+and the swap space on disk (which may or may not be the hard drive). Together, the available space in disk and RAM (physical memory)
+make up the virtual memory, which is an abstraction of the total resources available.
+In short, the virtual memory makes it so that the available space is larger than what can be found on RAM in isolation
+and creates the illusion that the main memory is larger than it actually is.
+In normal circumstances, a regular CPU tensor is pageable which means that it is divided in blocks called pages that
+can live anywhere in the virtual memory (both in RAM or on disk). As mentioned earlier, this has the advantage that
+the memory seems larger than what the main memory actually is.
+Typically, when a program accesses a page that is not in RAM, a “page fault” occurs and the operating system (OS) then brings
+back this page into RAM (“swap in” or “page in”).
+In turn, the OS may have to swap out (or “page out”) another page to make room for the new page.
+In contrast to pageable memory, a pinned (or page-locked or non-pageable) memory is a type of memory that cannot
+be swapped out to disk.
+It allows for faster and more predictable access times, but has the downside that it is more limited than the
+pageable memory (aka the main memory).
+
+
+
+
+
+CUDA and (non-)pageable memory#
+
+
+To understand how CUDA copies a tensor from CPU to CUDA, let’s consider the two scenarios above:
+
+If the memory is page-locked, the device can access the memory directly in the main memory. The memory addresses are well
+defined and functions that need to read these data can be significantly accelerated.
+If the memory is pageable, all the pages will have to be brought to the main memory before being sent to the GPU.
+This operation may take time and is less predictable than when executed on page-locked tensors.
+
+More precisely, when CUDA sends pageable data from CPU to GPU, it must first create a page-locked copy of that data
+before making the transfer.
+
+
+Asynchronous vs. Synchronous Operations with non_blocking=True (CUDA cudaMemcpyAsync)#
+
+
+When executing a copy from a host (such as, CPU) to a device (such as, GPU), the CUDA toolkit offers modalities to do these
+operations synchronously or asynchronously with respect to the host.
+In practice, when calling to(), PyTorch always makes a call to
+cudaMemcpyAsync.
+If non_blocking=False (default), a cudaStreamSynchronize will be called after each and every cudaMemcpyAsync, making
+the call to to() blocking in the main thread.
+If non_blocking=True, no synchronization is triggered, and the main thread on the host is not blocked.
+Therefore, from the host perspective, multiple tensors can be sent to the device simultaneously,
+as the thread does not need to wait for one transfer to be completed to initiate the other.
+
+Note
+In general, the transfer is blocking on the device side (even if it isn’t on the host side):
+the copy on the device cannot occur while another operation is being executed.
+However, in some advanced scenarios, a copy and a kernel execution can be done simultaneously on the GPU side.
+As the following example will show, three requirements must be met to enable this:
+
+The device must have at least one free DMA (Direct Memory Access) engine. Modern GPU architectures such as Volterra,
+Tesla, or H100 devices have more than one DMA engine.
+The transfer must be done on a separate, non-default cuda stream. In PyTorch, cuda streams can be handled using
+Stream.
+The source data must be in pinned memory.
+
+We demonstrate this by running profiles on the following script.
+
+import contextlib
+
+from torch.cuda import Stream
+
+
+s = Stream()
+
+torch.manual_seed(42)
+t1_cpu_pinned = torch.randn(1024**2 * 5, pin_memory=True)
+t2_cpu_paged = torch.randn(1024**2 * 5, pin_memory=False)
+t3_cuda = torch.randn(1024**2 * 5, device="cuda:0")
+
+assert torch.cuda.is_available()
+device = torch.device("cuda", torch.cuda.current_device())
+
+
+# The function we want to profile
+def inner(pinned: bool, streamed: bool):
+    with torch.cuda.stream(s) if streamed else contextlib.nullcontext():
+        if pinned:
+            t1_cuda = t1_cpu_pinned.to(device, non_blocking=True)
+        else:
+            t2_cuda = t2_cpu_paged.to(device, non_blocking=True)
+        t_star_cuda_h2d_event = s.record_event()
+    # This operation can be executed during the CPU to GPU copy if and only if the tensor is pinned and the copy is
+    #  done in the other stream
+    t3_cuda_mul = t3_cuda * t3_cuda * t3_cuda
+    t3_cuda_h2d_event = torch.cuda.current_stream().record_event()
+    t_star_cuda_h2d_event.synchronize()
+    t3_cuda_h2d_event.synchronize()
+
+
+# Our profiler: profiles the `inner` function and stores the results in a .json file
+def benchmark_with_profiler(
+    pinned,
+    streamed,
+) -> None:
+    torch._C._profiler._set_cuda_sync_enabled_val(True)
+    wait, warmup, active = 1, 1, 2
+    num_steps = wait + warmup + active
+    rank = 0
+    with torch.profiler.profile(
+        activities=[
+            torch.profiler.ProfilerActivity.CPU,
+            torch.profiler.ProfilerActivity.CUDA,
+        ],
+        schedule=torch.profiler.schedule(
+            wait=wait, warmup=warmup, active=active, repeat=1, skip_first=1
+        ),
+    ) as prof:
+        for step_idx in range(1, num_steps + 1):
+            inner(streamed=streamed, pinned=pinned)
+            if rank is None or rank == 0:
+                prof.step()
+    prof.export_chrome_trace(f"trace_streamed{int(streamed)}_pinned{int(pinned)}.json")
+
+
+Loading these profile traces in chrome (chrome://tracing) shows the following results: first, let’s see
+what happens if both the arithmetic operation on t3_cuda is executed after the pageable tensor is sent to GPU
+in the main stream:
+benchmark_with_profiler(streamed=False, pinned=False)
+
+
+/usr/local/lib/python3.10/dist-packages/torch/profiler/profiler.py:272: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+
+
+
+
+
+Using a pinned tensor doesn’t change the trace much, both operations are still executed consecutively:
+benchmark_with_profiler(streamed=False, pinned=True)
+
+
+
+
+
+Sending a pageable tensor to GPU on a separate stream is also a blocking operation:
+benchmark_with_profiler(streamed=True, pinned=False)
+
+
+
+
+
+Only pinned tensors copies to GPU on a separate stream overlap with another cuda kernel executed on
+the main stream:
+benchmark_with_profiler(streamed=True, pinned=True)
+
+
+
+
+
+
+
+
+A PyTorch perspective#
+
+
+
+pin_memory()#
+
+
+PyTorch offers the possibility to create and send tensors to page-locked memory through the
+pin_memory() method and constructor arguments.
+CPU tensors on a machine where CUDA is initialized can be cast to pinned memory through the pin_memory()
+method. Importantly, pin_memory is blocking on the main thread of the host: it will wait for the tensor to be copied to
+page-locked memory before executing the next operation.
+New tensors can be directly created in pinned memory with functions like zeros(), ones() and other
+constructors.
+Let us check the speed of pinning memory and sending tensors to CUDA:
+import torch
+import gc
+from torch.utils.benchmark import Timer
+import matplotlib.pyplot as plt
+
+
+def timer(cmd):
+    median = (
+        Timer(cmd, globals=globals())
+        .adaptive_autorange(min_run_time=1.0, max_run_time=20.0)
+        .median
+        * 1000
+    )
+    print(f"{cmd}: {median: 4.4f} ms")
+    return median
+
+
+# A tensor in pageable memory
+pageable_tensor = torch.randn(1_000_000)
+
+# A tensor in page-locked (pinned) memory
+pinned_tensor = torch.randn(1_000_000, pin_memory=True)
+
+# Runtimes:
+pageable_to_device = timer("pageable_tensor.to('cuda:0')")
+pinned_to_device = timer("pinned_tensor.to('cuda:0')")
+pin_mem = timer("pageable_tensor.pin_memory()")
+pin_mem_to_device = timer("pageable_tensor.pin_memory().to('cuda:0')")
+
+# Ratios:
+r1 = pinned_to_device / pageable_to_device
+r2 = pin_mem_to_device / pageable_to_device
+
+# Create a figure with the results
+fig, ax = plt.subplots()
+
+xlabels = [0, 1, 2]
+bar_labels = [
+    "pageable_tensor.to(device) (1x)",
+    f"pinned_tensor.to(device) ({r1:4.2f}x)",
+    f"pageable_tensor.pin_memory().to(device) ({r2:4.2f}x)"
+    f"\npin_memory()={100*pin_mem/pin_mem_to_device:.2f}% of runtime.",
+]
+values = [pageable_to_device, pinned_to_device, pin_mem_to_device]
+colors = ["tab:blue", "tab:red", "tab:orange"]
+ax.bar(xlabels, values, label=bar_labels, color=colors)
+
+ax.set_ylabel("Runtime (ms)")
+ax.set_title("Device casting runtime (pin-memory)")
+ax.set_xticks([])
+ax.legend()
+
+plt.show()
+
+# Clear tensors
+del pageable_tensor, pinned_tensor
+_ = gc.collect()
+
+
+pageable_tensor.to('cuda:0'):  0.3831 ms
+pinned_tensor.to('cuda:0'):  0.3259 ms
+pageable_tensor.pin_memory():  0.1141 ms
+pageable_tensor.pin_memory().to('cuda:0'):  0.4490 ms
+
+
+We can observe that casting a pinned-memory tensor to GPU is indeed much faster than a pageable tensor, because under
+the hood, a pageable tensor must be copied to pinned memory before being sent to GPU.
+However, contrary to a somewhat common belief, calling pin_memory() on a pageable tensor before
+casting it to GPU should not bring any significant speed-up, on the contrary this call is usually slower than just
+executing the transfer. This makes sense, since we’re actually asking Python to execute an operation that CUDA will
+perform anyway before copying the data from host to device.
+
+Note
+The PyTorch implementation of
+pin_memory
+which relies on creating a brand new storage in pinned memory through cudaHostAlloc
+could be, in rare cases, faster than transitioning data in chunks as cudaMemcpy does.
+Here too, the observation may vary depending on the available hardware, the size of the tensors being sent or
+the amount of available RAM.
+
+
+
+non_blocking=True#
+
+
+As mentioned earlier, many PyTorch operations have the option of being executed asynchronously with respect to the host
+through the non_blocking argument.
+Here, to account accurately of the benefits of using non_blocking, we will design a slightly more complex
+experiment since we want to assess how fast it is to send multiple tensors to GPU with and without calling
+non_blocking.
+# A simple loop that copies all tensors to cuda
+def copy_to_device(*tensors):
+    result = []
+    for tensor in tensors:
+        result.append(tensor.to("cuda:0"))
+    return result
+
+
+# A loop that copies all tensors to cuda asynchronously
+def copy_to_device_nonblocking(*tensors):
+    result = []
+    for tensor in tensors:
+        result.append(tensor.to("cuda:0", non_blocking=True))
+    # We need to synchronize
+    torch.cuda.synchronize()
+    return result
+
+
+# Create a list of tensors
+tensors = [torch.randn(1000) for _ in range(1000)]
+to_device = timer("copy_to_device(*tensors)")
+to_device_nonblocking = timer("copy_to_device_nonblocking(*tensors)")
+
+# Ratio
+r1 = to_device_nonblocking / to_device
+
+# Plot the results
+fig, ax = plt.subplots()
+
+xlabels = [0, 1]
+bar_labels = [f"to(device) (1x)", f"to(device, non_blocking=True) ({r1:4.2f}x)"]
+colors = ["tab:blue", "tab:red"]
+values = [to_device, to_device_nonblocking]
+
+ax.bar(xlabels, values, label=bar_labels, color=colors)
+
+ax.set_ylabel("Runtime (ms)")
+ax.set_title("Device casting runtime (non-blocking)")
+ax.set_xticks([])
+ax.legend()
+
+plt.show()
+
+
+copy_to_device(*tensors):  18.9014 ms
+copy_to_device_nonblocking(*tensors):  14.2984 ms
+
+
+To get a better sense of what is happening here, let us profile these two functions:
+from torch.profiler import profile, ProfilerActivity
+
+
+def profile_mem(cmd):
+    with profile(activities=[ProfilerActivity.CPU]) as prof:
+        exec(cmd)
+    print(cmd)
+    print(prof.key_averages().table(row_limit=10))
+
+
+Let’s see the call stack with a regular to(device) first:
+print("Call to `to(device)`", profile_mem("copy_to_device(*tensors)"))
+
+
+copy_to_device(*tensors)
+-------------------------  ------------  ------------  ------------  ------------  ------------  ------------
+                     Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg    # of Calls
+-------------------------  ------------  ------------  ------------  ------------  ------------  ------------
+                 aten::to         4.29%       1.017ms       100.00%      23.691ms      23.691us          1000
+           aten::_to_copy        12.57%       2.979ms        95.71%      22.674ms      22.674us          1000
+      aten::empty_strided        19.60%       4.644ms        19.60%       4.644ms       4.644us          1000
+              aten::copy_        27.17%       6.437ms        63.53%      15.051ms      15.051us          1000
+    cudaStreamIsCapturing         1.95%     461.388us         1.95%     461.388us       0.461us          1000
+          cudaMemcpyAsync        13.93%       3.301ms        13.93%       3.301ms       3.301us          1000
+    cudaStreamSynchronize        20.48%       4.852ms        20.48%       4.852ms       4.852us          1000
+-------------------------  ------------  ------------  ------------  ------------  ------------  ------------
+Self CPU time total: 23.691ms
+
+Call to `to(device)` None
+
+
+and now the non_blocking version:
+print(
+    "Call to `to(device, non_blocking=True)`",
+    profile_mem("copy_to_device_nonblocking(*tensors)"),
+)
+
+
+copy_to_device_nonblocking(*tensors)
+-------------------------  ------------  ------------  ------------  ------------  ------------  ------------
+                     Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg    # of Calls
+-------------------------  ------------  ------------  ------------  ------------  ------------  ------------
+                 aten::to         5.13%     989.026us        99.87%      19.265ms      19.265us          1000
+           aten::_to_copy        14.76%       2.847ms        94.75%      18.276ms      18.276us          1000
+      aten::empty_strided        23.22%       4.479ms        23.22%       4.479ms       4.479us          1000
+              aten::copy_        35.40%       6.828ms        56.77%      10.950ms      10.950us          1000
+    cudaStreamIsCapturing         2.38%     459.862us         2.38%     459.862us       0.460us          1000
+          cudaMemcpyAsync        18.99%       3.662ms        18.99%       3.662ms       3.662us          1000
+    cudaDeviceSynchronize         0.13%      24.171us         0.13%      24.171us      24.171us             1
+-------------------------  ------------  ------------  ------------  ------------  ------------  ------------
+Self CPU time total: 19.289ms
+
+Call to `to(device, non_blocking=True)` None
+
+
+The results are without any doubt better when using non_blocking=True, as all transfers are initiated simultaneously
+on the host side and only one synchronization is done.
+The benefit will vary depending on the number and the size of the tensors as well as depending on the hardware being
+used.
+
+Note
+Interestingly, the blocking to("cuda") actually performs the same asynchronous device casting operation
+(cudaMemcpyAsync) as the one with non_blocking=True with a synchronization point after each copy.
+
+
+
+Synergies#
+
+
+Now that we have made the point that data transfer of tensors already in pinned memory to GPU is faster than from
+pageable memory, and that we know that doing these transfers asynchronously is also faster than synchronously, we can
+benchmark combinations of these approaches. First, let’s write a couple of new functions that will call pin_memory
+and to(device) on each tensor:
+def pin_copy_to_device(*tensors):
+    result = []
+    for tensor in tensors:
+        result.append(tensor.pin_memory().to("cuda:0"))
+    return result
+
+
+def pin_copy_to_device_nonblocking(*tensors):
+    result = []
+    for tensor in tensors:
+        result.append(tensor.pin_memory().to("cuda:0", non_blocking=True))
+    # We need to synchronize
+    torch.cuda.synchronize()
+    return result
+
+
+The benefits of using pin_memory() are more pronounced for
+somewhat large batches of large tensors:
+tensors = [torch.randn(1_000_000) for _ in range(1000)]
+page_copy = timer("copy_to_device(*tensors)")
+page_copy_nb = timer("copy_to_device_nonblocking(*tensors)")
+
+tensors_pinned = [torch.randn(1_000_000, pin_memory=True) for _ in range(1000)]
+pinned_copy = timer("copy_to_device(*tensors_pinned)")
+pinned_copy_nb = timer("copy_to_device_nonblocking(*tensors_pinned)")
+
+pin_and_copy = timer("pin_copy_to_device(*tensors)")
+pin_and_copy_nb = timer("pin_copy_to_device_nonblocking(*tensors)")
+
+# Plot
+strategies = ("pageable copy", "pinned copy", "pin and copy")
+blocking = {
+    "blocking": [page_copy, pinned_copy, pin_and_copy],
+    "non-blocking": [page_copy_nb, pinned_copy_nb, pin_and_copy_nb],
+}
+
+x = torch.arange(3)
+width = 0.25
+multiplier = 0
+
+
+fig, ax = plt.subplots(layout="constrained")
+
+for attribute, runtimes in blocking.items():
+    offset = width * multiplier
+    rects = ax.bar(x + offset, runtimes, width, label=attribute)
+    ax.bar_label(rects, padding=3, fmt="%.2f")
+    multiplier += 1
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax.set_ylabel("Runtime (ms)")
+ax.set_title("Runtime (pin-mem and non-blocking)")
+ax.set_xticks([0, 1, 2])
+ax.set_xticklabels(strategies)
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+ax.legend(loc="upper left", ncols=3)
+
+plt.show()
+
+del tensors, tensors_pinned
+_ = gc.collect()
+
+
+copy_to_device(*tensors):  402.7469 ms
+copy_to_device_nonblocking(*tensors):  323.1495 ms
+copy_to_device(*tensors_pinned):  325.9750 ms
+copy_to_device_nonblocking(*tensors_pinned):  310.5191 ms
+pin_copy_to_device(*tensors):  575.5493 ms
+pin_copy_to_device_nonblocking(*tensors):  335.5550 ms
+
+
+
+
+Other copy directions (GPU -> CPU, CPU -> MPS)#
+
+
+Until now, we have operated under the assumption that asynchronous copies from the CPU to the GPU are safe.
+This is generally true because CUDA automatically handles synchronization to ensure that the data being accessed is
+valid at read time __whenever the tensor is in pageable memory__.
+However, in other cases we cannot make the same assumption: when a tensor is placed in pinned memory, mutating the
+original copy after calling the host-to-device transfer may corrupt the data received on GPU.
+Similarly, when a transfer is achieved in the opposite direction, from GPU to CPU, or from any device that is not CPU
+or GPU to any device that is not a CUDA-handled GPU (such as, MPS), there is no guarantee that the data read on GPU is
+valid without explicit synchronization.
+In these scenarios, these transfers offer no assurance that the copy will be complete at the time of
+data access. Consequently, the data on the host might be incomplete or incorrect, effectively rendering it garbage.
+Let’s first demonstrate this with a pinned-memory tensor:
+DELAY = 100000000
+try:
+    i = -1
+    for i in range(100):
+        # Create a tensor in pin-memory
+        cpu_tensor = torch.ones(1024, 1024, pin_memory=True)
+        torch.cuda.synchronize()
+        # Send the tensor to CUDA
+        cuda_tensor = cpu_tensor.to("cuda", non_blocking=True)
+        torch.cuda._sleep(DELAY)
+        # Corrupt the original tensor
+        cpu_tensor.zero_()
+        assert (cuda_tensor == 1).all()
+    print("No test failed with non_blocking and pinned tensor")
+except AssertionError:
+    print(f"{i}th test failed with non_blocking and pinned tensor. Skipping remaining tests")
+
+
+1th test failed with non_blocking and pinned tensor. Skipping remaining tests
+
+
+Using a pageable tensor always works:
+i = -1
+for i in range(100):
+    # Create a tensor in pageable memory
+    cpu_tensor = torch.ones(1024, 1024)
+    torch.cuda.synchronize()
+    # Send the tensor to CUDA
+    cuda_tensor = cpu_tensor.to("cuda", non_blocking=True)
+    torch.cuda._sleep(DELAY)
+    # Corrupt the original tensor
+    cpu_tensor.zero_()
+    assert (cuda_tensor == 1).all()
+print("No test failed with non_blocking and pageable tensor")
+
+
+No test failed with non_blocking and pageable tensor
+
+
+Now let’s demonstrate that CUDA to CPU also fails to produce reliable outputs without synchronization:
+tensor = (
+    torch.arange(1, 1_000_000, dtype=torch.double, device="cuda")
+    .expand(100, 999999)
+    .clone()
+)
+torch.testing.assert_close(
+    tensor.mean(), torch.tensor(500_000, dtype=torch.double, device="cuda")
+), tensor.mean()
+try:
+    i = -1
+    for i in range(100):
+        cpu_tensor = tensor.to("cpu", non_blocking=True)
+        torch.testing.assert_close(
+            cpu_tensor.mean(), torch.tensor(500_000, dtype=torch.double)
+        )
+    print("No test failed with non_blocking")
+except AssertionError:
+    print(f"{i}th test failed with non_blocking. Skipping remaining tests")
+try:
+    i = -1
+    for i in range(100):
+        cpu_tensor = tensor.to("cpu", non_blocking=True)
+        torch.cuda.synchronize()
+        torch.testing.assert_close(
+            cpu_tensor.mean(), torch.tensor(500_000, dtype=torch.double)
+        )
+    print("No test failed with synchronize")
+except AssertionError:
+    print(f"One test failed with synchronize: {i}th assertion!")
+
+
+0th test failed with non_blocking. Skipping remaining tests
+No test failed with synchronize
+
+
+Generally, asynchronous copies to a device are safe without explicit synchronization only when the target is a
+CUDA-enabled device and the original tensor is in pageable memory.
+In summary, copying data from CPU to GPU is safe when using non_blocking=True, but for any other direction,
+non_blocking=True can still be used but the user must make sure that a device synchronization is executed before
+the data is accessed.
+
+
+
+Practical recommendations#
+
+
+We can now wrap up some early recommendations based on our observations:
+In general, non_blocking=True will provide good throughput, regardless of whether the original tensor is or
+isn’t in pinned memory.
+If the tensor is already in pinned memory, the transfer can be accelerated, but sending it to
+pin memory manually from python main thread is a blocking operation on the host, and hence will annihilate much of
+the benefit of using non_blocking=True (as CUDA does the pin_memory transfer anyway).
+One might now legitimately ask what use there is for the pin_memory() method.
+In the following section, we will explore further how this can be used to accelerate the data transfer even more.
+
+
+Additional considerations#
+
+
+PyTorch notoriously provides a DataLoader class whose constructor accepts a
+pin_memory argument.
+Considering our previous discussion on pin_memory, you might wonder how the DataLoader manages to
+accelerate data transfers if memory pinning is inherently blocking.
+The key lies in the DataLoader’s use of a separate thread to handle the transfer of data from pageable to pinned
+memory, thus preventing any blockage in the main thread.
+To illustrate this, we will use the TensorDict primitive from the homonymous library.
+When invoking to(), the default behavior is to send tensors to the device asynchronously,
+followed by a single call to torch.device.synchronize() afterwards.
+Additionally, TensorDict.to() includes a non_blocking_pin option  which initiates multiple threads to execute
+pin_memory() before proceeding with to to(device).
+This approach can further accelerate data transfers, as demonstrated in the following example.
+from tensordict import TensorDict
+import torch
+from torch.utils.benchmark import Timer
+import matplotlib.pyplot as plt
+
+# Create the dataset
+td = TensorDict({str(i): torch.randn(1_000_000) for i in range(1000)})
+
+# Runtimes
+copy_blocking = timer("td.to('cuda:0', non_blocking=False)")
+copy_non_blocking = timer("td.to('cuda:0')")
+copy_pin_nb = timer("td.to('cuda:0', non_blocking_pin=True, num_threads=0)")
+copy_pin_multithread_nb = timer("td.to('cuda:0', non_blocking_pin=True, num_threads=4)")
+
+# Rations
+r1 = copy_non_blocking / copy_blocking
+r2 = copy_pin_nb / copy_blocking
+r3 = copy_pin_multithread_nb / copy_blocking
+
+# Figure
+fig, ax = plt.subplots()
+
+xlabels = [0, 1, 2, 3]
+bar_labels = [
+    "Blocking copy (1x)",
+    f"Non-blocking copy ({r1:4.2f}x)",
+    f"Blocking pin, non-blocking copy ({r2:4.2f}x)",
+    f"Non-blocking pin, non-blocking copy ({r3:4.2f}x)",
+]
+values = [copy_blocking, copy_non_blocking, copy_pin_nb, copy_pin_multithread_nb]
+colors = ["tab:blue", "tab:red", "tab:orange", "tab:green"]
+
+ax.bar(xlabels, values, label=bar_labels, color=colors)
+
+ax.set_ylabel("Runtime (ms)")
+ax.set_title("Device casting runtime")
+ax.set_xticks([])
+ax.legend()
+
+plt.show()
+
+
+td.to('cuda:0', non_blocking=False):  393.5065 ms
+td.to('cuda:0'):  313.4029 ms
+td.to('cuda:0', non_blocking_pin=True, num_threads=0):  319.0795 ms
+td.to('cuda:0', non_blocking_pin=True, num_threads=4):  303.1125 ms
+
+
+In this example, we are transferring many large tensors from the CPU to the GPU.
+This scenario is ideal for utilizing multithreaded pin_memory(), which can significantly enhance performance.
+However, if the tensors are small, the overhead associated with multithreading may outweigh the benefits.
+Similarly, if there are only a few tensors, the advantages of pinning tensors on separate threads become limited.
+As an additional note, while it might seem advantageous to create permanent buffers in pinned memory to shuttle
+tensors from pageable memory before transferring them to the GPU, this strategy does not necessarily expedite
+computation. The inherent bottleneck caused by copying data into pinned memory remains a limiting factor.
+Moreover, transferring data that resides on disk (whether in shared memory or files) to the GPU typically requires an
+intermediate step of copying the data into pinned memory (located in RAM).
+Utilizing non_blocking for large data transfers in this context can significantly increase RAM consumption,
+potentially leading to adverse effects.
+In practice, there is no one-size-fits-all solution.
+The effectiveness of using multithreaded pin_memory combined with non_blocking transfers depends on a
+variety of  factors, including the specific system, operating system, hardware, and the nature of the tasks
+being executed.
+Here is a list of factors to check when trying to speed-up data transfers between CPU and GPU, or comparing
+throughput’s across scenarios:
+
+Number of available cores
+How many CPU cores are available? Is the system shared with other users or processes that might compete for
+resources?
+
+Core utilization
+Are the CPU cores heavily utilized by other processes? Does the application perform other CPU-intensive tasks
+concurrently with data transfers?
+
+Memory utilization
+How much pageable and page-locked memory is currently being used? Is there sufficient free memory to allocate
+additional pinned memory without affecting system performance? Remember that nothing comes for free, for instance
+pin_memory will consume RAM and may impact other tasks.
+
+CUDA Device Capabilities
+Does the GPU support multiple DMA engines for concurrent data transfers? What are the specific capabilities and
+limitations of the CUDA device being used?
+
+Number of tensors to be sent
+How many tensors are transferred in a typical operation?
+
+Size of the tensors to be sent
+What is the size of the tensors being transferred? A few large tensors or many small tensors may not benefit from
+the same transfer program.
+
+System Architecture
+How is the system’s architecture influencing data transfer speeds (for example, bus speeds, network latency)?
+
+
+Additionally, allocating a large number of tensors or sizable tensors in pinned memory can monopolize a substantial
+portion of RAM.
+This reduces the available memory for other critical operations, such as paging, which can negatively impact the
+overall performance of an algorithm.
+
+
+Conclusion#
+
+
+Throughout this tutorial, we have explored several critical factors that influence transfer speeds and memory
+management when sending tensors from the host to the device. We’ve learned that using non_blocking=True generally
+accelerates data transfers, and that pin_memory() can also enhance performance if implemented
+correctly. However, these techniques require careful design and calibration to be effective.
+Remember that profiling your code and keeping an eye on the memory consumption are essential to optimize resource
+usage and achieve the best possible performance.
+
+
+Additional resources#
+
+
+If you are dealing with issues with memory copies when using CUDA devices or want to learn more about
+what was discussed in this tutorial, check the following references:
+
+CUDA toolkit memory management doc;
+CUDA pin-memory note;
+How to Optimize Data Transfers in CUDA C/C++;
+tensordict doc and repo.
+
+Total running time of the script: (1 minutes 3.202 seconds)
+
+
+Download Jupyter notebook: pinmem_nonblock.ipynb
+
+
+Download Python source code: pinmem_nonblock.py
+
+
+Download zipped: pinmem_nonblock.zip
+
+    def __len__(self):
+        return self.size
+
+    def __getitem__(self, idx):
+        data = torch.randn(3, self.feature_dim, self.feature_dim)
+        label = torch.randint(0, 10, (1,)).item()
+        if self.transform_delay > 0:
+            time.sleep(self.transform_delay)
+        return data, label
+
+    def __getitems__(self, indices):
+        """Fetch multiple items at once — enables vectorized generation.
+
+        Instead of N individual __getitem__ calls (each with its own
+        overhead), this generates the entire batch in one shot using
+        vectorized tensor operations.
+        """
+        n = len(indices)
+        # Vectorized generation: one call instead of N individual ones
+        data = torch.randn(n, 3, self.feature_dim, self.feature_dim)
+        labels = torch.randint(0, 10, (n,))
+        # Simulate batch-level I/O: one sleep for the whole batch,
+        # not one per sample (e.g., one DB query for N rows)
+        if self.transform_delay > 0:
+            time.sleep(self.transform_delay)
+        return [(data[i], labels[i].item()) for i in range(n)]
+
+
+
+
+Shared Training Infrastructure#
+To measure the real-world impact of each optimization, we define a
+reusable training loop that accepts a DataLoader and returns timing
+and loss. This avoids duplicating the training loop for every
+benchmark.
+We use a small dataset (500 samples) with a high transform
+delay (5ms) to ensure the pipeline remains data-bound throughout.
+The small dataset means short epochs (16 batches each), so we run
+many epochs — making persistent_workers’ benefit visible across
+epoch boundaries.
+benchmark_dataset = SyntheticDataset(size=512, feature_dim=224, transform_delay=0.005)
+
+
+class SmallTransformerModel(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=7, stride=4, padding=3),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d((7, 7)),
+        )
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=64, nhead=4, dim_feedforward=128, batch_first=True
+        )
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=2)
+        self.classifier = nn.Linear(64, 10)
+
+    def forward(self, x):
+        x = self.features(x)  # (B, 64, 7, 7)
+        B, C, H, W = x.shape
+        x = x.view(B, C, H * W).permute(0, 2, 1)  # (B, 49, 64)
+        x = self.transformer(x)  # (B, 49, 64)
+        x = x.mean(dim=1)  # (B, 64)
+        return self.classifier(x)
+
+
+def create_model():
+    """Create a conv+transformer model for benchmarking."""
+    return SmallTransformerModel().to(device)
+
+
+def train_and_benchmark(loader, max_batches=160, epochs=10, prefetch_device=None):
+    """Train a model over multiple epochs and return elapsed time and average loss.
+
+    Running multiple epochs (10) with a small dataset ensures many epoch
+    boundaries, making persistent_workers' startup savings visible.
+
+    Args:
+        loader: A DataLoader to iterate over.
+        max_batches: Maximum total number of batches to process across all epochs.
+        epochs: Number of epochs to iterate (re-iterates the loader each epoch).
+        prefetch_device: If set, wraps the loader in a DataPrefetcher each epoch
+            for overlapping H2D transfers. Data arrives already on device.
+
+    Returns:
+        Tuple of (elapsed_seconds, average_loss).
+    """
+    model = create_model()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+    criterion = nn.CrossEntropyLoss()
+
+    start_time = time.perf_counter()
+    total_loss = 0.0
+    num_batches = 0
+
+    for epoch in range(epochs):
+        if prefetch_device is not None:
+            data_iter = DataPrefetcher(loader, prefetch_device)
+        else:
+            data_iter = loader
+
+        for data, labels in data_iter:
+            if prefetch_device is None:
+                data = data.to(device, non_blocking=True)
+                labels = labels.to(device, non_blocking=True)
+
+            output = model(data)
+            loss = criterion(output, labels)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+            num_batches += 1
+
+            if num_batches >= max_batches:
+                break
+        if num_batches >= max_batches:
+            break
+
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    elapsed = time.perf_counter() - start_time
+
+    return elapsed, total_loss / num_batches
+
+
+
+
+Baseline Training Loop#
+Our starting point: a simple DataLoader with no multiprocessing,
+no pinned memory, and default settings. This establishes the
+performance floor we’ll improve upon.
+baseline_loader = DataLoader(
+    benchmark_dataset,
+    batch_size=32,
+    shuffle=True,
+    num_workers=0,
+    pin_memory=False,
+)
+
+print("\n=== Progressive Optimization Results ===")
+print("\nBaseline (num_workers=0, pin_memory=False):")
+baseline_time, baseline_loss = train_and_benchmark(baseline_loader)
+print(f"  Time: {baseline_time:.4f}s | Loss: {baseline_loss:.4f}")
+prev_time = baseline_time
+
+
+=== Progressive Optimization Results ===
+
+Baseline (num_workers=0, pin_memory=False):
+  Time: 32.8061s | Loss: 2.3171
+
+
+
+
+Batch Size Optimization#
+The batch_size parameter controls how many samples are processed
+together. Choosing the right batch size involves balancing several factors:
+Memory Considerations:
+
+Larger batch sizes require more GPU memory for storing inputs,
+activations, and gradients
+Out-of-memory (OOM) errors are common with large batch sizes
+Moderate batch sizes (32-128) often provide the best balance
+
+Training Dynamics:
+
+Batch size changes affect the effective learning rate, typically requiring tuning
+Larger batches provide more stable gradient estimates but may
+generalize differently
+
+
+Note
+When changing batch size, remember to tune your optimizer parameters,
+especially the learning rate schedule, unless you’re doing inference
+
+Since batch size is model-dependent (not a “just add it” optimization),
+we benchmark it in isolation rather than folding it into the progressive
+optimization chain.
+# Example: Testing different batch sizes
+batch_dataset = SyntheticDataset(size=1000, transform_delay=0)
+
+
+def benchmark_batch_size(batch_size, num_batches=10):
+    """Benchmark data loading with a specific batch size."""
+    loader = DataLoader(batch_dataset, batch_size=batch_size, shuffle=True)
+    start = time.perf_counter()
+    for i, (data, labels) in enumerate(loader):
+        if i >= num_batches:
+            break
+        data = data.to(device, non_blocking=True)
+        _ = data.sum()
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    elapsed = time.perf_counter() - start
+    return elapsed
+
+
+# Benchmark different batch sizes
+print("\nBatch size comparison (isolated benchmark):")
+for bs in [16, 32, 64, 128]:
+    elapsed = benchmark_batch_size(bs)
+    print(f"  Batch size {bs:3d}: {elapsed:.4f}s for 10 batches")
+
+
+Batch size comparison (isolated benchmark):
+  Batch size  16: 0.1730s for 10 batches
+  Batch size  32: 0.3445s for 10 batches
+  Batch size  64: 0.7167s for 10 batches
+  Batch size 128: 0.9294s for 10 batches
+
+
+
+
+Number of Workers (num_workers)#
+The num_workers parameter controls how many subprocesses are used
+for data loading. This is crucial for parallelizing expensive data
+transformations.
+How it works:
+
+Each worker maintains a queue of batches (controlled by prefetch_factor)
+Workers prepare batches in parallel and transfer them to the main process
+If in_order=True (default), batches are returned in order
+
+When to increase ``num_workers``:
+
+When transforms are computationally expensive (augmentations, decoding)
+When data is loaded from slow storage (network drives, HDD)
+When you observe GPU idle time due to data loading
+
+When ``num_workers=0`` might be faster:
+
+When transforms are cheap (simple tensor operations)
+When data is already in memory
+The overhead of inter-process communication (IPC) exceeds the
+parallelization benefits
+
+
+Note
+Finding the optimal num_workers requires tuning: increase workers
+until throughput plateaus. Too many workers waste CPU
+memory (each worker holds its own copy of the dataset object and
+prefetched batches) and can cause /dev/shm exhaustion. A good
+starting point is 2-4 workers per GPU; profile with different values
+to find the sweet spot for your workload.
+
+Let’s add num_workers=4 and prefetch_factor=2 to our training
+loop and measure the improvement:
+workers_loader = DataLoader(
+    benchmark_dataset,
+    batch_size=32,
+    shuffle=True,
+    num_workers=4,
+    prefetch_factor=2,
+    pin_memory=False,
+)
+
+print("\n+ num_workers=4, prefetch_factor=2:")
+workers_time, workers_loss = train_and_benchmark(workers_loader)
+print(f"  Time: {workers_time:.4f}s | Loss: {workers_loss:.4f}")
+print(
+    f"  Speedup vs baseline: {baseline_time / workers_time:.2f}x | vs previous: {prev_time / workers_time:.2f}x"
+)
+prev_time = workers_time
+
+
++ num_workers=4, prefetch_factor=2:
+  Time: 9.9481s | Loss: 2.3169
+  Speedup vs baseline: 3.30x | vs previous: 3.30x
+
+
+
+
+Understanding pin_memory#
+The pin_memory parameter enables faster CPU-to-GPU data transfers
+by using page-locked (pinned) memory.
+How pinned memory works:
+
+Pinned memory cannot be swapped to disk by the OS
+This enables faster DMA (Direct Memory Access) transfers to GPU
+The CPU-to-GPU transfer can happen asynchronously
+
+Best practices:
+
+Use pin_memory=True in the DataLoader (recommended approach)
+Combine with non_blocking=True when moving data to GPU
+Avoid manually calling tensor.pin_memory() followed by
+.to(device, non_blocking=True) - this is slower because
+pin_memory() is blocking
+
+The safe pattern:
+# Recommended: Let DataLoader handle pinning
+loader = DataLoader(dataset, pin_memory=True)
+for data, labels in loader:
+    data = data.to(device, non_blocking=True)
+    labels = labels.to(device, non_blocking=True)
+
+
+
+See also
+For more details, see the
+pin_memory tutorial
+
+Let’s add pin_memory=True to our configuration:
+pinmem_loader = DataLoader(
+    benchmark_dataset,
+    batch_size=32,
+    shuffle=True,
+    num_workers=4,
+    prefetch_factor=2,
+    pin_memory=torch.cuda.is_available(),
+)
+
+if torch.cuda.is_available():
+    print("\n+ pin_memory=True:")
+    pinmem_time, pinmem_loss = train_and_benchmark(pinmem_loader)
+    print(f"  Time: {pinmem_time:.4f}s | Loss: {pinmem_loss:.4f}")
+    print(
+        f"  Speedup vs baseline: {baseline_time / pinmem_time:.2f}x | vs previous: {prev_time / pinmem_time:.2f}x"
+    )
+    print(
+        "  (pin_memory benefit is modest here because CPU transform time dominates H2D transfer)"
+    )
+    prev_time = pinmem_time
+else:
+    print("\n+ pin_memory: skipped (CUDA not available)")
+    pinmem_time = workers_time
+
+
++ pin_memory=True:
+  Time: 9.8612s | Loss: 2.3209
+  Speedup vs baseline: 3.33x | vs previous: 1.01x
+  (pin_memory benefit is modest here because CPU transform time dominates H2D transfer)
+
+
+
+
+Persistent Workers#
+By default, worker processes are shut down and restarted between
+epochs. This incurs startup overhead (importing modules, forking
+processes, re-initializing datasets) on every epoch boundary.
+Setting persistent_workers=True keeps the workers alive across
+epochs, eliminating this repeated startup cost.
+When it helps most:
+
+Training for many epochs on smaller datasets
+When dataset __init__ is expensive (e.g., loading metadata)
+When combined with high num_workers
+
+Let’s compare with and without persistent workers over multiple epochs:
+non_persistent_loader = DataLoader(
+    benchmark_dataset,
+    batch_size=32,
+    shuffle=True,
+    num_workers=4,
+    prefetch_factor=2,
+    pin_memory=torch.cuda.is_available(),
+    persistent_workers=False,
+)
+
+persistent_loader = DataLoader(
+    benchmark_dataset,
+    batch_size=32,
+    shuffle=True,
+    num_workers=4,
+    prefetch_factor=2,
+    pin_memory=torch.cuda.is_available(),
+    persistent_workers=True,
+)
+
+print("\n+ persistent_workers=True (10 epochs):")
+non_persistent_time, _ = train_and_benchmark(non_persistent_loader)
+persistent_time, persistent_loss = train_and_benchmark(persistent_loader)
+print(f"  Without persistent_workers: {non_persistent_time:.4f}s")
+print(f"  With persistent_workers:    {persistent_time:.4f}s")
+print(
+    f"  Speedup vs baseline: {baseline_time / persistent_time:.2f}x | vs previous: {prev_time / persistent_time:.2f}x"
+)
+prev_time = persistent_time
+
+
++ persistent_workers=True (10 epochs):
+  Without persistent_workers: 9.8619s
+  With persistent_workers:    8.7091s
+  Speedup vs baseline: 3.77x | vs previous: 1.13x
+
+
+
+
+Overlapping H2D Transfer with GPU Compute#
+For maximum throughput, you can overlap Host-to-Device (H2D) data
+transfers with GPU computation. This ensures the GPU is never idle
+waiting for data.
+The idea is to prefetch the next batch to GPU while the current batch
+is being processed.
+
+Note
+The DataPrefetcher shows its greatest benefit when H2D transfer
+time overlaps meaningfully with GPU compute. If data loading is
+already fast, the stream synchronization overhead may exceed the benefit.
+
+class DataPrefetcher:
+    """Prefetches data to GPU while previous batch is being processed."""
+
+    def __init__(self, loader, device):
+        self.loader = iter(loader)
+        self.device = device
+        self.stream = torch.cuda.Stream() if torch.cuda.is_available() else None
+        self.next_data = None
+        self.next_labels = None
+        self.preload()
+
+    def preload(self):
+        try:
+            self.next_data, self.next_labels = next(self.loader)
+        except StopIteration:
+            self.next_data = None
+            self.next_labels = None
+            return
+
+        if self.stream is not None:
+            with torch.cuda.stream(self.stream):
+                self.next_data = self.next_data.to(self.device, non_blocking=True)
+                self.next_labels = self.next_labels.to(self.device, non_blocking=True)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.stream is not None:
+            torch.cuda.current_stream().wait_stream(self.stream)
+
+        data = self.next_data
+        labels = self.next_labels
+
+        if data is None:
+            raise StopIteration
+
+        # Ensure tensors are ready
+        if self.stream is not None:
+            data.record_stream(torch.cuda.current_stream())
+            labels.record_stream(torch.cuda.current_stream())
+
+        self.preload()
+        return data, labels
+
+
+# Integrate prefetcher into the training loop.
+if torch.cuda.is_available():
+    print("\n+ DataPrefetcher (overlapping H2D transfer):")
+    prefetch_time, prefetch_loss = train_and_benchmark(
+        persistent_loader, prefetch_device=device
+    )
+    print(f"  Time: {prefetch_time:.4f}s | Loss: {prefetch_loss:.4f}")
+    print(
+        f"  Speedup vs baseline: {baseline_time / prefetch_time:.2f}x | vs previous: {prev_time / prefetch_time:.2f}x"
+    )
+    prev_time = prefetch_time
+else:
+    print("\n+ DataPrefetcher: skipped (CUDA not available)")
+    prefetch_time = persistent_time
+
+
++ DataPrefetcher (overlapping H2D transfer):
+  Time: 8.6330s | Loss: 2.3194
+  Speedup vs baseline: 3.80x | vs previous: 1.01x
+
+
+
+
+Dataset-Level Optimization: __getitems__#
+Beyond tuning DataLoader parameters, you can optimize the dataset
+itself. PyTorch’s DataLoader supports a batched fetching protocol via
+__getitems__: if your dataset defines this method, the fetcher
+calls it once with a list of indices instead of calling __getitem__
+repeatedly for each sample.
+How it works:
+
+The default fetcher does: [dataset[idx] for idx in batch_indices]
+With __getitems__: dataset.__getitems__(batch_indices)
+
+When this helps:
+
+When per-sample overhead is significant (e.g., opening connections,
+parsing headers, acquiring locks)
+When data can be fetched in bulk more efficiently (e.g., one SQL query
+for N rows instead of N queries, or vectorized tensor generation)
+When the transform has a fixed setup cost that can be amortized
+across the batch
+
+Expected signature:
+def __getitems__(self, indices: list[int]) -> list:
+    # Fetch all items at once and return as a list
+    ...
+
+
+Our SyntheticDatasetBatched implements __getitems__ to generate
+the entire batch in one vectorized call (with a single amortized delay)
+rather than N individual calls each with their own delay.
+Let’s add this to our cumulative configuration:
+benchmark_dataset_batched = SyntheticDatasetBatched(
+    size=512, feature_dim=224, transform_delay=0.005
+)
+
+batched_loader = DataLoader(
+    benchmark_dataset_batched,
+    batch_size=32,
+    shuffle=True,
+    num_workers=4,
+    prefetch_factor=2,
+    pin_memory=torch.cuda.is_available(),
+    persistent_workers=True,
+)
+
+print("\n+ __getitems__ (batched dataset fetching):")
+batched_time, batched_loss = train_and_benchmark(batched_loader)
+print(f"  Time: {batched_time:.4f}s | Loss: {batched_loss:.4f}")
+print(
+    f"  Speedup vs baseline: {baseline_time / batched_time:.2f}x | vs previous: {prev_time / batched_time:.2f}x"
+)
+prev_time = batched_time
+
+
++ __getitems__ (batched dataset fetching):
+  Time: 2.8317s | Loss: 2.3205
+  Speedup vs baseline: 11.59x | vs previous: 3.05x
+
+
+
+
+in_order parameter#
+By default (in_order=True), the DataLoader returns batches in
+the same order as the dataset indices. This requires caching batches
+that arrive out of order from workers.
+When to consider ``in_order=False``:
+
+When you don’t need deterministic ordering (e.g., not checkpointing)
+When you observe training spikes due to batch caching
+When maximizing throughput is more important than reproducibility
+
+
+Note
+in_order=False might not increase average throughput, but it
+can reduce variance and eliminate occasional slow batches caused
+by head-of-line blocking when one worker is slower than others.
+
+
+
+Snapshot Frequency (snapshot_every_n_steps)#
+When using torchdata’s StatefulDataLoader (for checkpointing), the
+snapshot_every_n_steps parameter controls how often the
+DataLoader state is saved.
+Trade-offs:
+
+Higher frequency (smaller n): More overhead, but less data loss
+on job failure
+Lower frequency (larger n): Less overhead, but more replayed
+samples on recovery
+
+Choose based on your fault tolerance requirements and the cost of
+reprocessing data.
+
+
+Shared Memory and set_sharing_strategy#
+When using multiprocessing with num_workers > 0, PyTorch needs to
+transfer tensors between worker processes and the main process. The
+sharing strategy determines how this is done.
+Available Strategies:
+PyTorch provides two sharing strategies via
+torch.multiprocessing.set_sharing_strategy():
+
+file_descriptor (default on most systems)
+
+Uses file descriptors to share memory
+Limited by system’s open file descriptor limit (ulimit -n)
+More efficient for small tensors
+
+
+file_system
+
+Uses shared memory files in /dev/shm
+Not limited by file descriptor count
+Better for large numbers of tensors
+Low transform costs
+
+
+
+How to Change the Strategy:
+import torch.multiprocessing as mp
+
+# Switch to file_system strategy
+# Must be called before creating any DataLoader workers
+mp.set_sharing_strategy('file_system')
+
+
+Choosing the Right Strategy:
+
+
+Scenario
+Recommended Strategy
+Reason
+
+
+
+Many small tensors
+file_descriptor (default)
+Lower overhead per tensor
+
+Few large tensors
+file_system
+Avoids fd limits
+
+High num_workers
+file_system
+Avoids fd exhaustion
+
+
+
+
+
+Warning
+set_sharing_strategy() must be called before creating any
+DataLoader with num_workers > 0. Changing it afterward has no
+effect on existing workers.
+
+
+
+Handling Insufficient Shared Memory (/dev/shm)#
+When using num_workers > 0, PyTorch uses shared memory (/dev/shm)
+to efficiently pass data between worker processes and the main process.
+If you encounter errors like:
+RuntimeError: unable to open shared memory object </torch_xxx>
+ERROR: Unexpected bus error encountered in worker
+
+
+This typically means you’ve exhausted the shared memory allocation.
+Solutions:
+1. Increase /dev/shm size (if you can)
+2. Reduce memory pressure from DataLoader:
+# Reduce number of workers
+DataLoader(dataset, num_workers=2)  # Instead of 8+
+
+# Reduce prefetch factor
+DataLoader(dataset, num_workers=4, prefetch_factor=1)  # Instead of 2
+
+# Use smaller batch sizes
+DataLoader(dataset, batch_size=16)  # Smaller batches = less shm
+
+
+3. Switch sharing strategy:
+import torch.multiprocessing as mp
+mp.set_sharing_strategy('file_system')
+
+
+4. Clean up leaked shared memory:
+# List shared memory segments
+ls -la /dev/shm/
+
+# Remove orphaned PyTorch segments (be careful!)
+rm /dev/shm/torch_*
+
+
+
+Note
+Shared memory leaks can occur if worker processes crash without
+proper cleanup.
+
+
+
+Final Summary#
+Here’s the cumulative effect of each optimization we applied to
+our training loop. Each row includes all optimizations from previous
+rows:
+
+
+
+
+
+
+
+Configuration
+vs Baseline
+vs Previous
+
+
+
+Baseline (num_workers=0, no pinning)
+1.00x
+—
+
++ num_workers=4, prefetch_factor=2
+~2.7x
+~2.7x
+
++ pin_memory=True
+~2.8x
+~1.0x
+
++ persistent_workers=True
+~3.7x
+~1.3x
+
++ DataPrefetcher (H2D overlap)
+~3.6x
+~1.0x
+
++ __getitems__ (batched fetching)
+~10x
+~2.9x
+
+
+
+
+
+Note
+These results are based on our benchmark dataset.
+Actual speedups will vary depending on your specific
+workload, hardware, dataset size, and transform complexity.
+
+
+
+Summary and Best Practices#
+
+Start with moderate batch sizes (32-128) and scale up if memory
+allows.
+Use ``num_workers > 0`` when transforms are expensive. Start with
+2-4 workers and increase based on memory capacity. Higher is not always better.
+Enable ``pin_memory=True`` when using an accelerator.
+Use ``persistent_workers=True`` to avoid worker restart overhead
+between epochs.
+Profile your pipeline with to identify CPU bottlenecks during
+dataset access, transformations, etc.
+Implement data prefetching for GPU workloads to overlap data
+transfer with computation.
+Use ``file_system`` sharing strategy when hitting file descriptor limits.
+
+
+
+Conclusion#
+In this tutorial, we learned how to progressively optimize a PyTorch
+data loading pipeline — from a naive single-process baseline to a
+fully optimized configuration using multiprocessing workers, pinned
+memory, persistent workers, CUDA stream-based prefetching, and batched
+dataset fetching with __getitems__. Each optimization targets a
+different bottleneck, and together they can yield an order-of-magnitude
+improvement in throughput. These should be considered best practices
+and performance is dependent on the specific workload.
+
+
+Additional Resources#
+
+PyTorch DataLoader documentation
+Pin Memory and Non-blocking Transfer Tutorial
+PyTorch Performance Tuning Guide
+
+Total running time of the script: (1 minutes 25.020 seconds)
+
+
+Download Jupyter notebook: intermediate_data_loading_tutorial.ipynb
+
+
+Download Python source code: intermediate_data_loading_tutorial.py
+
+
+Download zipped: intermediate_data_loading_tutorial.zip
+
+Intro
+Visualizing...
+
+
+
+
+
+
+
+    Rate this Page
+    
+★
+★
+★
+★
+★
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+intermediate/visualizing_gradients_tutorial
+
+
+
+Run in Google Colab
+Colab
+
+
+
+
+
+Download Notebook
+Notebook
+
+
+
+
+
+View on GitHub
+GitHub
+
+
+
+
+
+
+Note
+Go to the end
+to download the full example code.
+
+
+Visualizing Gradients#
+Author: Justin Silver
+This tutorial explains how to extract and visualize gradients at any
+layer in a neural network. By inspecting how information flows from the
+end of the network to the parameters we want to optimize, we can debug
+issues such as vanishing or exploding
+gradients that occur during
+training.
+Before starting, make sure you understand tensors and how to manipulate
+them.
+A basic knowledge of how autograd
+works
+would also be useful.
+
+Setup#
+First, make sure PyTorch is
+installed and then import
+the necessary libraries.
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
+
+
+Next, we’ll be creating a network intended for the MNIST dataset,
+similar to the architecture described by the batch normalization
+paper.
+To illustrate the importance of gradient visualization, we will
+instantiate one version of the network with batch normalization
+(BatchNorm), and one without it. Batch normalization is an extremely
+effective technique to resolve vanishing/exploding
+gradients, and we will be verifying
+that experimentally.
+The model we use has a configurable number of repeating fully-connected
+layers which alternate between nn.Linear, norm_layer, and
+nn.Sigmoid. If batch normalization is enabled, then norm_layer
+will use
+BatchNorm1d,
+otherwise it will use the
+Identity
+transformation.
+def fc_layer(in_size, out_size, norm_layer):
+    """Return a stack of linear->norm->sigmoid layers"""
+    return nn.Sequential(nn.Linear(in_size, out_size), norm_layer(out_size), nn.Sigmoid())
+
+class Net(nn.Module):
+    """Define a network that has num_layers of linear->norm->sigmoid transformations"""
+    def __init__(self, in_size=28*28, hidden_size=128,
+                 out_size=10, num_layers=3, batchnorm=False):
+        super().__init__()
+        if batchnorm is False:
+            norm_layer = nn.Identity
+        else:
+            norm_layer = nn.BatchNorm1d
+
+        layers = []
+        layers.append(fc_layer(in_size, hidden_size, norm_layer))
+
+        for i in range(num_layers-1):
+            layers.append(fc_layer(hidden_size, hidden_size, norm_layer))
+
+        layers.append(nn.Linear(hidden_size, out_size))
+
+        self.layers = nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = torch.flatten(x, 1)
+        return self.layers(x)
+
+
+Next we set up some dummy data, instantiate two versions of the model,
+and initialize the optimizers.
+# set up dummy data
+x = torch.randn(10, 28, 28)
+y = torch.randint(10, (10, ))
+
+# init model
+model_bn = Net(batchnorm=True, num_layers=3)
+model_nobn = Net(batchnorm=False, num_layers=3)
+
+model_bn.train()
+model_nobn.train()
+
+optimizer_bn = optim.SGD(model_bn.parameters(), lr=0.01, momentum=0.9)
+optimizer_nobn = optim.SGD(model_nobn.parameters(), lr=0.01, momentum=0.9)
+
+
+We can verify that batch normalization is only being applied to one of
+the models by probing one of the internal layers:
+print(model_bn.layers[0])
+print(model_nobn.layers[0])
+
+
+Sequential(
+  (0): Linear(in_features=784, out_features=128, bias=True)
+  (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+  (2): Sigmoid()
+)
+Sequential(
+  (0): Linear(in_features=784, out_features=128, bias=True)
+  (1): Identity()
+  (2): Sigmoid()
+)
+
+
+
+
+Registering hooks#
+Because we wrapped up the logic and state of our model in a
+nn.Module, we need another method to access the intermediate
+gradients if we want to avoid modifying the module code directly. This
+is done by registering a
+hook.
+
+Warning
+Using backward pass hooks attached to output tensors is preferred over using retain_grad() on the tensors themselves. An alternative method is to directly attach module hooks (e.g. register_full_backward_hook()) so long as the nn.Module instance does not do perform any in-place operations. For more information, please refer to this issue.
+
+The following code defines our hooks and gathers descriptive names for
+the network’s layers.
+# note that wrapper functions are used for Python closure
+# so that we can pass arguments.
+
+def hook_forward(module_name, grads, hook_backward):
+    def hook(module, args, output):
+        """Forward pass hook which attaches backward pass hooks to intermediate tensors"""
+        output.register_hook(hook_backward(module_name, grads))
+    return hook
+
+def hook_backward(module_name, grads):
+    def hook(grad):
+        """Backward pass hook which appends gradients"""
+        grads.append((module_name, grad))
+    return hook
+
+def get_all_layers(model, hook_forward, hook_backward):
+    """Register forward pass hook (which registers a backward hook) to model outputs
+
+    Returns:
+        - layers: a dict with keys as layer/module and values as layer/module names
+                  e.g. layers[nn.Conv2d] = layer1.0.conv1
+        - grads: a list of tuples with module name and tensor output gradient
+                 e.g. grads[0] == (layer1.0.conv1, tensor.Torch(...))
+    """
+    layers = dict()
+    grads = []
+    for name, layer in model.named_modules():
+        # skip Sequential and/or wrapper modules
+        if any(layer.children()) is False:
+            layers[layer] = name
+            layer.register_forward_hook(hook_forward(name, grads, hook_backward))
+    return layers, grads
+
+# register hooks
+layers_bn, grads_bn = get_all_layers(model_bn, hook_forward, hook_backward)
+layers_nobn, grads_nobn = get_all_layers(model_nobn, hook_forward, hook_backward)
+
+
+
+
+Training and visualization#
+Let’s now train the models for a few epochs:
+epochs = 10
+
+for epoch in range(epochs):
+
+    # important to clear, because we append to
+    # outputs everytime we do a forward pass
+    grads_bn.clear()
+    grads_nobn.clear()
+
+    optimizer_bn.zero_grad()
+    optimizer_nobn.zero_grad()
+
+    y_pred_bn = model_bn(x)
+    y_pred_nobn = model_nobn(x)
+
+    loss_bn = F.cross_entropy(y_pred_bn, y)
+    loss_nobn = F.cross_entropy(y_pred_nobn, y)
+
+    loss_bn.backward()
+    loss_nobn.backward()
+
+    optimizer_bn.step()
+    optimizer_nobn.step()
+
+
+After running the forward and backward pass, the gradients for all the
+intermediate tensors should be present in grads_bn and
+grads_nobn. We compute the mean absolute value of each gradient
+matrix so that we can compare the two models.
+def get_grads(grads):
+    layer_idx = []
+    avg_grads = []
+    for idx, (name, grad) in enumerate(grads):
+        if grad is not None:
+            avg_grad = grad.abs().mean()
+            avg_grads.append(avg_grad)
+            # idx is backwards since we appended in backward pass
+            layer_idx.append(len(grads) - 1 - idx)
+    return layer_idx, avg_grads
+
+layer_idx_bn, avg_grads_bn = get_grads(grads_bn)
+layer_idx_nobn, avg_grads_nobn = get_grads(grads_nobn)
+
+
+With the average gradients computed, we can now plot them and see how
+the values change as a function of the network depth. Notice that when
+we don’t apply batch normalization, the gradient values in the
+intermediate layers fall to zero very quickly. The batch normalization
+model, however, maintains non-zero gradients in its intermediate layers.
+fig, ax = plt.subplots()
+ax.plot(layer_idx_bn, avg_grads_bn, label="With BatchNorm", marker="o")
+ax.plot(layer_idx_nobn, avg_grads_nobn, label="Without BatchNorm", marker="x")
+ax.set_xlabel("Layer depth")
+ax.set_ylabel("Average gradient")
+ax.set_title("Gradient flow")
+ax.grid(True)
+ax.legend()
+plt.show()
+
+
+
+
+Conclusion#
+In this tutorial, we demonstrated how to visualize the gradient flow
+through a neural network wrapped in a nn.Module class. We
+qualitatively showed how batch normalization helps to alleviate the
+vanishing gradient issue which occurs with deep neural networks.
+If you would like to learn more about how PyTorch’s autograd system
+works, please visit the references below. If you have
+any feedback for this tutorial (improvements, typo fixes, etc.) then
+please use the PyTorch Forums and/or
+the issue tracker to
+reach out.
+
+
+(Optional) Additional exercises#
+
+Try increasing the number of layers (num_layers) in our model and
+see what effect this has on the gradient flow graph
+How would you adapt the code to visualize average activations instead
+of average gradients? (Hint: in the hook_forward() function we have
+access to the raw tensor output)
+What are some other methods to deal with vanishing and exploding
+gradients?
+
+
+
+References#
+
+A Gentle Introduction to
+torch.autograd
+Automatic Differentiation with
+torch.autograd
+Autograd
+mechanics
+Batch Normalization: Accelerating Deep Network Training by Reducing
+Internal Covariate Shift
+On the difficulty of training Recurrent Neural
+Networks
+
+Total running time of the script: (0 minutes 0.234 seconds)
+
+
+Download Jupyter notebook: visualizing_gradients_tutorial.ipynb
+
+
+Download Python source code: visualizing_gradients_tutorial.py
+
+
+Download zipped: visualizing_gradients_tutorial.zip

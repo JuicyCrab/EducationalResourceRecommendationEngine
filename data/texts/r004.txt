@@ -1,0 +1,796 @@
+
+This module focuses on converting logistic regression models into binary classification models for predicting categories instead of probabilities.
+
+
+You'll learn how to determine the optimal threshold for classification, calculate and select appropriate evaluation metrics, and interpret ROC and AUC.
+
+
+The module covers binary and provides an introduction to multi-class classification, building upon prior knowledge of machine learning, linear regression, and logistic regression.
+
+
+The content explores methods for evaluating the quality of classification model predictions and applying them to real-world scenarios.
+
+
+
+
+
+
+
+Estimated module length: 70 minutes
+Learning objectives
+
+Determine an appropriate threshold for a binary classification model.
+Calculate and choose appropriate metrics to evaluate a binary
+      classification model.
+Interpret ROC and AUC.
+
+
+Prerequisites:
+This module assumes you are familiar with the concepts covered in the
+     following modules:
+
+Introduction to Machine Learning
+Linear regression
+Logistic regression
+
+
+In the Logistic regression module,
+you learned how to use the sigmoid function
+to convert raw model output to a value between 0 and 1 to make probabilistic
+predictions—for example, predicting that a given email has a 75% chance of
+being spam. But what if your goal is not to output probability but a
+category—for example, predicting whether a given email is "spam" or "not spam"?
+Classification is
+the task of predicting which of a set of classes
+(categories) an example belongs to. In this module, you'll learn how to convert
+a logistic regression model that predicts a probability into a
+binary classification
+model that predicts one of two classes. You'll also learn how to
+choose and calculate appropriate metrics to evaluate the quality of a
+classification model's predictions. Finally, you'll get a brief introduction to
+multi-class classification
+problems, which are discussed in more depth later in the course.
+Key terms:
+
+Binary classification
+Class
+Classification
+Multi-class classification
+Sigmoid function
+
+
+Let's say you have a logistic regression model for spam-email detection that
+predicts a value between 0 and 1, representing the probability that a given
+email is spam. A prediction of 0.50 signifies a 50% likelihood that the email is
+spam, a prediction of 0.75 signifies a 75% likelihood that the email is spam,
+and so on.
+You'd like to deploy this model in an email application to filter spam into
+a separate mail folder. But to do so, you need to convert the model's raw
+numerical output (e.g., 0.75) into one of two categories: "spam" or "not
+spam."
+To make this conversion, you choose a threshold probability, called a
+classification threshold.
+Examples with a probability above the threshold value are then assigned
+to the positive class,
+the class you are testing for (here, spam). Examples with a lower
+probability are assigned to the negative class,
+the alternative class (here, not spam).
+
+
+Click here for more details on the classification threshold.
+
+
+You may be wondering: what happens if the predicted score is equal to
+       the classification threshold (for instance, a score of 0.5 where
+       the classification threshold is also 0.5)? Handling for this case
+       depends on the particular implementation chosen for the classification
+       model. The Keras
+       library predicts the negative class if the score and threshold
+       are equal, but other tools/frameworks may handle this case
+       differently.
+
+
+Suppose the model scores one email as 0.99, predicting
+that email has a 99% chance of being spam, and another email as
+0.51, predicting it has a 51% chance of being spam. If you set the
+classification threshold to 0.5, the model will classify both emails as
+spam. If you set the threshold to 0.95, only the email scoring 0.99 will
+be classified as spam.
+While 0.5 might seem like an intuitive threshold, it's not a good idea if the
+cost of one type of wrong classification is greater than the other, or if the
+classes are imbalanced. If only 0.01% of emails are spam, or if misfiling
+legitimate emails is worse than letting spam into the inbox,
+labeling anything the model considers at least 50% likely to be spam
+as spam produces undesirable results.
+Confusion matrix
+The probability score is not reality, or
+ground truth.
+There are four possible outcomes for each output from a binary classifier.
+For the spam classifier example, if you lay out the ground truth as columns
+and the model's prediction as rows, the following table, called a
+confusion matrix, is the
+result:
+
+
+
+Actual positive
+Actual negative
+
+
+Predicted positive
+True positive (TP): A spam
+    email correctly classified as a spam email. These are the spam messages
+    automatically sent to the spam folder.
+
+False positive (FP): A not-spam email misclassified as
+    spam. These are the legitimate emails that
+    wind up in the spam folder.
+
+
+Predicted negative
+False
+    negative (FN): A spam email misclassified as not-spam. These are spam
+    emails that aren't
+    caught by the spam filter and make their way into the inbox.
+True negative (TN): A
+    not-spam email correctly classified as not-spam.
+    These are the legitimate emails that are sent
+    directly to the inbox.
+
+
+Notice that the total in each row gives all predicted positives (TP + FP) and
+all predicted negatives (FN + TN), regardless of validity. The total in each
+column, meanwhile, gives all real positives (TP + FN) and all real negatives
+(FP + TN) regardless of model classification.
+When the total of actual positives is not close to the total of actual
+negatives, the dataset is
+imbalanced. An instance
+of an imbalanced dataset might be a set of thousands of photos of clouds, where
+the rare cloud type you are interested in, say, volutus clouds, only appears
+a few times.
+Effect of threshold on true and false positives and negatives
+Different thresholds usually result in different numbers of true and false
+positives and true and false negatives. The following video explains why this is
+the case.
+
+
+
+
+Try changing the threshold yourself.
+
+
+
+
+This widget includes three toy datasets:
+
+Separated, where positive examples and negative examples are generally
+ well differentiated, with most positive examples having higher scores than
+ negative examples.
+Unseparated, where many positive examples have lower scores than
+ negative examples, and many negative examples have higher scores than
+ positive examples.
+Imbalanced, containing only a few examples of the positive class.
+
+Check your understanding
+
+
+1. Imagine a phishing or malware classification model where
+    phishing and malware websites are in the class labeled 1 (true) and
+    harmless websites are in the class labeled 0 (false). This model
+    mistakenly classifies a legitimate website as malware. What is this called?
+    
+
+A false positive
+A negative example (legitimate site) has been wrongly
+      classified as a positive example (malware site).
+
+
+A true positive
+A true positive would be a malware site correctly
+      classified as malware.
+
+
+A false negative
+A false negative would be a malware site incorrectly
+      classified as a legitimate site.
+
+
+A true negative
+A true negative would be a legitimate site correctly
+      classified as a legitimate site.
+
+
+
+
+
+2. In general, what happens to the number of false positives when the
+    classification threshold increases? What about true positives? Experiment
+    with the slider above.
+    
+
+Both true and false positives decrease.
+As the threshold increases, the model will likely predict
+      fewer positives overall, both true and false. A spam classifier with a
+      threshold of .9999 will only label an email as spam if it considers the
+      classification to be at least 99.99% likely, which means it is highly
+      unlikely to mislabel a legitimate email, but also likely to miss actual
+      spam email.
+
+
+Both true and false positives increase.
+Using the slider above, try setting the threshold to 0.1,
+      then dragging it to 0.9. What happens to the number of false positives
+      and true positives?
+
+
+True positives increase. False positives decrease.
+Using the slider above, try setting the threshold to 0.1,
+      then dragging it to 0.9. What happens to the number of false positives
+      and true positives?
+
+
+
+
+
+3. In general, what happens to the number of false negatives when the
+    classification threshold increases? What about true negatives? Experiment
+    with the slider above.
+    
+
+Both true and false negatives increase.
+As the threshold increases, the model will likely predict
+      more negatives overall, both true and false. At a very high threshold,
+      almost all emails, both spam and not-spam, will be classified as not-spam.
+      
+
+
+Both true and false negatives decrease.
+Using the slider above, try setting the threshold to 0.1,
+      then dragging it to 0.9. What happens to the number of false negatives
+      and true negatives?
+
+
+True negatives increase. False negatives decrease.
+Using the slider above, try setting the threshold to 0.1,
+      then dragging it to 0.9. What happens to the number of false negatives
+      and true negatives?
+
+
+
+Key terms:
+
+Binary classification
+Class-imbalanced dataset
+Classification threshold
+Confusion matrix
+Ground truth
+Negative class
+Positive class
+
+True and false positives and negatives are used to calculate several useful
+metrics for evaluating models. Which evaluation metrics are most
+meaningful depends on the specific model and the specific task, the cost
+of different misclassifications, and whether the dataset is balanced or
+imbalanced.
+All of the metrics in this section are calculated at a single fixed threshold,
+and change when the threshold changes. Very often, the user tunes the
+threshold to optimize one of these metrics.
+Accuracy
+Accuracy is the proportion of all
+classifications that were correct, whether positive or negative. It is
+mathematically defined as:
+\[\text{Accuracy} =
+\frac{\text{correct classifications}}{\text{total classifications}}
+= \frac{TP+TN}{TP+TN+FP+FN}\]
+In the spam classification example, accuracy measures the fraction of all
+emails correctly classified.
+A perfect model would have zero false positives and zero false negatives, and
+therefore an accuracy of 1.0, or 100%.
+Because it incorporates all four outcomes from the
+confusion matrix
+(TP, FP, TN, FN), given a balanced
+dataset, with similar numbers of examples in both classes, accuracy can
+serve as a coarse-grained measure of model quality. For this reason, it is often
+the default evaluation metric used for generic or unspecified models
+carrying out generic or unspecified tasks.
+However, when the dataset is imbalanced,
+or where one kind of mistake (FN or FP) is more costly than the other, which is
+the case in most real-world applications, it's better to optimize for one of
+the other metrics instead.
+For heavily imbalanced datasets, where one class appears very rarely, say 1% of
+the time, a model that predicts negative 100% of the time would score 99% on
+accuracy, despite being useless.
+Note: In machine learning (ML), words like
+recall, precision, and accuracy have mathematical
+definitions that may differ from, or be more specific than, more commonly
+used meanings of the word.
+Recall, or true positive rate
+The true positive rate (TPR), or the proportion of all actual positives that
+were classified correctly as positives, is also known as
+recall.
+Recall is mathematically defined as:
+\[\text{Recall (or TPR)} =
+\frac{\text{correctly classified actual positives}}{\text{all actual positives}}
+= \frac{TP}{TP+FN}\]
+False negatives are actual positives that were misclassified as negatives, which
+is why they appear in the denominator. In the spam classification example,
+recall measures the fraction of spam emails that were correctly classified as
+spam. This is why another name for recall is probability of detection: it
+answers the question "What fraction of spam emails are detected by this
+model?"
+A hypothetical perfect model would have zero false negatives and therefore a
+recall (TPR) of 1.0, which is to say, a 100% detection rate.
+In an imbalanced dataset where the number of actual positives is very
+low, recall is a more meaningful metric than accuracy because it
+measures the ability of the model to correctly identify all positive instances.
+For applications like disease prediction, correctly identifying the positive
+cases is crucial. A false negative typically has more serious consequences
+than a false positive. For a concrete example comparing recall and accuracy
+metrics, see the notes in the definition of
+recall.
+False positive rate
+The false positive rate (FPR)
+is the proportion of all actual negatives that were classified incorrectly
+as positives, also known as the probability of false alarm. It is
+mathematically defined as:
+\[\text{FPR} =
+\frac{\text{incorrectly classified actual negatives}}
+{\text{all actual negatives}}
+= \frac{FP}{FP+TN}\]
+False positives are actual negatives that were misclassified, which is why they
+appear in the denominator. In the spam classification example, FPR measures the
+fraction of legitimate emails that were incorrectly classified as spam, or the
+model's rate of false alarms.
+A perfect model would have zero false positives and therefore a FPR of 0.0,
+which is to say, a 0% false alarm rate.
+For an imbalanced dataset, FPR is generally a more informative metric than
+accuracy. However, if the number of actual negatives is very low, FPR may not be
+an ideal choice, due to its volatility. For example, if there are only four
+actual negatives in a dataset, one misclassification results in an FPR of 25%,
+while a second misclassification causes the FPR to jump to 50%. In cases like
+this, precision (described next) may be a more stable metric for
+evaluating the effects of false positives.
+Precision
+Precision
+is the proportion of all the model's positive classifications
+that are actually positive. It is mathematically defined as:
+\[\text{Precision} =
+\frac{\text{correctly classified actual positives}}
+{\text{everything classified as positive}}
+= \frac{TP}{TP+FP}\]
+In the spam classification example, precision measures the fraction of emails
+classified as spam that were actually spam.
+A hypothetical perfect model would have zero false positives and therefore a
+precision of 1.0.
+In an imbalanced dataset where the number of actual positives is very, very
+low, say 1-2 examples in total, precision is less meaningful and less useful
+as a metric.
+Precision improves as false positives decrease, while recall improves when
+false negatives decrease. But as seen in the previous section, increasing the
+classification threshold tends to decrease the number of false positives and
+increase the number of false negatives, while decreasing the threshold has the
+opposite effects. As a result, precision and recall often show an inverse
+relationship, where improving one of them worsens the other.
+Try it yourself:
+
+
+
+
+
+What does NaN mean in the metrics?
+
+NaN, or "not a number," appears when dividing by 0, which can happen
+  with any of these metrics. When TP and FP are both 0, for example, the
+  formula for precision has 0 in the denominator, resulting in NaN. While
+  in some cases NaN can indicate perfect performance and could be
+  replaced by a score of 1.0, it can also come from a model that is practically
+  useless. A model that never predicts positive, for example, would have 0 TPs
+  and 0 FPs and thus a calculation of its precision would result in NaN.
+
+
+Choice of metric and tradeoffs
+The metric(s) you choose to prioritize when evaluating the model and
+choosing a threshold depend on the costs, benefits, and risks of the
+specific problem. In the spam classification example, it often makes
+sense to prioritize recall, nabbing all the spam emails, or precision,
+trying to ensure that spam-labeled emails are in fact spam, or some
+balance of the two, above some minimum accuracy level.
+
+
+Metric
+Guidance
+
+
+Accuracy
+Use as a rough indicator of model
+    training progress/convergence for balanced datasets.
+For model performance, use only in combination with other metrics.
+Avoid for imbalanced datasets. Consider using another metric.
+
+
+Recall(True positive rate)
+Use when false negatives are more
+    expensive than false positives.
+
+
+False positive rate
+Use when false positives are
+    more expensive than false negatives.
+
+
+Precision
+Use when it's very important for
+    positive predictions to be accurate.
+
+
+
+(Optional, advanced) F1 score
+
+The F1 score is the harmonic mean (a
+  kind of average) of precision and recall.
+Mathematically, it is given by:
+\[\text{F1}=2*\frac{\text{precision * recall}}{\text{precision + recall}}
+  = \frac{2\text{TP}}{2\text{TP + FP + FN}}\]
+This metric balances the importance of precision and recall, and is
+  preferable to accuracy for class-imbalanced datasets. When precision
+  and recall both have perfect scores of 1.0, F1 will also have a perfect score
+  of 1.0. More broadly, when precision and recall are close in value, F1 will
+  be close to their value. When precision and recall are far apart, F1 will
+  be similar to whichever metric is worse.
+
+
+Exercise: Check your understanding
+
+
+A model outputs 5 TP, 6 TN, 3 FP, and 2 FN. Calculate the recall.
+    
+
+0.714
+Recall is calculated as \(\frac{TP}{TP+FN}=\frac{5}{7}\).
+      
+
+
+0.455
+Recall considers all actual positives, not all correct
+      classifications. The formula for recall is \(\frac{TP}{TP+FN}\).
+
+
+0.625
+Recall considers all actual positives, not all positive
+      classifications. The formula for recall is \(\frac{TP}{TP+FN}\)
+
+
+
+
+
+A model outputs 3 TP, 4 TN, 2 FP, and 1 FN. Calculate the precision.
+    
+
+0.6
+Precision is calculated as \(\frac{TP}{TP+FP}=\frac{3}{5}\).
+      
+
+
+0.75
+Precision considers all positive classifications, not all
+      actual positives. The formula for precision is \(\frac{TP}{TP+FP}\).
+
+
+0.429
+Precision considers all positive classifications, not all
+      correct classifications. The formula for precision is \(\frac{TP}{TP+FP}\)
+
+
+
+
+
+You're building a binary classifier that checks photos of insect traps
+    for whether a dangerous invasive species is present. If the model detects
+    the species, the entomologist (insect scientist) on duty is notified. Early
+    detection of this insect is critical to preventing an infestation. A
+    false alarm (false positive) is easy to handle: the entomologist sees that
+    the photo was misclassified and marks it as such. Assuming an acceptable
+    accuracy level, which metric should this model be optimized for?
+    
+
+Recall
+In this scenario, false alarms (FP) are low-cost, and false
+      negatives are highly costly, so it makes sense to maximize recall, or the probability of
+      detection.
+      
+
+
+False positive rate (FPR)
+In this scenario, false alarms (FP) are low-cost. Trying
+      to minimize them at the risk of missing actual positives doesn't make
+      sense.
+
+
+Precision
+In this scenario, false alarms (FP) aren't particularly
+      harmful, so trying to improve the correctness of positive classifications
+      doesn't make sense.
+
+
+
+Key terms:
+
+Accuracy
+False positive rate (FPR)
+Precision
+Recall
+
+The previous section presented a set of model metrics, all calculated at a
+single classification threshold value. But if you want to evaluate a
+model's quality across all possible thresholds, you need different tools.
+Receiver-operating characteristic curve (ROC)
+The ROC curve
+is a visual representation of model performance across all thresholds.
+The long version of the name, receiver operating characteristic, is a holdover
+from WWII radar detection.
+The ROC curve is drawn by calculating the true positive rate (TPR)
+and false positive rate (FPR) at every possible threshold (in practice, at
+selected intervals), then graphing TPR over FPR. A perfect model,
+which at some threshold has a TPR of 1.0 and a FPR of 0.0, can
+be represented by either a point at
+(0, 1) if all other thresholds are ignored, or by the following:
+
+
+
+Figure 1. ROC and AUC of a hypothetical perfect model.
+  
+
+Area under the curve (AUC)
+The area under the ROC curve (AUC)
+represents the probability that the model,
+if given a randomly chosen positive and negative example, will rank the
+positive higher than the negative.
+The perfect model above, containing a square with sides of length 1, has an
+area under the curve (AUC) of 1.0. This means there is a 100% probability that
+the model will correctly rank a randomly chosen positive example higher than a
+randomly chosen negative example. In other words, looking at the spread of
+data points below, AUC gives the probability that the model will place a
+randomly chosen square to the right of a randomly chosen circle, independent of
+where the threshold is set.
+
+
+
+Figure 2. A spread of predictions for a binary classification model. AUC is the chance a randomly chosen square is positioned to the right of a randomly chosen circle.
+  
+
+In more concrete terms, a spam classifier with AUC
+of 1.0 always assigns a random spam email a higher probability of being
+spam than a random legitimate email. The actual classification of each
+email depends on the threshold that you choose.
+For a binary classifier, a model that does exactly as well as random guesses or
+coin flips has a ROC that is a diagonal line from (0,0) to (1,1). The AUC is
+0.5, representing a 50% probability of correctly ranking a random positive and
+negative example.
+In the spam classifier example, a spam classifier with AUC of 0.5 assigns
+a random spam email a higher probability of being spam than a random
+legitimate email only half the time.
+
+
+
+Figure 3. ROC and AUC of completely random guesses.
+  
+
+
+(Optional, advanced) Precision-recall curve
+
+AUC and ROC work well for comparing models when the dataset is roughly
+  balanced between classes. When the dataset is imbalanced, precision-recall
+  curves (PRCs) and the area under those curves may offer a better comparative
+  visualization of model performance. Precision-recall curves are created by
+  plotting precision on the y-axis and recall on the x-axis across all
+  thresholds.
+
+
+
+AUC and ROC for choosing model and threshold
+AUC is a useful measure for comparing the performance of two different models,
+as long as the dataset is roughly balanced. The model with greater area under
+the curve is generally the better one.
+
+
+
+
+Figure 4. ROC and AUC of two hypothetical models. The curve on the
+    right, with a greater AUC, represents the better of the two models.
+  
+
+The points on a ROC curve closest to (0,1) represent a range of the
+best-performing thresholds for the given model. As discussed in the
+Thresholds,
+Confusion matrix
+and
+Choice of metric and tradeoffs
+sections, the threshold you choose depends on which metric is most important to
+the specific use case. Consider the points A, B, and C in the following
+diagram, each representing a threshold:
+
+
+
+Figure 5. Three labeled points representing thresholds.
+  
+
+If false positives (false alarms) are highly costly, it may make sense to
+choose a threshold that gives a lower FPR, like the one at point A, even if TPR
+is reduced. Conversely, if false positives are cheap and false negatives
+(missed true positives) highly costly, the threshold for point C, which
+maximizes TPR, may be preferable. If the costs are roughly equivalent, point B
+may offer the best balance between TPR and FPR.
+Here is the ROC curve for the data we have seen before:
+
+
+
+
+Exercise: Check your understanding
+
+
+In practice, ROC curves are much less regular than the illustrations
+    given above. Which of the following models, represented by their ROC curve
+    and AUC, has the best performance?
+    
+
+
+This model has the highest AUC, which corresponds with the best
+           performance.
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Which of the following models performs worse than chance?
+    
+
+
+This model has an AUC lower than 0.5, which means it performs worse
+           than chance.
+      
+
+
+
+This model performs slightly better than chance.
+
+
+
+This model performs the same as chance.
+
+
+
+This is a hypothetical perfect classifier.
+
+
+
+
+
+Which of the following changes can be made to the worse-than-chance
+    model in the previous question to cause it to perform better than chance?
+    
+
+Reverse the predictions, so predictions of 1 become
+      0, and predictions of 0 become 1.
+If a binary classifier reliably puts examples in the
+      wrong classes more often than chance, switching the class label
+      immediately makes its predictions better than chance without having to
+      retrain the model.
+      
+
+
+Have it always predict the negative class.
+This may or may not improve performance above chance. Also, as
+      discussed in the Accuracy section,
+      this isn't a useful model.
+
+
+Have it always predict the positive class.
+This may or may not improve performance above chance. Also, as
+      discussed in the Accuracy section,
+      this isn't a useful model.
+
+
+
+
+
+Imagine a situation where it's better to allow some spam to reach the
+    inbox than to send a business-critical email to the spam folder. You've
+    trained a spam classifier for this situation where the positive class is
+    spam and the negative class is not-spam.
+    Which of the following points
+    on the ROC curve for your classifier is preferable?
+
+
+
+Point A
+In this use case, it's better to minimize false positives,
+      even if true positives also decrease.
+      
+
+
+Point B
+This threshold balances true and false positives.
+
+
+Point C
+This threshold maximizes true positives (flags more spam)
+      at a cost of more false positives (more legitimate emails flagged as
+      spam).
+
+
+
+Key terms:
+
+Area under the ROC curve (AUC)
+ROC curve
+
+Prediction bias, calculated as the difference between the average prediction and the average ground truth, is a quick check for model or data issues.
+
+
+A model with zero prediction bias ideally predicts the same average outcome as observed in the ground truth data, such as a spam detection model predicting the same percentage of spam emails as actually present in the dataset.
+
+
+Significant prediction bias can indicate problems in the training data, the model itself, or the new data being applied to the model.
+
+
+Common causes of prediction bias include biased data, excessive regularization, bugs in the training process, and insufficient features provided to the model.
+
+
+
+
+
+
+
+Calculating
+prediction bias
+is a quick check that can flag issues with the model or training data
+early on.
+Prediction bias is the difference between the mean of a model's
+predictions
+and the mean of
+ground-truth labels in the
+data. A model trained on a dataset
+where 5% of the emails are spam should predict, on average, that 5% of the
+emails it classifies are spam. In other words, the mean of the labels in the
+ground-truth dataset is 0.05, and the mean of the model's predictions should
+also be 0.05. If this is the case, the model has zero prediction bias. Of
+course, the model might still have other problems.
+If the model instead predicts 50% of the time that an email is spam, then
+something is wrong with the training dataset, the new dataset the model is
+applied to, or with the model itself. Any
+significant difference between the two means suggests that the model has
+some prediction bias.
+Prediction bias can be caused by:
+
+Biases or noise in the data, including biased sampling for the training set
+Too-strong regularization, meaning that the model was oversimplified and lost
+some necessary complexity
+Bugs in the model training pipeline
+The set of features provided to the model being insufficient for the task
+
+Key terms:
+
+Ground truth
+Prediction
+Prediction bias
+
+Multi-class classification can be treated as an extension of binary classification to more than two classes. If each example can only be assigned to one class, then the classification problem can be handled as a binary classification problem, where one class contains one of the multiple classes, and the other class contains all the other classes put together. The process can then be repeated for each of the original classes.
+
+For example, in a three-class multi-class classification problem, where you're classifying examples with the labels A, B, and C, you could turn the problem into two separate binary classification problems. First, you might create a binary classifier that categorizes examples using the label A+B and the label C. Then, you could create a second binary classifier that reclassifies the examples that are labeled A+B using the label A and the label B.
+
+An example of a multi-class problem is a handwriting classifier that takes an image of a handwritten digit and decides which digit, 0-9, is represented.
+
+If class membership isn't exclusive, which is to say, an example can be assigned to multiple classes, this is known as a multi-label classification problem.

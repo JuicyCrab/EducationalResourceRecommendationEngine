@@ -1,0 +1,254 @@
+In the Linear regression module, you explored how to construct a model to make continuous numerical predictions, such as the fuel efficiency of a car. But what if you want to build a model to answer questions like "Will it rain today?" or "Is this email spam?"
+
+This module introduces a new type of regression model called logistic regression that is designed to predict the probability of a given outcome.
+SPEAKER: Thus far in the course, we've
+focused on building models that output a numerical prediction.
+For example, the amount of time it
+takes to drive to your destination.
+But what if we want to make other types of predictions
+to answer questions like, will it rain today?
+Does my car need a new transmission?
+Is this email spam?
+Let's take a closer look at that last example.
+Suppose we want to create a simple spam
+filter, which predicts whether an email is legitimate or junk.
+We collect some training and test data,
+and train a linear regression model
+to predict 1, if an email is spam, and 0, if it isn't, based
+on the number of spammy words in the email text.
+Here are the results.
+Let's say we have an email that contains 10 spammy words.
+Is it spam?
+A score of 1 means spam, and a score of 0 means not spam.
+But what about a score of 0.62?
+We can think of this score as an indicator of the likelihood
+that the email is spam.
+The lower the value, the less likely it's spam,
+and the higher the value, the more likely it's spam.
+But, it would be more useful if a regression model predicted
+a formal probability, a value from 0 to 1,
+representing the chances the email is spam.
+This type of regression task is called logistic regression.
+So how do we get a linear model to output a probability?
+We need to transform the model to apply some limits,
+so it outputs continuous values that
+fall within the range from 0 to 1,
+where 0 indicates a 0% chance an email is spam,
+and 1 indicates a 100% chance it it's spam.
+What mathematical function could we use to do this?
+Two curves that may come to mind are an exponential curve
+and a hyperbola.
+Both functions produce outputs that
+approach a limit in at least one direction.
+But neither function's range is constrained
+to values between 0 and 1.
+What if we combine the two formulas?
+Here, we've created a curve whose output is squished
+between values 0 and 1.
+As the input decreases to negative infinity,
+the output approaches 0.
+And as the input increases to infinity,
+the output approaches 1.
+This curve is called a sigmoid, one
+of a family of s-shaped curves called the logistic functions,
+from which logistic regression gets its name.
+We can use it to map the outputs of our linear model
+to a continuous probability range.
+Now we can retrain our model to calculate
+the probability of spam for any value of our feature, the number
+of spammy words.
+Using a logistic regression model,
+we can predict that our email with 10 spammy words
+has a 69% chance of being spam.
+Note that in practice, a spam prediction model would likely
+train on additional features and use
+more sophisticated natural language processing techniques.
+Logistic regression is a popular technique for building models
+that discriminate between two possible outcomes, including
+classification tasks.
+We'll further explore these applications later
+in the course.
+
+Many problems require a probability estimate as output. Logistic regression is an extremely efficient mechanism for calculating probabilities. Practically speaking, you can use the returned probability in either of the following two ways:
+
+Applied "as is." For example, if a spam-prediction model takes an email as input and outputs a value of 0.932, this implies a 93.2% probability that the email is spam.
+
+Converted to a binary category such as True or False, Spam or Not Spam.
+
+This module focuses on using logistic regression model output as-is. In the Classification module, you'll learn how to convert this output into a binary category.
+
+Sigmoid function
+You might be wondering how a logistic regression model can ensure its output represents a probability, always outputting a value between 0 and 1. As it happens, there's a family of functions called logistic functions whose output has those same characteristics. The standard logistic function, also known as the sigmoid function (sigmoid means "s-shaped"), has the formula:
+
+
+where:
+
+f(x) is the output of the sigmoid function.
+e is Euler's number: a mathematical constant ≈ 2.71828.
+x is the input to the sigmoid function.
+Figure 1 shows the corresponding graph of the sigmoid function.
+
+Figure 1. Graph of the sigmoid function. The curve approaches 0 as x values decrease to negative infinity, and 1 as x values increase toward infinity.
+As the input, x, increases, the output of the sigmoid function approaches but never reaches 1. Similarly, as the input decreases, the sigmoid function's output approaches but never reaches 0.
+
+Click here for a deeper dive into the math behind the sigmoid function
+
+Transforming linear output using the sigmoid function
+The following equation represents the linear component of a logistic regression model:
+
+
+where:
+
+z is the output of the linear equation, also called the log odds.
+b is the bias.
+The w values are the model's learned weights.
+The x values are the feature values for a particular example.
+To obtain the logistic regression prediction, the z value is then passed to the sigmoid function, yielding a value (a probability) between 0 and 1:
+
+
+where:
+
+y' is the output of the logistic regression model.
+e is Euler's number: a mathematical constant ≈ 2.71828.
+z is the linear output (as calculated in the preceding equation).
+Click here to learn more about log-odds
+
+Figure 2 illustrates how linear output is transformed to logistic regression output using these calculations.
+
+Figure 2. Left: graph of the linear function z = 2x + 5, with three points highlighted. Right: Sigmoid curve with the same three points highlighted after being transformed by the sigmoid function.
+In Figure 2, a linear equation becomes input to the sigmoid function, which bends the straight line into an s-shape. Notice that the linear equation can output very big or very small values of z, but the output of the sigmoid function, y', is always between 0 and 1, exclusive. For example, the yellow square on the left graph has a z value of –10, but the sigmoid function in the right graph maps that –10 into a y' value of 0.00004.
+
+Exercise: Check your understanding
+A logistic regression model with three features has the following bias and weights:
+
+
+
+Logistic regression
+models are trained using the same process as
+linear regression
+models, with two key distinctions:
+
+Logistic regression models use
+Log Loss as the loss function
+instead of squared loss.
+Applying regularization
+is critical to prevent
+overfitting.
+
+The following sections discuss these two considerations in more depth.
+Log Loss
+In the Linear regression module,
+you used squared loss (also called
+L2 loss) as the
+loss function.
+Squared loss works well for a linear
+model where the rate of change of the output values is constant. For example,
+given the linear model $y' = b + 3x_1$, each time you increment the input
+value $x_1$ by 1, the output value $y'$ increases by 3.
+However, the rate of change of a logistic regression model is not constant.
+As you saw in Calculating a probability, the
+sigmoid curve is s-shaped
+rather than linear. When the log-odds ($z$) value is closer to 0, small
+increases in $z$ result in much larger changes to $y$ than when $z$ is a large
+positive or negative number. The following table shows the sigmoid function's
+output for input values from 5 to 10, as well as the corresponding precision
+required to capture the differences in the results.
+
+
+input
+logistic output
+required digits of precision
+
+
+5
+0.993
+3
+
+
+6
+0.997
+3
+
+
+7
+0.999
+3
+
+
+8
+0.9997
+4
+
+
+9
+0.9999
+4
+
+
+10
+0.99998
+5
+
+
+If you used squared loss to calculate errors for the sigmoid function, as the
+output got closer and closer to 0 and 1, you would need more memory to
+preserve the precision needed to track these values.
+Instead, the loss function for logistic regression is
+Log Loss. The
+Log Loss equation returns the logarithm of the magnitude of the change, rather
+than just the distance from data to prediction. Log Loss is calculated as
+follows:
+$\text{Log Loss} = -\frac{1}{N}\sum_{i=1}^{N} [y_i\log(y_i') + (1 - y_i)\log(1 - y_i')]$
+
+where:
+
+\(N\) is the number of labeled examples in the dataset
+\(i\) is the index of an example in the dataset (e.g., \((x_3, y_3)\)
+  is the third example in the dataset)
+
+    \(y_i\) is the label for the \(i\)th example. Since this is logistic
+    regression, \(y_i\) must either be 0 or 1.
+  
+
+    \(y_i'\) is your model's prediction for the \(i\)th example
+    (somewhere between 0 and 1), given the set of features in \(x_i\).
+  
+
+
+
+Click the icon to learn more about Log Loss.
+
+
+This form of the Log Loss function calculates the mean Log Loss across all
+points in the dataset. Using mean Log Loss (as opposed to total Log Loss) is
+desirable in practice, because it enables us to decouple tuning of the batch
+size and the learning rate.
+
+
+Regularization in logistic regression
+Regularization, a mechanism for
+penalizing model complexity during training, is extremely important in logistic
+regression modeling. Without regularization, the asymptotic nature of logistic
+regression would keep driving loss towards 0 in cases where the model has a
+large number of features. Consequently, most logistic regression models use one
+of the following two strategies to decrease model complexity:
+
+L2 regularization
+Early stopping:
+Limiting the number of training steps to halt training while loss is
+still decreasing.
+
+Note: You'll learn more about
+regularization in the
+Datasets, Generalization, and Overfitting
+module of the course.
+Key terms:
+
+Gradient descent
+Linear regression
+Log Loss
+Logistic regression
+Loss function
+Overfitting
+Regularization
+Squared loss

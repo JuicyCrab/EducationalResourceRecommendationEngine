@@ -1,0 +1,204 @@
+Abstract—Deep neural networks (DNNs) have recently
+achieved great success in many visual recognition tasks. However, existing deep neural network models are computationally
+expensive and memory intensive, hindering their deployment in
+devices with low memory resources or in applications with strict
+latency requirements. Therefore, a natural thought is to perform
+model compression and acceleration in deep networks without
+significantly decreasing the model performance. During the past
+five years, tremendous progress has been made in this area. In
+this paper, we review the recent techniques for compacting and
+accelerating DNN models. In general, these techniques are divided into four categories: parameter pruning and quantization,
+low-rank factorization, transferred/compact convolutional filters,
+and knowledge distillation. Methods of parameter pruning and
+quantization are described first, after that the other techniques
+are introduced. For each category, we also provide insightful
+analysis about the performance, related applications, advantages
+and drawbacks. Then we go through some very recent successful
+methods, for example, dynamic capacity networks and stochastic
+depths networks. After that, we survey the evaluation matrices,
+the main datasets used for evaluating the model performance and
+recent benchmark efforts. Finally, we conclude this paper, discuss
+remaining the challenges and possible directions for future work.Index Terms—Deep Learning, Convolutional Neural Networks,
+Model Compression and Acceleration,I. INTRODUCTIONIn recent years, deep neural networks have recently received
+lots of attention, been applied to different applications and
+achieved dramatic accuracy improvements in many tasks.
+These works rely on deep networks with millions or even
+billions of parameters, and the availability of GPUs with
+very high computation capability plays a key role in their
+success. For example, the work by Krizhevsky et al. [1]
+achieved breakthrough results in the 2012 ImageNet Challenge
+using a network containing 60 million parameters with five
+convolutional layers and three fully-connected layers. Usually,
+it takes two to three days to train the whole model on
+ImagetNet dataset with a NVIDIA K40 machine. Another
+example is the top face verification results on the Labeled
+Faces in the Wild (LFW) dataset were obtained with networks
+containing hundreds of millions of parameters, using a mix
+of convolutional, locally-connected, and fully-connected layers
+[2], [3]. It is also very time-consuming to train such a modelYu Cheng is a Senior Researcher at Microsoft, One Microsoft Way,
+Redmond, WA 98052, USA.
+Duo Wang and Tao Zhang are with the Department of Automation,
+Tsinghua University, Beijing 100084, China.
+Pan Zhou is with the School of Electronic Information and Communications, Huazhong University of Science and Technology, Wuhan 430074,
+China.to get reasonable performance. In architectures that rely only
+on fully-connected layers, the number of parameters can grow
+to billions [4].
+As larger neural networks with more layers and nodes
+are considered, reducing their storage and computational cost
+becomes critical, especially for some real-time applications
+such as online learning and incremental learning. In addition,
+recent years witnessed significant progress in virtual reality,
+augmented reality, and smart wearable devices, creating unprecedented opportunities for researchers to tackle fundamental challenges in deploying deep learning systems to portable
+devices with limited resources (e.g. memory, CPU, energy,
+bandwidth). Efficient deep learning methods can have significant impacts on distributed systems, embedded devices, and
+FPGAs for Artificial Intelligence. For example, the ResNet-50
+[5] with 50 convolutional layers needs over 95MB memory for
+storage and over 3.8 billion floating number multiplications
+when processing an image. After discarding some redundant
+weights, the network still works as usual but saves more than
+75% of parameters and 50% computational time. For devices
+like cell phones and FPGAs with only several megabyte
+resources, how to compact the models used on them is also
+important.
+Achieving these goals calls for joint solutions from many
+disciplines, including but not limited to machine learning,
+optimization, computer architecture, signal processing, and
+hardware design. In this paper, we review recent works on
+compressing and accelerating deep neural networks, which
+attracts a lot of attention from the deep learning community
+and already achieved lots of progress in the past years.
+Based on their properties, we divide these approaches into
+four categories: parameter pruning and quantization, lowrank factorization, transferred/compact convolutional filters,
+and knowledge distillation. The parameter pruning and quantization based methods explore the redundancy in the model parameters and try to remove the redundant and uncritical ones.
+Low-rank factorization based techniques use matrix/tensor
+decomposition to estimate the informative parameters of the
+DNNs. The approaches based on transferred/compact convolutional filters design special structural convolutional filters to
+reduce the parameter space and save storage/computation. The
+knowledge distillation based methods learn a distilled model
+and train a more compact neural network to reproduce the
+output of a larger network.
+In Table I, we briefly summarize these four types of
+approaches. The parameter pruning & quantization, low-rank
+factorization and knowledge distillation approaches can be
+deployed in DNN models with fully connected layers andarXiv:1710.09282v9 [cs.LG] 14 Jun 2020IEEE SIGNAL PROCESSING MAGAZINE, SPECIAL ISSUE ON DEEP LEARNING FOR IMAGE UNDERSTANDING 7Another widely used measurement is the index space saving
+defined in several papers [31], [36] asβ(M, M ∗) = a − a∗a∗ , (9)
+where β(M, M ∗) is the defined space saving rate.
+Similarly, given the running time s of M and s∗ of M ∗,
+the speedup rate δ(M, M ∗) is defined as:δ(M, M ∗) = s
+s∗ . (10)
+Most work used the average training time per epoch to measure
+the running time, while in [31], [36], the average testing time
+was used. Generally, the compression rate and speedup rate
+are highly correlated, as smaller models often results in faster
+computation for both the training and the testing stages.
+A good compression method is expected to achieve almost
+the same performance as the original model with much smaller
+parameters and less computational time. However, for different
+applications with different CNN designs, the relation between
+parameter size and computational time might be different.
+For example, it is observed that for deep CNNs with fully
+connected layers, most of the parameters are in the fully
+connected layers; while for image classification tasks, float
+point operations are mainly in the first few convolutional layers
+since each filter is convolved with the whole image, which is
+usually very large at the beginning. Thus compression and
+acceleration of the network should focus on different type of
+layers for different applications.
+VIII. CHALLENGES AND FUTURE WORKWe summarized recent efforts on compressing and accelerating deep neural networks (DNNs). Here we discuss more
+details about how to choose different compression approaches,
+technique challenges and possible solutions for future work.A. General SuggestionsThere are no golden criteria to measure which approach
+is the best. How to choose a proper method really depends
+on the applications and requirements. Here are some general
+suggestions we can provide:• If the applications need compacted models from pretrained deep nets, you can choose either pruning &
+quantization or low rank factorization based methods.
+If you need end-to-end solutions for your problem, the
+low rank and transferred convolutional filters approaches
+should be considered.• For applications in particular domains (e.g., medical
+images), methods with human prior (like the transferred
+convolutional filters, structural matrix) sometimes have
+benefits. For example, when doing medical images classification, transferred convolutional filters could work
+well as medical images (like organ) do have the rotation
+transformation property.• The approaches of pruning & quantization generally give
+reasonable compression rate while not hurt the accuracy.
+Thus for applications which requires stable model performance, it is better to utilize pruning & quantization.• If your application involves small/medium size datasets
+or requires significantly improving efficiency, you can try
+the knowledge distillation approaches. The compressed
+student model can take the benefit of transferring knowledge from teacher model, achieving robust performance
+when datasets are not large.• As we mentioned before, these aforementioned techniques are orthogonal. It is reasonable to combine two
+or three of them to maximize the gain. For some specific applications, like object detection, which requires
+both convolutional and fully connected layers, you can
+compress the convolutional layers with a low rank based
+method and the fully connected layers with a pruning
+technique.B. Technique ChallengesWe also summarize the following challenges still need to
+be addressed.• Most of the current state-of-the-art approaches build on
+well-designed CNN models, which have limited freedom
+to change the configuration (e.g., network architectures,
+hyper-parameters). To handle more complicated tasks,
+the furture work should provide more plausible ways to
+configure the compressed models.• Hardware constraints in various of small platforms (e.g.,
+mobile, robotic, self-driving car) are still a major problem
+to hinder the extension of deep CNNs. How to make full
+use of the limited computational source and how to design
+special compression methods for such platforms are still
+challenges that need to be addressed.• Pruning is an effective way to compress and accelerate CNNs. The current pruning techniques are mostly
+designed to eliminate connections between neurons. On
+the other hand, pruning channel can directly reduce the
+feature map width and shrink the model into a thinner
+one. It is efficient but also challenging because removing
+channels might dramatically change the input of the
+following layer.• As we mentioned before, methods of structural matrix
+and transferred convolutional filters impose prior human
+knowledge to the model, which could significantly affect
+the performance and stability. It is critical to investigate
+how to control the impact of those prior knowledge.• The methods of knowledge distillation provide many benefits such as directly accelerating model without special
+hardware or implementations. It is still worthy developing
+KD-based approaches and exploring how to improve their
+performances.• Despite the great achievements of these compression
+approaches, the black box mechanism is still the key
+barrier to the adoption. For example, why some neurons/connections are pruned is not clear. Exploring the
+knowledge interpret-ability is still an important challenge.C. Possible Future DirectionsTo solve the hyper-parameters configuration problem, we
+can rely on the recent neural architecture search strategiesIEEE SIGNAL PROCESSING MAGAZINE, SPECIAL ISSUE ON DEEP LEARNING FOR IMAGE UNDERSTANDING 8[79], [80]. This framework provides a mechanism allowing
+the algorithm to automatically learn how to exploit structure
+in the problem of interest. Leveraging reinforcement learning
+to efficiently sample the design space and improve the model
+compression has been tried in [81].
+Regarding the use of CNNs in different hardware platforms,
+proposing some hardware-aware approaches is one direction.
+Wang et al. [82] proposed the Hardware-Aware Automated
+Quantization (HAQ) to take the hardware accelerator‘s feedback in the design loop. Similar idea can be applied to make
+CNNs more applicable for different platforms. The work in
+[83] directly learn the architectures for large-scale target tasks
+and target hardware based performance.
+Channel pruning provides the efficiency benefit on both
+CPU and GPU because no special implementation is required.
+But it is also challenging to handle the input configuration.
+One possible solution is to use the training-based channel
+pruning methods [84], which focus on imposing sparse constraints on weights during training. In addition, training from
+scratch for such methods is costly for deep CNNs. In [85], the
+authors provided an iterative two-step algorithm to effectively
+prune channels in each layer. The work in [86] associated a
+scaling factor with each channel and imposed regularization on
+these scaling factors during training to automatically identify
+unimportant channels. Liu et al. [87] showed that pruned
+architecture itself is more crucial and pruning can be useful
+as an architecture search paradigm.
+Exploring new types of knowledge in the teacher models
+and transferring it to the student models is useful for the
+knowledge distillation (KD) approaches. Instead of directly reducing and transferring parameters, passing selectivity knowledge of neurons could be helpful. One option is deriving a
+way to select essential neurons related to the task [88], [89].
+Very recently, the contrastive loss instead of KL divergence
+for distillation has been tried in [90].
+For methods with the convolutional filters and the structural
+matrix, we can conclude that the transformation lies in the
+family of functions that only operations on the spatial dimensions. Hence to address the imposed prior issue, one solution is
+to provide a generalization of the aforementioned approaches
+in two aspects: 1) instead of limiting the transformation to
+belong to a set of predefined transformations, let it be the
+whole family of spatial transformations applied on 2D filters
+or matrix, and 2) learn the transformation jointly with all the
+model parameters.
+Despite the image classification task, people are also adapting the compacted models in other tasks [73], [91], [92]. There
+is also some work about deep natural language models [93],
+[94]. We would like to see more work for applications with
+larger deep nets (e.g., video and image frames [95], [96],
+vision + language [97] and GANs [98], [99]).

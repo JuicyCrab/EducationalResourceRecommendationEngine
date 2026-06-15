@@ -1,0 +1,122 @@
+St
+Quest St
+Quest stack
+Quest hello and welcome to stack Quest
+stack Quest is brought to you by the
+friendly folks in the genetics
+department at the University of North
+Carolina at Chapel
+K-NN overview
+Hill today we're going to be talking
+about the K nearest neighbors algorithm
+which is a super simple way to classify
+data
+in a nutshell if you already had a lot
+of data that Define these cell types we
+could use it to decide which type of
+cell this guy is let's see it in
+action step one start with a data set
+K-NN applied to scatterplot data
+with known categories in this case we
+have different cell types from an
+intestinal
+tumor we then cluster that data in this
+case we used PCA
+step two add a new cell with unknown
+category to the plot we don't know this
+cell's category because it was taken
+from another tumor where the cells were
+not properly sorted and so what we want
+to do is we want to classify this new
+cell we want to figure out what cell
+it's most similar to and then we're
+going to call it that type of
+cell step three we classify the new cell
+by looking at the nearest nearest
+annotated cells I.E the nearest
+neighbors if the K in K nearest
+neighbors is equal to one then we will
+only use the nearest neighbor to define
+the category in this case the category
+is green because the nearest neighbor is
+already known to be the green cell type
+if k equals 11 we would use the 11
+nearest Neighbors in this case the
+category is still green because the 11
+cells that are closest to the unknown
+cell are already
+green now the new cell is somewhere more
+interesting it's about halfway between
+the green and the red cells if k equals
+11 and the new cells between two or more
+categories we simply pick the category
+that gets the most
+votes in this case seven nearest
+neighbors are
+red three nearest neighbors are
+orange one nearest neighbor is
+green since red got the most votes the
+final assignment is
+K-NN applied to a heatmap
+red this same principle applies to heat
+Maps this heat map was drawn with the
+same data and clustered using
+hierarchical
+clustering if our new cell ended up in
+the middle of the light blue cluster and
+if k equals 1 we just look at the
+nearest cell and that cell is light blue
+so we classify the unknown cell as a
+light blue cell if k equals 5 we'd look
+at the five nearest cells which are also
+light blue so we'd still classify the
+unknown cell as light blue if the new
+cell ended up closer to the edge of the
+light blue cells and k equals 11 then we
+take a vote
+seven nearest neighbors are light blue
+and four are light green so we'd still
+go with light blue if the new cell is
+right between two
+categories well if K is odd then we can
+avoid a lot of
+ties if we still get a tied vote we can
+flip a coin or decide not to assign the
+cell to a
+category before we go let's talk about a
+little machine learning SL data mining
+terminology the data used for the
+initial clustering the data where we
+know the categories in advance is called
+training data
+bam a few thoughts on picking a value
+Thoughts on how to pick 'K'
+for K there is no physical or biological
+way to determine the best value for K so
+you may have to try out a few values
+before settling on one do this by
+pretending part of the training data is
+unknown and then what you do is you
+categorize that unknown data using the K
+nearest neighbor algorithm and you
+assess how good the new categories match
+what you know
+already low values for K like k equal 1
+or k equals 2 can be noisy and subject
+to the effects of
+outliers large values for K smooth over
+things but you don't want K to be so
+large that a c category with only a few
+samples in it will always be outvoted by
+other
+categories hooray we've made it to the
+end of another exciting stack Quest if
+you like this stack Quest go ahead and
+subscribe to my channel and you'll see
+more like it and if you have any ideas
+of things you'd like me to do a stack
+Quest on feel free to put those ideas in
+the comments okay guess that's it tune
+in next time for another exciting stag
+Quest
+
