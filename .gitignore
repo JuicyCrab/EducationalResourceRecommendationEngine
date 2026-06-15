@@ -10,4 +10,4 @@ wheels/
 .venv
 
 # all data text files 
-*/data/.txt 
+*.txt 
