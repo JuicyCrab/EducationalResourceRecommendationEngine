@@ -8,6 +8,7 @@
 import re
 from collections import Counter, defaultdict
 from math import log
+import heapq
 
 def tokenize(text) -> list[str]:
     return re.findall(r'\b[a-z]+\b', text.lower())
@@ -40,9 +41,9 @@ def inverse_document_frequency(total_number_of_docs, inverted_index) -> dict[str
 
     return idf
 
-def bm25_score(query, doc, doc_len, avg_doc_len, idf_values, k1=1.5, b=0.75) -> float:
+def bm25_score(query, doc_tokens, doc_len, avg_doc_len, idf_values, k1=1.5, b=0.75) -> float:
     """
-    Function computes the bm25 score by utilizing the terms in the query and calculating 
+    Computes the bm25 score by utilizing the terms in the query and calculating 
     the inverse document frequency. Also, includes experimental constants 
     k1(term frequency saturation) and b(length normalization). k1 controls how much 
     repeated occurrences of a term matter and prevents favoring of documents that 
@@ -50,16 +51,53 @@ def bm25_score(query, doc, doc_len, avg_doc_len, idf_values, k1=1.5, b=0.75) -> 
     length integrity. 
     """
     query_tokens = tokenize(query)
-    tf = term_frequency(doc)
+    tf = term_frequency(doc_tokens)
     score = 0
     for token in query_tokens:
         if token not in idf_values:
             continue
-        score += idf_values[token] * (tf[token] * (k1 + 1)) / (tf[token] + k1 * (1 - b + b* (doc_len / avg_doc_len)))
+        score += idf_values[token] * (tf[token] * (k1 + 1)) / (tf[token] + k1 * (1 - b + b * (doc_len / avg_doc_len)))
     return score
 
-def document_ranking():
-    pass
+def document_ranking(query, documents) -> list[tuple[float, int]]:
+    """
+    Handles the ranking of documents using the Bm25 scoring computation. Min-Heap
+    organizes the ordering which sorts the ranking by score being the highest times 
+    by a negative constant. 
+    """
+    doc_ranking = []
+    total_docs = len(documents)
+    inverted_idx = inverted_index(documents)
+    avg_doc_len = average_doc_len(documents)
+    idf = inverse_document_frequency(total_docs,inverted_idx)
+
+    for idx, doc in enumerate(documents):
+        doc_tokens = tokenize(doc)
+        doc_len = len(doc_tokens)
+        doc_score = bm25_score(query, doc_tokens, doc_len, avg_doc_len, idf)
+        heapq.heappush(doc_ranking, (-doc_score, idx))
+
+    sorted_ranking_negatives = sorted(doc_ranking, reverse=False)
+    sorted_ranking_positives = [(-1 * score, idx) for score, idx in sorted_ranking_negatives]
+    return sorted_ranking_positives
+    
+
+
+def average_doc_len(documents) -> float:
+    """
+    Computes the average length for documents used for the BM score calculation. 
+    """
+    if len(documents) == 0:
+        return 0
+
+    average_sum = 0
+
+    for doc in documents:
+        tokens = tokenize(doc)
+        average_sum += len(tokens)
+
+    return average_sum / len(documents)
+
 
 if __name__ == '__main__':
     pass

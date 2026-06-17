@@ -9,3 +9,8 @@ dependencies = [
     "pymupdf>=1.27.2.3",
     "requests>=2.34.2",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.17",
+]
