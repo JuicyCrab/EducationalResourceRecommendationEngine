@@ -80,7 +80,7 @@ def document_ranking(query, documents) -> list[tuple[float, int]]:
     sorted_ranking_negatives = sorted(doc_ranking, reverse=False)
     sorted_ranking_positives = [(-1 * score, idx) for score, idx in sorted_ranking_negatives]
     return sorted_ranking_positives
-    
+
 
 
 def average_doc_len(documents) -> float:
@@ -98,6 +98,9 @@ def average_doc_len(documents) -> float:
 
     return average_sum / len(documents)
 
-
-if __name__ == '__main__':
-    pass
+def toString(document_ranking) -> str:
+    if document_ranking is None:
+        return "Invalid Document Ranking. Must enter a non-None document ranking."
+    
+    for rank in document_ranking:
+        print(f"Resource {rank[1]} BM Score: {rank[0]}")
