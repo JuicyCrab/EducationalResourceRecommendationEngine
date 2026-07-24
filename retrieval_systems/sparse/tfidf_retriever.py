@@ -1,7 +1,7 @@
 import math
 from collections import Counter
-
-class TFIDF_Retriever:
+from retriever_utils import RetrieverUtils
+class TFIDF_Retriever(RetrieverUtils):
     def __init__(self):
         self.documents: dict[int, str] = {}
         self.doc_term_freq: dict[int, Counter] = {} # individual documents tf Counters
@@ -11,7 +11,7 @@ class TFIDF_Retriever:
     def add_document(self, doc_id: int, text: str):
         """Index a document."""
         self.documents[doc_id] = text
-        tokens = super.tokenize(text)
+        tokens = super().tokenizer(text)
         
         self.doc_term_freq[doc_id] = Counter(tokens)
         
@@ -47,7 +47,7 @@ class TFIDF_Retriever:
     
     def score_document(self, query: str, doc_id: int) -> float:
         score = 0.0
-        query_tokens = super.tokenize(query)
+        query_tokens = super().tokenizer(query)
         for token in query_tokens:
             tf = self.compute_tf(token, doc_id)
             idf = self.compute_idf(token)

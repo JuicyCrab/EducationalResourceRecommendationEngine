@@ -13,7 +13,7 @@ class InvertedIndex(RetrieverUtils):
     def add_document(self, doc_id: int, text: str):
         """Add document to the index."""
         self.documents[doc_id] = text;
-        tokens = super.tokenize(text)
+        tokens = super().tokenizer(text)
         self.doc_len[doc_id] = len(tokens)
         
         total_length = sum(self.doc_len.values())
@@ -25,7 +25,7 @@ class InvertedIndex(RetrieverUtils):
     
     def search(self, query: str) -> set[int]:
         """Find documents with all the query terms."""
-        query_tokens = super.tokenize(query)
+        query_tokens = super().tokenizer(query)
         if not query:
             return set()
         

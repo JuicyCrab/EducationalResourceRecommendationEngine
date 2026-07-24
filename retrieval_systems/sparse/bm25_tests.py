@@ -1,4 +1,4 @@
-from bm25_scratch import document_ranking, toString
+from retrieval_systems.sparse.bm25_scratch import document_ranking, toString
 import os
 from dotenv import load_dotenv
 import json
