@@ -1,23 +1,19 @@
 import re
-from typing import Dict, List, Set
 from collections import defaultdict
+from retriever_utils import RetrieverUtils
 
-class invertedIndex:
+class InvertedIndex(RetrieverUtils):
     def __init__(self):
-        self.index: Dict[str, Set[int]] = defaultdict(set)
-        self.documents: Dict[int, str] = {}
-        self.doc_len: Dict[int, int] = {}
+        self.index: dict[str, set[int]] = defaultdict(set)
+        self.documents: dict[int, str] = {}
+        self.doc_len: dict[int, int] = {}
         self.avg_doc_len: float = 0.0
     
-    def tokenize(self, text: str) -> str:
-        """Tokenize converts strings to lowercase and ensures the words are standalone."""
-        text = text.lower()
-        return re.findall(r'\b[a-z]+\b', text)
     
     def add_document(self, doc_id: int, text: str):
         """Add document to the index."""
         self.documents[doc_id] = text;
-        tokens = self.tokenize(text)
+        tokens = super.tokenize(text)
         self.doc_len[doc_id] = len(tokens)
         
         total_length = sum(self.doc_len.values())
@@ -27,9 +23,9 @@ class invertedIndex:
         for token in tokens:
             self.index[token].add(doc_id)
     
-    def search(self, query: str) -> Set[int]:
+    def search(self, query: str) -> set[int]:
         """Find documents with all the query terms."""
-        query_tokens = self.tokenize(query)
+        query_tokens = super.tokenize(query)
         if not query:
             return set()
         
