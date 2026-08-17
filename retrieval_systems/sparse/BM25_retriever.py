@@ -1,19 +1,19 @@
 import math
 from collections import defaultdict, Counter
-from retriever_utils import RetrieverUtils
+from .retriever_utils import RetrieverUtils
 
 class BM25Retriever(RetrieverUtils):
     def __init__(self, k1 = 1.5, b = 0.75):
         self.k1 = k1
         self.b = b
-        self.documents: dict[int, str] = {}
+        self.documents: dict[str, str] = {}
         self.doc_term_freq: dict[int, Counter] = {}
         self.doc_len: dict[int, int] = {}
         self.doc_freqs = Counter()
-        self.avg_doc_len: float = 0.0
+        self.avg_doc_len_sum: float = 0.0
         self.inverted_index: dict[str, set[int]] = defaultdict(set)
     
-    def add_document(self, doc_id: int, text: str):
+    def add_document(self, doc_id: str, text: str):
         """Add document to the index."""
         self.documents[doc_id] = text
         tokens = super().tokenizer(text)
@@ -21,12 +21,11 @@ class BM25Retriever(RetrieverUtils):
         self.doc_len[doc_id] = len(tokens)
         self.doc_term_freq[doc_id] = Counter(tokens)
         
-        total_doc_len = sum(self.doc_len.values()) + len(tokens)
-        self.avg_doc_len = total_doc_len / len(self.documents)
+        self.avg_doc_len_sum = sum(self.doc_len.values()) + len(tokens)
         
         unique_terms = set(tokens)
         for term in unique_terms:
-            self.doc_freqs[doc_id] += 1
+            self.doc_freqs[term] += 1
             self.inverted_index[term].add(doc_id)
         
         
@@ -37,14 +36,14 @@ class BM25Retriever(RetrieverUtils):
         IDF(q) = log((N - n(q) + 0.5) / (n(q) + 0.5) + 1)
         """
         n_docs = len(self.documents)
-        doc_freq = len(self.doc_freqs.get(term, 0))
+        doc_freq = self.doc_freqs.get(term, 0)
         
         numerator = n_docs - doc_freq + 0.5
         denominator = doc_freq + 0.5
         
         return math.log((numerator / denominator) + 1)
     
-    def score_document(self, query: str, doc_id: int) -> float:
+    def score_document(self, query: str, doc_id: str) -> float:
         """
         Computer BM25 score for a document.
         
@@ -63,7 +62,7 @@ class BM25Retriever(RetrieverUtils):
             tf = term_freq[token]
             idf = self.compute_idf(token)
             
-            length_norm = 1 - self.b + self.b * (self.doc_len[doc_id] / self.avg_doc_len)
+            length_norm = 1 - self.b + self.b * (self.doc_len[doc_id] / (self.avg_doc_len_sum / len(self.documents)))
             tf_component = (tf * (self.k1 + 1)) / (tf + self.k1 * length_norm)
             
             score += idf * tf_component

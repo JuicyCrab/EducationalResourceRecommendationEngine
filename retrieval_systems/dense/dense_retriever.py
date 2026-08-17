@@ -1,26 +1,35 @@
 from sentence_transformers import SentenceTransformer, util
 import numpy as np
+from evals.eval_utils import EvalUtils
 
 class DenseRetriever():
+    
     def __init__(self, model_name = 'sentence-transformers/multi-qa-mpnet-base-cos-v1', embedding_file_path = 'dense_resource_embeddings.npy'):
         self.model = SentenceTransformer(model_name)
-        self.doc_embeddings: np.ndarray = np.ndarray([])
+        self.doc_embeddings: np.array = np.array([])
         self.embedding_file_path = embedding_file_path
-        self.doc_ids: list[int] = [] 
+        self.doc_ids: list[str] = []
         self.doc_texts: list[str] = []
         self.doc_id_file_path = 'dense_retriever_embedding_doc_ids.npy'
     
-    def embed_documents(self, documents: dict[int, str]):
-        """Embed the documents and store the ids with embeddings"""
-        for key, value in documents.items():
-                self.doc_ids.append(key)
-                self.doc_texts.append(value)
-
-        self.doc_embeddings = self.model.encode(self.doc_texts, convert_to_numpy=True)
+    def embed_documents(self, documents: list[dict[int, str]]):
+        """Embed the documents and store the ids with embeddings. Handles when initially adding documents, and
+            when there are documents already populating the vector database.
+        """
+        new_ids = [doc["idx"] for doc in documents]
+        new_texts = [doc["extracted_text"] for doc in documents]
+        new_embeddings = self.model.encode(new_texts, convert_to_numpy=True)
         
+        self.doc_ids.extend(new_ids)
+        self.doc_texts.extend(new_texts)
+        
+        if self.doc_embeddings.size == 0:
+            self.doc_embeddings = new_embeddings
+        else:
+            self.doc_embeddings = np.vstack([self.doc_embeddings, new_embeddings])
     def save_embeddings(self) -> bool:
         """To prevent from recalculating the embeddings"""
-        if len(self.doc_embeddings) == 0:
+        if self.doc_embeddings.size == 0:
             return False
         
         np.save(self.embedding_file_path, self.doc_embeddings)
