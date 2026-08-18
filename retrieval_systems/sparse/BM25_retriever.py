@@ -1,8 +1,17 @@
+"""
+This module implements a BM25 retriever.
+
+It uses the BM25 algorithm to score documents based on their relevance to a given query.
+The retriever can add documents, compute IDF, score documents, and perform searches.
+"""
+
 import math
 from collections import defaultdict, Counter
+
 from .retriever_utils import RetrieverUtils
 
 class BM25Retriever(RetrieverUtils):
+    
     def __init__(self, k1 = 1.5, b = 0.75):
         self.k1 = k1
         self.b = b
@@ -13,15 +22,14 @@ class BM25Retriever(RetrieverUtils):
         self.avg_doc_len_sum: float = 0.0
         self.inverted_index: dict[str, set[int]] = defaultdict(set)
     
-    def add_document(self, doc_id: str, text: str):
-        """Add document to the index."""
+    def add_document(self, doc_id: str, text: str) -> None:
         self.documents[doc_id] = text
         tokens = super().tokenizer(text)
         
         self.doc_len[doc_id] = len(tokens)
         self.doc_term_freq[doc_id] = Counter(tokens)
         
-        self.avg_doc_len_sum = sum(self.doc_len.values()) + len(tokens)
+        self.avg_doc_len_sum = sum(self.doc_len.values())
         
         unique_terms = set(tokens)
         for term in unique_terms:
@@ -31,9 +39,10 @@ class BM25Retriever(RetrieverUtils):
         
     def compute_idf(self, term: str) -> float:
         """
-        Compute idf using BM25 formula.
+        This computes idf using BM25 formula.
         
-        IDF(q) = log((N - n(q) + 0.5) / (n(q) + 0.5) + 1)
+        Formula: 
+            IDF(q) = log((N - n(q) + 0.5) / (n(q) + 0.5) + 1)
         """
         n_docs = len(self.documents)
         doc_freq = self.doc_freqs.get(term, 0)
@@ -45,10 +54,11 @@ class BM25Retriever(RetrieverUtils):
     
     def score_document(self, query: str, doc_id: str) -> float:
         """
-        Computer BM25 score for a document.
+        Calculates the total BM25 relevance score for a single document.
         
-        Score(D, Q) = sum(IDF(q) * (f(q, D) * (k1 + 1)) /
-        (f(q, D) + k1 * (1- b + b * |D| / avgdl()))
+        Formula:
+            Score(D, Q) = sum(IDF(q) * (f(q, D) * (k1 + 1)) /
+                          (f(q, D) + k1 * (1- b + b * |D| / avgdl()))
         """
         query_tokens = super().tokenizer(query)
         term_freq = self.doc_term_freq[doc_id]
@@ -70,6 +80,11 @@ class BM25Retriever(RetrieverUtils):
         return score
 
     def search(self, query: str, top_k: int = 5) -> list[tuple[int, float]]:
+        """
+        Searches across added documents and returns the top_k most relevant documents based on the query.
+        
+        Retrieves candidate documents using the inverted index, scores them using BM25, and returns the top_k results.
+        """
         query_tokens = super().tokenizer(query)
         scores = []
         

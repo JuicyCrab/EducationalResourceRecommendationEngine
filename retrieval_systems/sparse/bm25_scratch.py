@@ -1,14 +1,14 @@
 """
-    This script is intended for making the best matching algorithm or BM25 from 
-    scratch. Includes computing the term frequency, handling inverted term
-    frequency, and utilizing document normalization to prevent term inequality
-    for different document sizes. 
+This script implements the Best Matching algorithm (BM25) from scratch.
+
+It handles computing term frequencies, inverted document frequencies, and
+utilizes document length normalization to prevent term inequality across
+different text lengths.
 """
 
-import re
 from collections import Counter, defaultdict
 from math import log
-import heapq
+import re
 
 def tokenize(text) -> list[str]:
     return re.findall(r'\b[a-z]+\b', text.lower())
@@ -18,89 +18,72 @@ def term_frequency(tokens) -> dict[str, int]:
 
 def inverted_index(documents) -> dict[str, int]: 
     """
-        Takes in tokenized documents and maps the term to the multiple documents. 
-        Loop through the docs and get term frequency. 
-        if that term frequency doesn't exist as a key than add new key. tf = term frequency 
+    Map each unique term to the indices of documents containing it.
+
+    Takes tokenized documents and builds a lookup index.
     """
     inverted_index_result = defaultdict(list)
     for idx, doc in enumerate(documents):
         tf = term_frequency(doc)
         for term in tf:
             inverted_index_result[term].append(idx)
-
     return inverted_index_result
 
 
 def inverse_document_frequency(total_number_of_docs, inverted_index) -> dict[str, int]:
     """
-        Describes the significance of term rarity across documents. 
+    Calculate the significance of term rarity across all documents.
     """
     idf = {}
     for key, value in inverted_index.items():
-        idf[key] = log((total_number_of_docs - len(value) + 0.5) / (len(value) + 0.5) + 1)
-
+        numerator = total_number_of_docs - len(value) + 0.5
+        denominator = len(value) + 0.5
+        idf[key] = log((numerator / denominator) + 1)
     return idf
 
-def bm25_score(query, doc_tokens, doc_len, avg_doc_len, idf_values, k1=1.5, b=0.75) -> float:
+def bm25_score(query_tokens, doc_tokens, doc_len, avg_doc_len, idf_values, k1=1.5, b=0.75) -> float:
     """
-    Computes the bm25 score by utilizing the terms in the query and calculating 
-    the inverse document frequency. Also, includes experimental constants 
-    k1(term frequency saturation) and b(length normalization). k1 controls how much 
-    repeated occurrences of a term matter and prevents favoring of documents that 
-    greatly mention a term. b is a penalizer for long documents and values resource 
-    length integrity. 
+    Compute the BM25 relevance score for a single tokenized document.
+
+    Utilizes experimental constants k1 (term frequency saturation) and b 
+    (length normalization) to penalize abnormally long texts.
     """
-    query_tokens = tokenize(query)
     tf = term_frequency(doc_tokens)
-    score = 0
+    score = 0.0
     for token in query_tokens:
         if token not in idf_values:
             continue
-        score += idf_values[token] * (tf[token] * (k1 + 1)) / (tf[token] + k1 * (1 - b + b * (doc_len / avg_doc_len)))
+        length_norm = 1 - b + b * (doc_len / avg_doc_len)
+        tf_component = (tf[token] * (k1 + 1)) / (tf[token] + k1 * length_norm)
+        score += idf_values[token] * tf_component
     return score
 
-def document_ranking(query, documents) -> list[tuple[float, int]]:
-    """
-    Handles the ranking of documents using the Bm25 scoring computation. Min-Heap
-    organizes the ordering which sorts the ranking by score being the highest times 
-    by a negative constant. 
-    """
-    doc_ranking = []
+def document_ranking(query: str, documents: list[str]) -> list[tuple[float, int]]:
+    """Rank documents by calculating their BM25 score against a search query."""
+    tokenized_docs = [tokenize(doc) for doc in documents]
     total_docs = len(documents)
-    inverted_idx = inverted_index(documents)
-    avg_doc_len = average_doc_len(documents)
-    idf = inverse_document_frequency(total_docs,inverted_idx)
-
-    for idx, doc in enumerate(documents):
-        doc_tokens = tokenize(doc)
-        doc_len = len(doc_tokens)
-        doc_score = bm25_score(query, doc_tokens, doc_len, avg_doc_len, idf)
-        heapq.heappush(doc_ranking, (-doc_score, idx))
-
-    sorted_ranking_negatives = sorted(doc_ranking, reverse=False)
-    sorted_ranking_positives = [(-1 * score, idx) for score, idx in sorted_ranking_negatives]
-    return sorted_ranking_positives
-
-
-
-def average_doc_len(documents) -> float:
-    """
-    Computes the average length for documents used for the BM score calculation. 
-    """
-    if len(documents) == 0:
-        return 0
-
-    average_sum = 0
-
-    for doc in documents:
-        tokens = tokenize(doc)
-        average_sum += len(tokens)
-
-    return average_sum / len(documents)
-
-def toString(document_ranking) -> str:
-    if document_ranking is None:
-        return "Invalid Document Ranking. Must enter a non-None document ranking."
     
-    for rank in document_ranking:
-        print(f"Resource {rank[1]} BM Score: {rank[0]}")
+    if total_docs == 0:
+        return []
+    
+    avg_doc_len = sum(len(doc) for doc in tokenized_docs) / total_docs
+    inverted_idx = inverted_index(tokenized_docs)
+    idf = inverse_document_frequency(total_docs, inverted_idx)
+    query_tokens = tokenize(query)
+
+    doc_ranking = []
+    for idx, doc in enumerate(tokenized_docs):
+        doc_len = len(doc)
+        doc_score = bm25_score(query_tokens, doc, doc_len, avg_doc_len, idf)
+        doc_ranking.append((doc_score, idx))
+
+    return sorted(doc_ranking, key=lambda x: x[0], reverse=True)
+
+def print_rankings(doc_ranking: list[tuple[float, int]]):
+    """Print the calculated BM25 scores for the generated document ranking."""
+    if not doc_ranking:
+        print("Invalid Document Ranking. Must enter a non-None document ranking.")
+        return 
+    
+    for score, idx in document_ranking:
+        print(f"Resource {idx} BM Score: {score}")

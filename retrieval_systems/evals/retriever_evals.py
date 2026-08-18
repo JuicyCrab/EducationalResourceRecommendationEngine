@@ -1,50 +1,47 @@
 """
-This class represents the evaluation metrics for retrieval systems. The metrics used
-for the task of taking a query and returning relevant documents are precision,
-recall, and mean reciprocal rank.
-"""
+This class represents the evaluation metrics for retrieval systems. 
 
-__author__ = "Eyasu Smieja"
-__version__ = 1.0
+The metrics used for the task of taking a query and returning relevant 
+documents are precision, recall, and mean reciprocal rank.
+"""
 
 
 class RetrieverEvals:
+
     @staticmethod
     def precision(retrieved: list[tuple[str, float]], relevant: set[str], k: int = 5) -> float:
-        """Computes the precision using the formula precision = (|tp| / k)"""
-        if k == 0:
-            raise ValueError("Arg k can't be 0 or negative. Enter a positive number.")
+        """Compute the precision at k score for retrieved items."""
+        if k <= 0:
+            raise ValueError("Arg k must be a positive integer greater than 0.")
         
+        if not retrieved:
+            return 0.0
+
         doc_ids = {resource[0] for resource in retrieved[:k]}
         docs_intersected = relevant.intersection(doc_ids)
-        numerator = len(docs_intersected)
-        denominator = k if len(retrieved) > k else len(retrieved)
         
-        if denominator == 0:
-            return 0.0
-        
-        return numerator / denominator
+        return len(docs_intersected) / k
 
     @staticmethod
     def recall(retrieved: list[tuple[str, float]], relevant: set[str], k: int = 5) -> float:
-        """Computes recall using the formula recall = (TP) / (TP + FN)."""
+        """Compute the recall at k score for retrieved items."""
         if len(relevant) == 0:
-            raise ValueError("The arg Relevant is an empty set. Enter a set with at least one item. ")
+            raise ValueError("The arg Relevant cannot be an empty set.")
+            
         doc_ids = {resource[0] for resource in retrieved[:k]}
         docs_intersected = relevant.intersection(doc_ids)
-        tp = len(docs_intersected)
-        fn = len(relevant) - tp
-        return tp / (tp + fn)
-    
+        
+        return len(docs_intersected) / len(relevant)
+
     @staticmethod
     def mean_reciprocal_rank(retrieved: list[tuple[str, float]], relevant: set[str], k: int = 5) -> float:
-        """Computes mean reciprocal ranking(MRR) using the formula MRR = (1 / N) sum(1 / rank_i)"""
-        if len(retrieved) == 0:
+        """Compute the Reciprocal Rank (RR) score for a single query iteration."""
+        if not retrieved:
             return 0.0
-        
-        k = len(retrieved) if len(retrieved) < k else k
-        for rank in range(0, k):
+
+        max_rank = min(len(retrieved), k)
+        for rank in range(max_rank):
             if retrieved[rank][0] in relevant:
                 return 1 / (rank + 1)
-    
-        return 0
+
+        return 0.0
