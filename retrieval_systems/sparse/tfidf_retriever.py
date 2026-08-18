@@ -34,7 +34,7 @@ class TFIDFRetriever(RetrieverUtils):
     def compute_tf(self, term: str, doc_id: int) -> float:
         """Computes the log normalized term frequency for a document."""
         
-        tf = self.doc_term_freq[doc_id].get(term, 0) #gets the count of a term for this specific doc
+        tf = self.doc_term_freq[doc_id].get(term, 0)
         return 1 + math.log(tf) if tf > 0 else 0
 
     def compute_idf(self, term: str) -> float:

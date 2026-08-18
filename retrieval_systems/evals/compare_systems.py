@@ -91,7 +91,6 @@ def print_comparison(comparison: dict):
 
     print("\nPer-query MRR deltas (hybrid vs dense, hybrid vs bm25):")
     for row in comparison["per_query_deltas"]:
-        # FIXED: Wrapped long print strings to maximize code readability
         print(
             f"  {row['query_id']}: bm25={row['bm25_mrr']:.2f} "
             f"dense={row['dense_mrr']:.2f} hybrid={row['hybrid_mrr']:.2f}  "

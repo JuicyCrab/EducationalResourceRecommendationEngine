@@ -13,9 +13,7 @@ from hybrid.reciprocal_rank_fusion import ReciprocalRankFusion
 from sparse.BM25_retriever import BM25Retriever
 
 
-def query_batch(
-    retrieval_system, start_idx: int, end_idx: int, k: int = 5
-) -> list[dict]:
+def query_batch(retrieval_system, start_idx: int, end_idx: int, k: int = 5) -> list[dict]:
     """Query a batch of documents using a single retrieval system."""
     queries = EvalUtils.get_resource_queries(start_idx, end_idx)
     if not isinstance(retrieval_system, (BM25Retriever, DenseRetriever)):
@@ -61,7 +59,7 @@ def query_batch_rrf(
         bm25_retrieved = bm25_retrieval_system.search(query["query_text"], top_k=k)
         dense_retrieved = dense_retrieval_system.search(query["query_text"], top_k=k)
         
-        # FIXED: Pass rrf_k into the k argument of your fusion formula calculator
+       
         hybrid_retrieved = ReciprocalRankFusion.search(
             bm25_retrieved, dense_retrieved, k=rrf_k
         )
@@ -98,7 +96,7 @@ def evaluate_batch(batch_results: list[dict], k: int = 5) -> dict:
     if n_metrics == 0:
         return {"per_query": [], "precision": 0.0, "recall": 0.0, "mrr": 0.0}
 
-    # FIXED: Recomputed metric sums to reflect correct aggregate means
+
     mean_precision = sum(m["precision"] for m in metrics) / n_metrics
     mean_recall = sum(m["recall"] for m in metrics) / n_metrics
     mean_mrr = sum(m["mrr"] for m in metrics) / n_metrics
