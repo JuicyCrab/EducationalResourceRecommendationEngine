@@ -27,6 +27,7 @@ class DenseRetriever():
             self.doc_embeddings = new_embeddings
         else:
             self.doc_embeddings = np.vstack([self.doc_embeddings, new_embeddings])
+            
     def save_embeddings(self) -> bool:
         """To prevent from recalculating the embeddings"""
         if self.doc_embeddings.size == 0:
