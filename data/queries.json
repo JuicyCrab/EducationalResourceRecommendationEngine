@@ -5,104 +5,104 @@
         "query_text": "I already know some of the basics of python and want to learn machine learning.", 
         "prior_knowledge": ["python"], 
         "learning_duration": "2 years", 
-        "relevant_resource_ids": ["r0001", "r0002", "r0003", "r0004", "r0005", "r0006", "r0008", "r0009", "r0010", "r0011", "r0014", "r0028", "r0037", "r0039", "r0040", "r0043", "r0044"] 
+        "relevant_resource_ids": ["r001", "r002", "r003", "r004", "r005", "r006", "r008", "r009", "r010", "r011", "r014", "r028", "r037", "r039", "r040", "r043", "r044"] 
     },
     {
         "query_id": "q002",
         "query_text": "I am a college student studying computer engineering, who already knows intermediate python, and am interested in reinforcement learning systems and other machine learning techniques.", 
         "prior_knowledge": ["python", "discrete math", "probability and data analysis", "physics", "calculus 1", "calculus 2", "multivariable calculus", "differential equations", "data structures and algorithms"], 
         "learning_duration": "ongoing", 
-        "relevant_resource_ids": ["r0005", "r0007", "r0011", "r0012", "r0013", "r0015", "r0018", "r0020", "r0026", "r0028", "r0029", "r0035", "r0041"] 
+        "relevant_resource_ids": ["r005", "r007", "r011", "r012", "r013", "r015", "r018", "r020", "r026", "r028", "r029", "r035", "r041"] 
     },
     {
         "query_id": "q003",
         "query_text": "I need a concise machine learning roadmap that covers neural networks, classification, and anomaly detection", 
         "prior_knowledge": ["math", "statistics", "python"], 
         "learning_duration": "4 months", 
-        "relevant_resource_ids": ["r0002", "r0003", "r0004", "r0005", "r0006", "r0009", "r0010", "r0012", "r0013", "r0019", "r0021", "r0022", "r0023", "r0025", "r0026", "r0028", "r0046"] 
+        "relevant_resource_ids": ["r002", "r003", "r004", "r005", "r006", "r009", "r010", "r012", "r013", "r019", "r021", "r022", "r023", "r025", "r026", "r028", "r046"] 
     },
     {
         "query_id": "q004",
         "query_text": "My name is James and I am a software engineer. Could you create a roadmap that teaches me about supervised learning methods including Linear Regression, Support vector machines, Random Forests, and K-Nearest Neighbors. The code should be using python.", 
         "prior_knowledge": ["apis", "frontend and backend engineering", "middleware", "college calculus", "Python"], 
         "learning_duration": "6 months", 
-        "relevant_resource_ids": ["r0002", "r0003", "r0004", "r0010", "r0012", "r0013", "r0014", "r0019", "r0021", "r0022", "r0023", "r0024"] 
+        "relevant_resource_ids": ["r002", "r003", "r004", "r010", "r012", "r013", "r014", "r019", "r021", "r022", "r023", "r024"] 
     },
     {
         "query_id": "q005",
         "query_text": "I am interested in how physics informed machine learning models are built and how they function", 
         "prior_knowledge": ["scikit-learn", "pytorch", "quantum mechanics", "ordinary differential equations"], 
         "learning_duration": "48 hours", 
-        "relevant_resource_ids": ["r0017", "r0032", "r0033", "r0048"] 
+        "relevant_resource_ids": ["r017", "r032", "r033", "r048"] 
     },
     {
         "query_id": "q006",
         "query_text": "I know python and basic statistics and want to learn machine learning", 
         "prior_knowledge": ["descriptive statistics", "python", "probability"], 
         "learning_duration": "1 month", 
-        "relevant_resource_ids": ["r0002", "r0003", "r0004", "r0005", "r0006", "r0009", "r0010", "r0014", "r0018", "r0021", "r0022", "r0023", "r0024", "r0025", "r0028", "r0037", "r0039", "r0040", "r0043", "r0044"] 
+        "relevant_resource_ids": ["r002", "r003", "r004", "r005", "r006", "r009", "r010", "r014", "r018", "r021", "r022", "r023", "r024", "r025", "r028", "r037", "r039", "r040", "r043", "r044"] 
     },
     {
         "query_id": "q007",
         "query_text": "I want to learn machine learning", 
         "prior_knowledge": ["math", "python"], 
         "learning_duration": "3 days", 
-        "relevant_resource_ids": ["r0002", "r0003", "r0004", "r0006", "r0008", "r0014"] 
+        "relevant_resource_ids": ["r002", "r003", "r004", "r006", "r008", "r014"] 
     },
     {
         "query_id": "q008",
         "query_text": "I am an embedded systems engineer that needs to improve the self driving using computer vision. Create an effective roadmap that teaches the necessary machine learning techniques for this application.", 
         "prior_knowledge": ["python", "C++", "low-level hardware systems", "linear algebra", "calculus"], 
         "learning_duration": "18 months", 
-        "relevant_resource_ids": ["r0010", "r0011", "r0017", "r0026", "r0036", "r0042", "r0047"] 
+        "relevant_resource_ids": ["r010", "r011", "r017", "r026", "r036", "r042", "r047"] 
     },
     {
         "query_id": "q009",
         "query_text": "I want to learn about generative neural network models that utilize reinforcement learning.", 
         "prior_knowledge": ["diffusion models", "middleware", "reinforcement learning", "perceptron", "neural networks", "backpropagation", "computer vision"], 
         "learning_duration": "3 months", 
-        "relevant_resource_ids": ["r0005", "r0007", "r0015", "r0017", "r0020", "r0026", "r0027", "r0028", "r0029", "r0035", "r0038", "r0041", "r0045"] 
+        "relevant_resource_ids": ["r005", "r007", "r015", "r017", "r020", "r026", "r027", "r028", "r029", "r035", "r038", "r041", "r045"] 
     },
     {
         "query_id": "q010",
         "query_text": "Teach me the mathematical fundamentals of machine learning so I can implement backpropagation from scratch.", 
         "prior_knowledge": ["numpy", "pandas", "fastapi", "python fundamentals"], 
         "learning_duration": "8 months", 
-        "relevant_resource_ids": ["r0002", "r0005", "r0007", "r0009", "r0012", "r0013", "r0017", "r0018", "r0020", "r0025", "r0026", "r0028", "r0029", "r0038", "r0043"] 
+        "relevant_resource_ids": ["r002", "r005", "r007", "r009", "r012", "r013", "r017", "r018", "r020", "r025", "r026", "r028", "r029", "r038", "r043"] 
     },
     {
         "query_id": "q011",
         "query_text": "Can you create a learning path that teaches how quantized models improve inference speed without risking performance?", 
         "prior_knowledge": ["jax"], 
         "learning_duration": "6 weeks", 
-        "relevant_resource_ids": ["r0016", "r0027", "r0030", "r0031", "r0034", "r0049"] 
+        "relevant_resource_ids": ["r016", "r027", "r030", "r031", "r034", "r049"] 
     },
     {
         "query_id": "q012",
         "query_text": "How do transformer attention mechanism work mathematically", 
         "prior_knowledge": ["linear algebra", "python", "neural networks", "backpropagation"], 
         "learning_duration": "2 months", 
-        "relevant_resource_ids": ["r0007", "r0016", "r0018", "r0020", "r0027", "r0028", "r0029", "r0030", "r0038", "r0041", "r0045"] 
+        "relevant_resource_ids": ["r007", "r016", "r018", "r020", "r027", "r028", "r029", "r030", "r038", "r041", "r045"] 
     },
     {
         "query_id": "q013",
         "query_text": "I am a complete beginner with no programming experience and want to learn machine learning", 
         "prior_knowledge": [], 
         "learning_duration": "1 year", 
-        "relevant_resource_ids": ["r0002", "r0003", "r0004", "r0005", "r0006", "r0008", "r0009", "r0010", "r0011", "r0014", "r0026", "r0028", "r0037", "r0039", "r0043", "r0044"] 
+        "relevant_resource_ids": ["r002", "r003", "r004", "r005", "r006", "r008", "r009", "r010", "r011", "r014", "r026", "r028", "r037", "r039", "r043", "r044"] 
     },
     {
         "query_id": "q014",
         "query_text": "I am transitioning from a marketing background into data science and need to learn machine learning as fast as possible", 
         "prior_knowledge": ["excel", "basic statistics"], 
         "learning_duration": "2 weeks", 
-        "relevant_resource_ids": ["r0002", "r0003", "r0004", "r0006", "r0008", "r0009", "r0014", "r0022", "r0037", "r0039", "r0040", "r0043", "r0044"] 
+        "relevant_resource_ids": ["r002", "r003", "r004", "r006", "r008", "r009", "r014", "r022", "r037", "r039", "r040", "r043", "r044"] 
     },
     {
         "query_id": "q015",
         "query_text": "machine learning roadmap", 
         "prior_knowledge": [], 
         "learning_duration": "1 week", 
-        "relevant_resource_ids": ["r0008", "r0009", "r0014", "r0024"] 
+        "relevant_resource_ids": ["r008", "r009", "r014", "r024"] 
     }
 ]
