@@ -4,6 +4,7 @@ from sparse.BM25_retriever import BM25Retriever
 from evals.retriever_evals import RetrieverEvals
 from dense.dense_retriever import DenseRetriever
 from hybrid.reciprocal_rank_fusion import ReciprocalRankFusion
+from evals.compare_systems import compare_systems, print_comparison
 
 
 
@@ -134,15 +135,19 @@ def hybrid_tests():
     print("Per-query bm25 metrics:")
     for metric in train_bm25_metrics["per_query"]:
         print(metric)
-    
+
     print("Per-query dense metrics:")
     for metric in train_dense_metrics["per_query"]:
         print(metric)
-    
+
     print("Per-query hybrid metrics:")
     for metric in train_hybrid_metrics["per_query"]:
         print(metric)
-        
+    
+    comparison = compare_systems(train_bm25_metrics["per_query"],
+                                 train_dense_metrics["per_query"], 
+                                 train_hybrid_metrics["per_query"])
+    print_comparison(comparison)
 if __name__ =='__main__':
     hybrid_results = hybrid_tests()
 
